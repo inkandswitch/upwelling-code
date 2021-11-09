@@ -1,6 +1,7 @@
 import type { TLBinding, TLPage, TLPageState, TLSnapLine } from '@tldraw/core'
 import type { Shape } from '../shapes'
 import type { S } from '@state-designer/react'
+import * as Automerge from 'automerge';
 
 export const VERSION = 1
 export const PERSIST_DATA = true
@@ -93,13 +94,28 @@ export const INITIAL_PAGE_STATE: TLPageState = {
   bindingId: null,
 }
 
-export const INITIAL_DATA = {
-  id: 'myDocument',
-  version: VERSION,
-  page: INITIAL_PAGE,
-  pageState: INITIAL_PAGE_STATE,
-  overlays: {
+
+export const INITIAL_DATA = Automerge.change<AppData>(Automerge.init('0000'), { time: 0 }, (doc: AppData) => {
+  doc.id = 'myDocument'
+  doc.version = VERSION
+  doc.page = INITIAL_PAGE
+  doc.pageState = INITIAL_PAGE_STATE
+  doc.overlays = {
     snapLines: [] as TLSnapLine[],
+  },
+  doc.meta = {
+    isDarkMode: false,
+  }
+})
+
+
+export type AppData = {
+  id: string,
+  version: number,
+  page: TLPage,
+  pageState: TLPageState,
+  overlays: {
+    snapLines: TLSnapLine[],
   },
   meta: {
     isDarkMode: false,
@@ -110,8 +126,6 @@ export type AppDocument = {
   id: string
   page: TLPage<Shape>
 }
-
-export type AppData = typeof INITIAL_DATA
 
 export type Action = S.Action<AppData>
 

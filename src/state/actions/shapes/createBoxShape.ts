@@ -3,18 +3,20 @@ import { shapeUtils } from 'shapes'
 import type { Action } from 'state/constants'
 import { getPagePoint } from 'state/helpers'
 import { mutables } from 'state/mutables'
+import * as Automerge from 'automerge';
 
 export const createBoxShape: Action = (data, payload: TLPointerInfo) => {
-  console.log('box created?')
   const shape = shapeUtils.box.getShape({
     parentId: 'page1',
     point: getPagePoint(payload.point, data.pageState),
-    size: [10, 10],
+    size: [100, 100],
     childIndex: Object.values(data.page.shapes).length,
   })
-
-  data.page.shapes[shape.id] = shape
-  data.pageState.selectedIds = [shape.id]
-
+    
+  let doc = Automerge.change(data, doc => {
+    doc.page.shapes[shape.id] = shape
+    doc.pageState.selectedIds = [shape.id]
+  })
+  Object.assign(data, doc)
   mutables.pointedBoundsHandleId = TLBoundsCorner.BottomRight
 }

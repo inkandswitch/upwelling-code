@@ -1,6 +1,7 @@
 import type { TLBinding } from '@tldraw/core'
 import { nanoid } from 'nanoid'
 import type { Action, CustomBinding } from 'state/constants'
+import * as Automerge from 'automerge';
 
 export const createBindings: Action = (
   data,
@@ -14,6 +15,7 @@ export const createBindings: Action = (
       ...partial,
     }
 
-    data.page.bindings[binding.id] = binding
+    let newData = Automerge.change(data, doc => doc.page.bindings[binding.id] = binding)
+    Object.assign(data, newData)
   })
 }

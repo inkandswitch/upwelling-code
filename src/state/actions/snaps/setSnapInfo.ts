@@ -14,6 +14,7 @@ export const setSnapInfo: Action = (data, payload: TLPointerInfo) => {
       others.push(bounds)
     }
   })
+  console.log('snapInfo')
 
   const initialBounds = Utils.getBoundsWithCenter(
     Utils.getCommonBounds(

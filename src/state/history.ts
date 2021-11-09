@@ -1,29 +1,30 @@
 import { AppData, INITIAL_DATA, PERSIST_DATA } from './constants'
 import { current } from 'immer'
+import * as Automerge from 'automerge';
+import { Buffer } from 'buffer/';
 
-export function makeHistory(ID = '@tldraw/core_advanced_example') {
-  let initialData = INITIAL_DATA
+export function makeHistory(ID = 'v67') {
+  let initialData: AppData = INITIAL_DATA
 
-  const saved = localStorage.getItem(ID)
+  const saved: string = localStorage.getItem(ID)
 
-  if (PERSIST_DATA && saved !== null) {
-    let restoredData = JSON.parse(saved)
+  if (PERSIST_DATA && saved) {
+    let serializedDoc: Automerge.BinaryDocument = new Uint8Array(Buffer.from(saved, 'hex')) as Automerge.BinaryDocument
+    let restoredData = Automerge.load<AppData>(serializedDoc)
+    console.log(restoredData)
 
     if (restoredData.version < INITIAL_DATA.version) {
       // Migrations would go here
-      restoredData = INITIAL_DATA
+      initialData = INITIAL_DATA
     }
-
     initialData = restoredData
-  }
+  } 
 
   let stack: AppData[] = [initialData]
   let pointer = 0
 
   function persist(data: AppData) {
-    delete data.pageState.hoveredId
-    data.overlays.snapLines = []
-    localStorage.setItem(ID, JSON.stringify(data))
+    localStorage.setItem(ID, Buffer.from(Automerge.save(data)).toString('hex'))
   }
 
   function push(data: AppData) {
@@ -56,7 +57,6 @@ export function makeHistory(ID = '@tldraw/core_advanced_example') {
   function reset(data = INITIAL_DATA) {
     stack = [data]
     pointer = 0
-    localStorage.setItem(ID, JSON.stringify(data))
     persist(data)
     return data
   }

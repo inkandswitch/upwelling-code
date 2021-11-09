@@ -242,16 +242,9 @@ export const machine = createState({
         creating: {
           onEnter: ['createBoxShape', 'setSnapshot'],
           on: {
-            TOGGLED_MODIFIER: 'transformSelectedShapes',
-            MOVED_POINTER: 'transformSelectedShapes',
-            PANNED: 'transformSelectedShapes',
-            CANCELLED: {
-              do: 'deleteSelectedShapes',
-              to: 'select',
-            },
             STOPPED_POINTING: {
               do: 'addToHistory',
-              to: 'select',
+              to: 'select'
             },
           },
         },
