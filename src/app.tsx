@@ -71,6 +71,8 @@ export default class App extends React.Component<AppProps> {
       this.setState({
         page: this.document
       })
+    }).catch(err => {
+      console.error(err)
     })
   }
   updateState (changeFn: Automerge.ChangeFn<AppState>) {
