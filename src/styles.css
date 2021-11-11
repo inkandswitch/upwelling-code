@@ -9,9 +9,19 @@ body {
   padding: 0px;
 }
 
+#toolbar {
+	margin: 10px;
+	display: flex;
+	justify-content: space-between;
+}
+
+
+#sync-indicator {
+}
+
 .tldraw {
   position: fixed;
-  top: 0px;
+  top: 50px;
   left: 0px;
   right: 0px;
   bottom: 0px;

@@ -7,53 +7,49 @@ import { TLPointerInfo } from '@tldraw/core';
 import * as Automerge from 'automerge';
 import * as storage from './storage/localStorage';
 import * as http from './storage/http';
+import { SyncIndicator } from './components/SyncIndicator';
+import { AppState, AppProps, SYNC_STATE } from './types';
 
 export const shapeUtils: TLShapeUtilsMap<Shape> = {
   box: new BoxUtil(),
 }
 
-type Binding = any;
-
-type AppState = {
-  id: string,
-  shapes: Record<string, Shape>
-  bindings: Record<string, Binding> 
-}
-
-type AppProps = {
-  id: string
-}
-
 export default class App extends React.Component<AppProps> {
+  initialDocument: AppState
   document: AppState
+  interval: any  
   state: {
     page: AppState,
-    pageState: TLPageState
+    sync_state: SYNC_STATE,
+    pageState: TLPageState,
   }
 
   constructor(props: AppProps) {
     super(props)
 
     let saved = storage.getItem(props.id)
-
+    
+    let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init('0000'), { time: 0 }, (doc: AppState) => {
+      doc.id = props.id
+      doc.shapes = {}
+      doc.bindings = {}
+    }))
+    const [ initialDocument , ]= Automerge.applyChanges(Automerge.init<AppState>(), [initialChange])
+    this.initialDocument = this.document = initialDocument 
     if (saved) {
+      console.log('loading locally saved document and overriding initial document')
       this.document = Automerge.load(saved as Automerge.BinaryDocument)
-    } else {
-      this.document = Automerge.change(Automerge.init<AppState>('0000'), { time: 0 }, (doc: AppState) => {
-        doc.id = props.id
-        doc.shapes = {}
-        doc.bindings = {}
-      })
     }
 
     this.state = {
+      sync_state: SYNC_STATE.LOADING,
       page: {
-        id: this.document.id,
+        id: this.props.id,
         shapes: this.document.shapes,
         bindings: this.document.bindings,
       },
       pageState: {
-        id: this.document.id,
+        id: this.props.id,
         selectedIds: [],
         hoveredId: undefined,
         camera: {
@@ -65,28 +61,66 @@ export default class App extends React.Component<AppProps> {
   }
 
   componentWillMount() {
-    http.getItem(this.props.id).then((doc: Automerge.BinaryDocument) => {
-      let newDoc = Automerge.load<AppState>(doc)
-      this.document = Automerge.merge<AppState>(this.document, newDoc)
-      this.setState({
-        page: this.document
-      })
-    }).catch(err => {
-      console.error(err)
-    })
+    if (this.connected) this._subscribe()
   }
+
+  componentWillUnmount() {
+    this._unsubscribe()
+  }
+  
+  _unsubscribe() {
+    this.setState({ sync_state: SYNC_STATE.OFFLINE })
+    if (this.interval) clearInterval(this.interval)
+    this.interval = false
+  }
+
+  _subscribe() {
+    this.setState({ sync_state: SYNC_STATE.LOADING })
+    let fetch = () => {
+      console.log('polling')
+      http.getItem(this.props.id).then((doc: Automerge.Doc<AppState>) => {
+        let changes = Automerge.getChanges(this.initialDocument, doc)
+        if (changes.length === 0) {
+          this.setState({ sync_state: SYNC_STATE.SYNCED })
+        } else {
+          this.setState({ sync_state: SYNC_STATE.LOADING })
+          let [document, patch] = Automerge.applyChanges<AppState>(this.document, changes)
+          this.document = document
+          this.setState({
+            page: this.document
+          })
+          this.saveToNetwork()
+          this.persist()
+        }
+      }).catch(err => {
+        this.saveToNetwork()
+        this.setState({ sync_state: SYNC_STATE.ERROR }) 
+        console.error(err)
+      })
+    }
+    if (!this.interval) this.interval = setInterval(fetch, 500);
+  }
+
   updateState (changeFn: Automerge.ChangeFn<AppState>) {
     this.document = Automerge.change<AppState>(this.document, changeFn)
     this.setState({
       page: this.document
     })
     this.persist()
+    this.saveToNetwork()
+  }
+
+  saveToNetwork() {
+    if (this.connected) http.setItem(this.props.id, this.document)
   }
 
   persist () {
-    console.log('saving')
-    storage.setItem(this.document.id, this.document)
-    http.setItem(this.document.id, this.document)
+    console.log('persisting')
+    storage.setItem(this.props.id, this.document)
+  }
+
+  get connected() {
+    return this.state.sync_state !== SYNC_STATE.OFFLINE
   }
   
   render() {
@@ -95,7 +129,7 @@ export default class App extends React.Component<AppProps> {
         id: nanoid(),
         type: 'box',
         name: 'Box',
-        parentId: this.document.id,
+        parentId: this.props.id,
         isLocked: false,
         point: e.point,
         size: [100, 100],
@@ -142,6 +176,7 @@ export default class App extends React.Component<AppProps> {
         doc.shapes[e.target].point = shape.point
       })
       this.persist()
+      this.saveToNetwork()
     }
 
     const onDragShape = (e: TLPointerInfo) => {
@@ -162,6 +197,8 @@ export default class App extends React.Component<AppProps> {
           }
         }
       })
+      this.persist()
+      this.saveToNetwork()
     }
 
     const onKeyDown: TLKeyboardEventHandler = (key: string, info: TLKeyboardInfo, e: KeyboardEvent) => {
@@ -214,30 +251,50 @@ export default class App extends React.Component<AppProps> {
       onShapeChange
     }
 
+    let onConnectClick = () => {
+      if (this.connected) this._unsubscribe()
+      else this._subscribe()
+    }
+
+    let onClearClick = () => {
+      this._unsubscribe()
+      http.deleteItem(this.document.id)
+      localStorage.clear()
+    }
+
     let meta = {}
   
     return (
-      <div className="tldraw">
-        <Renderer
-          shapeUtils={shapeUtils} // Required
-          page={this.state.page} // Required
-          pageState={this.state.pageState} // Required
-          {...events}
-          meta={meta}
-          theme={theme}
-          id={undefined}
-          containerRef={undefined}
-          hideBounds={true}
-          hideIndicators={false}
-          hideHandles={true}
-          hideCloneHandles={true}
-          hideBindingHandles={true}
-          hideRotateHandles={true}
-          userId={undefined}
-          users={undefined}
-          snapLines={undefined}
-          onBoundsChange={undefined}
-        />
+      <div>
+        <div className="tldraw">
+          <Renderer
+            shapeUtils={shapeUtils} // Required
+            page={this.state.page} // Required
+            pageState={this.state.pageState} // Required
+            {...events}
+            meta={meta}
+            theme={theme}
+            id={undefined}
+            containerRef={undefined}
+            hideBounds={true}
+            hideIndicators={false}
+            hideHandles={true}
+            hideCloneHandles={true}
+            hideBindingHandles={true}
+            hideRotateHandles={true}
+            userId={undefined}
+            users={undefined}
+            snapLines={undefined}
+            onBoundsChange={undefined}
+          />
+        </div>
+        <div id="toolbar">
+          <div id="toolbar.buttons">
+            <button onClick={onConnectClick}>{this.connected ? 'Disconnect' : 'Connect'}</button>
+            <button onClick={onClearClick}>Clear</button>
+          </div>
+          <SyncIndicator state={this.state.sync_state} />
+        </div>
       </div>
     )
   }

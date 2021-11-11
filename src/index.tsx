@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom'
 import App from './App'
 import './styles.css'
 
-const id = window.location.hash.replace('#', '') || 'default'
+const id = window.location.pathname === '/' ? 'default' : window.location.pathname.replace('/', '')
+console.log(id)
 
 ReactDOM.render(
   <React.StrictMode>
