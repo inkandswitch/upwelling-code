@@ -94,7 +94,6 @@ export default class App extends React.Component<AppProps> {
         }
       }).catch(err => {
         this.saveToNetwork()
-        this.setState({ sync_state: SYNC_STATE.ERROR }) 
         console.error(err)
       })
     }
@@ -111,7 +110,11 @@ export default class App extends React.Component<AppProps> {
   }
 
   saveToNetwork() {
-    if (this.connected) http.setItem(this.props.id, this.document)
+    if (this.connected) {
+      http.setItem(this.props.id, this.document).catch(err => {
+        this.setState({ sync_state: SYNC_STATE.OFFLINE })
+      })
+    }
   }
 
   persist () {
