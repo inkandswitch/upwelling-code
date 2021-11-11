@@ -8,10 +8,10 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
       indicator = <LoadingIcons.BallTriangle speed="1" stroke="#98ff98" />
       break;
     case SYNC_STATE.ERROR:
-      indicator= 'error'
+      indicator = <LoadingIcons.Bars fill="red" speed="0" />
       break;
     case SYNC_STATE.OFFLINE:
-      indicator = <LoadingIcons.Circles fill="red" speed="0" />
+      indicator = <LoadingIcons.Bars fill="grey" speed="0" />
       break;
     default:
       indicator = <LoadingIcons.Circles speed="1" stroke="yellow" />

@@ -77,20 +77,20 @@ export default class App extends React.Component<AppProps> {
   _subscribe() {
     this.setState({ sync_state: SYNC_STATE.LOADING })
     let fetch = () => {
-      console.log('polling')
       http.getItem(this.props.id).then((doc: Automerge.Doc<AppState>) => {
-        let changes = Automerge.getChanges(this.initialDocument, doc)
-        if (changes.length === 0) {
+        if (Automerge.equals(this.document, doc)) {
           this.setState({ sync_state: SYNC_STATE.SYNCED })
         } else {
           this.setState({ sync_state: SYNC_STATE.LOADING })
+          let changes = Automerge.getChanges(this.initialDocument, doc)
           let [document, patch] = Automerge.applyChanges<AppState>(this.document, changes)
+
           this.document = document
           this.setState({
-            page: this.document
+            page: document
           })
-          this.saveToNetwork()
           this.persist()
+          this.saveToNetwork()
         }
       }).catch(err => {
         this.saveToNetwork()
@@ -115,7 +115,6 @@ export default class App extends React.Component<AppProps> {
   }
 
   persist () {
-    console.log('persisting')
     storage.setItem(this.props.id, this.document)
   }
 
