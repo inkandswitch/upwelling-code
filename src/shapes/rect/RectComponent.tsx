@@ -1,11 +1,10 @@
 import * as React from 'react'
-import { TLShapeUtil, SVGContainer } from '@tldraw/core'
+import { TLShapeUtil, SVGContainer, HTMLContainer } from '@tldraw/core'
 import type { RectShape } from './RectShape'
 
 export const RectComponent = TLShapeUtil.Component<RectShape, SVGSVGElement>(
   ({ shape, events, meta }, ref) => {
-    const color = shape.isLocked ? 'orange' : 'black'
-
+    const color = shape.isLocked ? '#a52a2a' : '#ffbf00'
 
     return (
       <SVGContainer ref={ref} {...events}>
@@ -15,7 +14,7 @@ export const RectComponent = TLShapeUtil.Component<RectShape, SVGSVGElement>(
           stroke={color}
           strokeWidth={2}
           strokeLinejoin="round"
-          fill="none"
+          fill={color}
           pointerEvents="all"
         />
       </SVGContainer>
