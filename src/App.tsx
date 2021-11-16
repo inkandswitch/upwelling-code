@@ -17,8 +17,8 @@ export const shapeUtils: TLShapeUtilsMap<Shape> = {
 export default class App extends React.Component<AppProps> {
   initialDocument: AppState
   document: AppState
-  interval: any  
   state: {
+    message: string
     page: AppState,
     sync_state: SYNC_STATE,
     pageState: TLPageState,
@@ -39,10 +39,12 @@ export default class App extends React.Component<AppProps> {
     if (saved) {
       console.log('loading locally saved document and overriding initial document')
       this.document = Automerge.load(saved as Automerge.BinaryDocument)
+      console.log(this.document)
     }
 
     this.state = {
       sync_state: SYNC_STATE.LOADING,
+      message: 'idle',
       page: {
         id: this.props.id,
         shapes: this.document.shapes,
@@ -60,71 +62,39 @@ export default class App extends React.Component<AppProps> {
     }
   }
 
-  componentWillMount() {
-    if (this.connected) this._subscribe()
-  }
-
-  componentWillUnmount() {
-    this._unsubscribe()
-  }
-  
-  _unsubscribe() {
-    this.setState({ sync_state: SYNC_STATE.OFFLINE })
-    if (this.interval) clearInterval(this.interval)
-    this.interval = false
-  }
-
-  _subscribe() {
+  _sync() {
     this.setState({ sync_state: SYNC_STATE.LOADING })
-    let fetch = () => {
-      http.getItem(this.props.id).then((doc: Automerge.Doc<AppState>) => {
-        if (Automerge.equals(this.document, doc)) {
-          this.setState({ sync_state: SYNC_STATE.SYNCED })
-        } else {
-          this.setState({ sync_state: SYNC_STATE.LOADING })
-          let changes = Automerge.getChanges(this.initialDocument, doc)
-          let [document, patch] = Automerge.applyChanges<AppState>(this.document, changes)
-
-          this.document = document
-          this.setState({
-            page: document
-          })
-          this.persist()
-          this.saveToNetwork()
-        }
-      }).catch(err => {
-        this.saveToNetwork()
-        console.error(err)
-      })
-    }
-    if (!this.interval) this.interval = setInterval(fetch, 500);
+    http.sync(this.props.id, this.document).then((document: Automerge.Doc<any>) => {
+      this.document = document as AppState
+      this.setState({ page: document, sync_state: SYNC_STATE.SYNCED })
+      this.persist()
+    }).catch(err => {
+      console.error(err)
+    })
   }
 
   updateState (changeFn: Automerge.ChangeFn<AppState>) {
+    this.setState({ sync_state: SYNC_STATE.LOADING })
     this.document = Automerge.change<AppState>(this.document, changeFn)
     this.setState({
       page: this.document
     })
     this.persist()
-    this.saveToNetwork()
   }
 
   saveToNetwork() {
-    if (this.connected) {
-      http.setItem(this.props.id, this.document).catch(err => {
-        this.setState({ sync_state: SYNC_STATE.OFFLINE })
-      })
-    }
+    this.setState({ message: 'saving to network' })
+    http.setItem(this.props.id, this.document).then(_ => {
+      this.setState({ message: 'idle' })
+    }).catch (err => {
+      this.setState({ sync_state: SYNC_STATE.OFFLINE })
+    })
   }
 
   persist () {
     storage.setItem(this.props.id, this.document)
   }
 
-  get connected() {
-    return this.state.sync_state !== SYNC_STATE.OFFLINE
-  }
-  
   render() {
     const onDoubleClickCanvas = (e: TLPointerInfo) => {
       let shape = {
@@ -144,6 +114,7 @@ export default class App extends React.Component<AppProps> {
     }
 
     const onHoverShape = (e: TLPointerInfo) => {
+      this.setState({message: 'on hover '})
       this.setState({
         pageState: {
           ...this.state.pageState,
@@ -153,6 +124,7 @@ export default class App extends React.Component<AppProps> {
     }
 
     const onUnhoverShape = (e: TLPointerInfo) => {
+      this.setState({message: 'idle'})
       this.setState({
         pageState: {
           ...this.state.pageState,
@@ -162,6 +134,7 @@ export default class App extends React.Component<AppProps> {
     }
 
     const onPointShape = (e: TLPointerInfo) => {
+      this.setState({message: 'point selected'})
       if (this.state.pageState.selectedIds.includes(e.target)) return
       else this.setState({
         pageState: {
@@ -172,18 +145,18 @@ export default class App extends React.Component<AppProps> {
     }
 
     const onReleaseShape = (e: TLPointerInfo) => {
+      this.setState({message: 'idle'})
       const shape = this.state.page.shapes[e.target]
       if (this.document.shapes[e.target] === shape) return
-      this.document = Automerge.change<AppState>(this.document, (doc: AppState) => {
+      this.updateState((doc: AppState) => {
         doc.shapes[e.target].point = shape.point
       })
-      this.persist()
-      this.saveToNetwork()
     }
 
     const onDragShape = (e: TLPointerInfo) => {
       // TODO: this is creating a change and saving the automerge document to disk for every drag. 
       // instead, let's only save it every 500ms or something?
+      this.setState({message: 'on drag'})
       const shape = this.state.page.shapes[e.target]
       if (shape.isLocked) return
 
@@ -199,8 +172,6 @@ export default class App extends React.Component<AppProps> {
           }
         }
       })
-      this.persist()
-      this.saveToNetwork()
     }
 
     const onKeyDown: TLKeyboardEventHandler = (key: string, info: TLKeyboardInfo, e: KeyboardEvent) => {
@@ -253,13 +224,11 @@ export default class App extends React.Component<AppProps> {
       onShapeChange
     }
 
-    let onConnectClick = () => {
-      if (this.connected) this._unsubscribe()
-      else this._subscribe()
+    let onSyncClick = () => {
+      this._sync()
     }
 
     let onClearClick = () => {
-      this._unsubscribe()
       http.deleteItem(this.document.id)
       localStorage.clear()
     }
@@ -292,10 +261,11 @@ export default class App extends React.Component<AppProps> {
         </div>
         <div id="toolbar">
           <div id="toolbar.buttons">
-            <button onClick={onConnectClick}>{this.connected ? 'Disconnect' : 'Connect'}</button>
+            <button onClick={onSyncClick}>Sync</button>
             <button onClick={onClearClick}>Clear</button>
           </div>
           <SyncIndicator state={this.state.sync_state} />
+            {this.state.message}
         </div>
       </div>
     )
