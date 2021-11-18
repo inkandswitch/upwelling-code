@@ -2,6 +2,10 @@ import * as Automerge from 'automerge';
 
 const BASE = 'http://localhost:5000'
 
+export function getURI(id: string): string {
+  return `${BASE}/${id}`
+}
+
 export async function sync (id: string, ours: Automerge.Doc<any>): Promise<Automerge.Doc<any>> { 
   let document = ours
   try { 
@@ -17,7 +21,7 @@ export async function sync (id: string, ours: Automerge.Doc<any>): Promise<Autom
 }
 
 export async function getItem (id: string, actorId?: string): Promise<Automerge.Doc<any>> { 
-  const response = await fetch(`${BASE}/${id}`)
+  const response = await fetch(getURI(id))
   if (response.status !== 200) throw new Error('No saved draft for doc with id=' + id)
   const respbuffer = await response.arrayBuffer()
   if (respbuffer.byteLength === 0) throw new Error('No saved draft for doc with id=' + id)
@@ -27,7 +31,7 @@ export async function getItem (id: string, actorId?: string): Promise<Automerge.
 
 export async function setItem (id: string, doc: Automerge.Doc<any>): Promise<Response> {
   let binary = Automerge.save(doc)
-  return fetch(`${BASE}/${id}`, {
+  return fetch(getURI(id), {
     body: binary,
     method: "post",
     headers: {
@@ -38,7 +42,7 @@ export async function setItem (id: string, doc: Automerge.Doc<any>): Promise<Res
 
 export async function deleteItem(id: string): Promise<Response> {
   let binary = ''
-  return fetch(`${BASE}/${id}`, {
+  return fetch(getURI(id), {
     body: binary,
     method: "post",
     headers: {

@@ -9,6 +9,7 @@ import * as storage from './storage/localStorage';
 import * as http from './storage/http';
 import { SyncIndicator } from './components/SyncIndicator';
 import { AppState, AppProps, SYNC_STATE } from './types';
+import { showOpenFilePicker, showSaveFilePicker } from 'file-system-access';
 
 export const shapeUtils: TLShapeUtilsMap<Shape> = {
   box: new BoxUtil(),
@@ -62,9 +63,9 @@ export default class App extends React.Component<AppProps> {
     }
   }
 
-  _sync() {
+  _sync(document: Automerge.Doc<AppState>) {
     this.setState({ sync_state: SYNC_STATE.LOADING })
-    http.sync(this.props.id, this.document).then((document: Automerge.Doc<any>) => {
+    http.sync(this.props.id, document).then((document: Automerge.Doc<any>) => {
       this.document = document as AppState
       this.setState({ page: document, sync_state: SYNC_STATE.SYNCED })
       this.persist()
@@ -225,13 +226,35 @@ export default class App extends React.Component<AppProps> {
     }
 
     let onSyncClick = () => {
-      this._sync()
+      this._sync(this.document)
     }
 
     let onClearClick = () => {
-      http.deleteItem(this.document.id)
+      http.deleteItem(this.props.id)
       localStorage.clear()
     }
+
+    let onOpenClick = async () => {
+      let [fileHandle] = await showOpenFilePicker()
+      const file = await fileHandle.getFile()
+      let binary = new Uint8Array(await file.arrayBuffer())
+      this._sync(Automerge.load(binary as Automerge.BinaryDocument))
+    }
+
+    let onDownloadClick = async () => {
+      let fileHandle = await showSaveFilePicker({
+        suggestedName: this.props.id + '.sesh',
+        types: [
+          { accept: { "image/png": [ ".sesh" ] } },
+        ]
+
+      })
+      let writer = await fileHandle.createWritable()
+      let binary = Automerge.save(this.document)
+      writer.write(binary)
+      writer.close()
+    }
+
 
     let meta = {}
   
@@ -261,8 +284,10 @@ export default class App extends React.Component<AppProps> {
         </div>
         <div id="toolbar">
           <div id="toolbar.buttons">
+            <button onClick={onDownloadClick}>Download</button>
+            <button onClick={onOpenClick}>Open</button>
             <button onClick={onSyncClick}>Sync</button>
-            <button onClick={onClearClick}>Clear</button>
+            <button onClick={onClearClick}>Delete</button>
           </div>
           <SyncIndicator state={this.state.sync_state} />
             {this.state.message}
