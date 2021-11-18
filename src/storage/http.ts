@@ -6,8 +6,8 @@ export async function sync (id: string, ours: Automerge.Doc<any>): Promise<Autom
   let document = ours
   try { 
     let doc = await getItem(id)
-    //let changes = Automerge.getChanges(doc, ours)
-    let newDoc = Automerge.merge(doc, ours)
+    let changes = Automerge.getAllChanges(doc)
+    let [newDoc, patch] = Automerge.applyChanges(ours, changes)
     document = newDoc
   } catch (err) {
     console.log('error', err)
