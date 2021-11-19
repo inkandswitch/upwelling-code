@@ -1,6 +1,6 @@
 # Session
 
-A collaborative editor that respects creative privacy.
+A proof-of-concept collaborative editor for demonstrating CRDT-based branching and merging behaviors.
 
 ## Run the server 
 
