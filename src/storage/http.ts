@@ -11,12 +11,12 @@ export async function sync (id: string, ours: Automerge.Doc<any>): Promise<Autom
   try { 
     let doc = await getItem(id)
     let changes = Automerge.getAllChanges(doc)
-    let [newDoc, patch] = Automerge.applyChanges(ours, changes)
+    let [newDoc, ] = Automerge.applyChanges(ours, changes)
     document = newDoc
   } catch (err) {
     console.log('error', err)
   }
-  let response = await setItem(id, document)
+  await setItem(id, document)
   return document
 }
 
