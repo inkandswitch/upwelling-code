@@ -6,17 +6,15 @@ export function getURI(id: string): string {
   return `${BASE}/${id}`
 }
 
-export async function sync (id: string, ours: Automerge.Doc<any>): Promise<Automerge.Doc<any>> { 
+export function sync (id: string, ours: Automerge.Doc<any>, theirs: Automerge.Doc<any>): Automerge.Doc<any> { 
   let document = ours
   try { 
-    let doc = await getItem(id)
-    let changes = Automerge.getAllChanges(doc)
+    let changes = Automerge.getAllChanges(theirs)
     let [newDoc, ] = Automerge.applyChanges(ours, changes)
     document = newDoc
   } catch (err) {
     console.log('error', err)
   }
-  await setItem(id, document)
   return document
 }
 

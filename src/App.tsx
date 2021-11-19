@@ -62,20 +62,19 @@ export default class App extends React.Component<AppProps> {
     console.log(this.state)
   }
 
-  _sync(document: Automerge.Doc<AppState>) {
+  _sync(ours: Automerge.Doc<AppState>, theirs: Automerge.Doc<AppState>) {
     this.setState({ sync_state: SYNC_STATE.LOADING })
-    http.sync(this.document.id, document).then((document: Automerge.Doc<any>) => {
-      this.document = document as AppState
-      console.log('synced', document.pages[0])
-      this.setState({ page: document.pages[0], sync_state: SYNC_STATE.SYNCED })
-      if (this.props.id !== document.id) {
-        this.setState({message: 'previewing ' + document.id})
-      }
-      this.persist()
-    }).catch(err => {
-      console.log('got error')
-      console.error(err)
-    })
+    let changes = Automerge.getAllChanges(theirs)
+    let [newDoc, ] = Automerge.applyChanges(ours, changes)
+    let document = newDoc
+    this.document = document as AppState
+    console.log('synced', document.pages[0])
+    this.setState({ page: document.pages[0], sync_state: SYNC_STATE.SYNCED })
+    if (this.props.id !== document.id) {
+      this.setState({ message: 'previewing ' + document.id })
+    }
+    this.persist()
+    return document
   }
 
   updateState (changeFn: Automerge.ChangeFn<AppState>) {
@@ -236,12 +235,17 @@ export default class App extends React.Component<AppProps> {
       onShapeChange
     }
 
-    let onSyncClick = () => {
-      this._sync(this.document)
+    let onSyncClick = async () => {
+      let theirs = await http.getItem(this.document.id) 
+      this._sync(this.document, theirs)
     }
 
-    let onClearClick = () => {
-      http.deleteItem(this.document.id)
+    let onClearClick = async () => {
+      try { 
+        await http.deleteItem(this.document.id)
+      } catch (err) {
+        console.error(err)
+      }
       localStorage.clear()
     }
 
@@ -249,14 +253,20 @@ export default class App extends React.Component<AppProps> {
       let [fileHandle] = await showOpenFilePicker()
       const file = await fileHandle.getFile()
       let binary = new Uint8Array(await file.arrayBuffer())
-      this._sync(Automerge.load(binary as Automerge.BinaryDocument))
+      let theirs = Automerge.load<AppState>(binary as Automerge.BinaryDocument)
+
+      if (this.document.id.startsWith(theirs.id.split('_')[0])) this._sync(this.document, theirs)
+      else {
+        storage.setItem(theirs.id, theirs)
+        window.location.href = '/' + theirs.id
+      }
     }
 
     let onDownloadClick = async () => {
-      await http.setItem(this.document.id, this.document)
       let filename = this.document.id + '.sesh'
       let el = document.createElement('a')
-      el.setAttribute('href', http.getURI(this.document.id))
+      let buf = Automerge.save(this.document)
+      el.setAttribute('href', 'data:application/octet-stream;base64,' + Buffer.from(buf).toString('base64'));
       el.setAttribute('download', filename)
       el.click()
     }
@@ -266,7 +276,7 @@ export default class App extends React.Component<AppProps> {
         doc.id = doc.id + '_' + nanoid()
       })
       storage.setItem(duplicate.id, duplicate)
-      await http.setItem(duplicate.id, duplicate)
+      this.saveToNetwork()
       window.location.href = '/' + duplicate.id
     }
 
@@ -313,7 +323,6 @@ export default class App extends React.Component<AppProps> {
           <div id="toolbar.buttons">
             <button onClick={onDownloadClick}>Download</button>
             <button onClick={onOpenClick}>Open</button>
-            <button onClick={onSyncClick}>Sync</button>
             <button onClick={onClearClick}>Delete</button>
             <button onClick={onForkClick}>Duplicate</button>
             <button onClick={onMergeClick}>Merge</button>
