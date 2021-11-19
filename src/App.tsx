@@ -83,6 +83,7 @@ export default class App extends React.Component<AppProps> {
         console.error(err)
       }
       localStorage.clear()
+      window.location.href = '/'
     }
 
     let onOpenClick = async () => {
@@ -159,6 +160,10 @@ export default class App extends React.Component<AppProps> {
             <button onClick={onDownloadClick}>Download</button>
             <button onClick={onOpenClick}>Open</button>
             <button onClick={onClearClick}>Delete</button>
+            </div>
+
+<div>
+            Experimental: 
             <button onClick={onForkClick}>Duplicate</button>
             <button onClick={onMergeClick}>Merge</button>
           </div>
