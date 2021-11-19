@@ -12,3 +12,7 @@ See README in `server/`
 npm i
 npm start
 ```
+
+## License
+
+MIT
