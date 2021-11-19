@@ -9,7 +9,7 @@ import * as storage from './storage/localStorage';
 import * as http from './storage/http';
 import { SyncIndicator } from './components/SyncIndicator';
 import { Page, AppState, AppProps, SYNC_STATE } from './types';
-import { showOpenFilePicker, showSaveFilePicker } from 'file-system-access';
+import { showOpenFilePicker } from 'file-system-access';
 
 export const shapeUtils: TLShapeUtilsMap<Shape> = {
   box: new BoxUtil(),
@@ -253,17 +253,12 @@ export default class App extends React.Component<AppProps> {
     }
 
     let onDownloadClick = async () => {
-      let fileHandle = await showSaveFilePicker({
-        suggestedName: this.document.id + '.sesh',
-        types: [
-          { accept: { "image/png": [ ".sesh" ] } },
-        ]
-
-      })
-      let writer = await fileHandle.createWritable()
-      let binary = Automerge.save(this.document)
-      writer.write(binary)
-      writer.close()
+      await http.setItem(this.document.id, this.document)
+      let filename = this.document.id + '.sesh'
+      let el = document.createElement('a')
+      el.setAttribute('href', http.getURI(this.document.id))
+      el.setAttribute('download', filename)
+      el.click()
     }
 
     let onForkClick = async () => {
