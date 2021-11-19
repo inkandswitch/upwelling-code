@@ -1,16 +1,10 @@
-import { Shape } from './shapes'
+import * as Automerge from 'automerge';
 
 export type Binding = any;
 
-export type Page = {
-  id: string,
-  shapes: Record<string, Shape>
-  bindings: Record<string, Binding>
-}
-
 export type AppState = {
   id: string,
-  pages: Page[]
+  text: Automerge.Text
 }
 
 export type AppProps = {

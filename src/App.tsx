@@ -1,27 +1,18 @@
 import * as React from 'react'
-import { BoxUtil, Shape } from './shapes'
-import { TLShapeUtilsMap, Renderer, TLKeyboardEventHandler, TLKeyboardInfo, TLPageState } from '@tldraw/core'
-import Vec from '@tldraw/vec'
 import { nanoid } from 'nanoid';
-import { TLPointerInfo } from '@tldraw/core';
 import * as Automerge from 'automerge';
 import * as storage from './storage/localStorage';
 import * as http from './storage/http';
 import { SyncIndicator } from './components/SyncIndicator';
-import { Page, AppState, AppProps, SYNC_STATE } from './types';
+import { AppState, AppProps, SYNC_STATE } from './types';
 import { showOpenFilePicker } from 'file-system-access';
-
-export const shapeUtils: TLShapeUtilsMap<Shape> = {
-  box: new BoxUtil(),
-}
 
 export default class App extends React.Component<AppProps> {
   document: AppState
   state: {
     message: string
-    page: Page,
-    sync_state: SYNC_STATE,
-    pageState: TLPageState,
+    text: string,
+    sync_state: SYNC_STATE
   }
 
   constructor(props: AppProps) {
@@ -31,11 +22,7 @@ export default class App extends React.Component<AppProps> {
     
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init('0000'), { time: 0 }, (doc: AppState) => {
       doc.id = props.id
-      doc.pages = [{
-        id: 'index',
-        shapes: {},
-        bindings: {}
-      }]
+      doc.text = new Automerge.Text('')
     }))
     const [ initialDocument , ]= Automerge.applyChanges(Automerge.init<AppState>(), [initialChange])
     this.document = initialDocument 
@@ -48,18 +35,8 @@ export default class App extends React.Component<AppProps> {
     this.state = {
       sync_state: SYNC_STATE.LOADING,
       message: 'idle',
-      page: this.document.pages[0],
-      pageState: {
-        id: 'index',
-        selectedIds: [],
-        hoveredId: undefined,
-        camera: {
-          point: [0, 0],
-          zoom: 1,
-        }
-      } as TLPageState
+      text: this.document.text.toString()
     }
-    console.log(this.state)
   }
 
   _sync(ours: Automerge.Doc<AppState>, theirs: Automerge.Doc<AppState>) {
@@ -68,8 +45,7 @@ export default class App extends React.Component<AppProps> {
     let [newDoc, ] = Automerge.applyChanges(ours, changes)
     let document = newDoc
     this.document = document as AppState
-    console.log('synced', document.pages[0])
-    this.setState({ page: document.pages[0], sync_state: SYNC_STATE.SYNCED })
+    this.setState({ text: this.document.text, sync_state: SYNC_STATE.SYNCED })
     if (this.props.id !== document.id) {
       this.setState({ message: 'previewing ' + document.id })
     }
@@ -80,13 +56,8 @@ export default class App extends React.Component<AppProps> {
   updateState (changeFn: Automerge.ChangeFn<AppState>) {
     this.setState({ sync_state: SYNC_STATE.LOADING })
     this.document = Automerge.change<AppState>(this.document, changeFn)
-    let page = this.document.pages[0]
     this.setState({
-      page,
-      pageState: {
-        ...this.state.pageState,
-        id: page.id 
-      }
+      text: this.document.text.toString()
     })
     this.persist()
   }
@@ -105,136 +76,6 @@ export default class App extends React.Component<AppProps> {
   }
 
   render() {
-    const onDoubleClickCanvas = (e: TLPointerInfo) => {
-      let page = this.document.pages[0]
-      let shape = {
-        id: nanoid(),
-        type: 'box',
-        name: 'Box',
-        parentId: page.id,
-        isLocked: false,
-        point: e.point,
-        size: [100, 100],
-        childIndex: Object.values(page.shapes).length
-      } as Shape
-
-      this.updateState((doc: AppState) => {
-        doc.pages[0].shapes[shape.id] = shape
-      })
-    }
-
-    const onHoverShape = (e: TLPointerInfo) => {
-      this.setState({message: 'on hover '})
-      this.setState({
-        pageState: {
-          ...this.state.pageState,
-          hoveredId: e.target
-        }
-      })
-    }
-
-    const onUnhoverShape = (e: TLPointerInfo) => {
-      this.setState({message: 'idle'})
-      this.setState({
-        pageState: {
-          ...this.state.pageState,
-          hoveredId: undefined
-        }
-      })
-    }
-
-    const onPointShape = (e: TLPointerInfo) => {
-      this.setState({message: 'point selected'})
-      if (this.state.pageState.selectedIds.includes(e.target)) return
-      else this.setState({
-        pageState: {
-          ...this.state.pageState,
-          selectedIds: [e.target],
-        }
-      })
-    }
-
-    const onReleaseShape = (e: TLPointerInfo) => {
-      this.setState({message: 'idle'})
-      const shape = this.state.page.shapes[e.target]
-      let page = this.document.pages[0]
-      if (page.shapes[e.target] === shape) return
-      this.updateState((doc: AppState) => {
-        doc.pages[0].shapes[e.target].point = shape.point
-      })
-    }
-
-    const onDragShape = (e: TLPointerInfo) => {
-      // TODO: this is creating a change and saving the automerge document to disk for every drag. 
-      // instead, let's only save it every 500ms or something?
-      this.setState({message: 'on drag'})
-      const shape = this.state.page.shapes[e.target]
-      if (shape.isLocked) return
-
-      this.setState({
-        page: {
-          ...this.state.page,
-          shapes: {
-            ...this.state.page.shapes,
-            [shape.id]: {
-              ...shape,
-              point: Vec.sub(e.point, Vec.div(shape.size, 2))
-            }
-          }
-        }
-      })
-    }
-
-    const onKeyDown: TLKeyboardEventHandler = (key: string, info: TLKeyboardInfo, e: KeyboardEvent) => {
-      switch (key) {
-        case 'l': {
-          this.updateState((doc: AppState) => {
-            this.state.pageState.selectedIds.forEach(id => {
-              doc.pages[0].shapes[id].isLocked = !doc.pages[0].shapes[id].isLocked
-            })
-          })
-        }
-      }
-    }
-
-    const onShapeChange = (changes: any) => {
-      console.log('on shape change', changes)
-      const shape = this.state.page.shapes[changes.id]
-      this.setState({
-        page: {
-          ...this.state.page,
-          shapes: {
-            ...this.state.page.shapes,
-            [shape.id]: {
-              ...shape,
-              ...changes,
-            } as Shape,
-          },
-        }
-      })
-    }
-
-    const theme = {
-      accent: 'rgb(255, 0, 0)',
-      brushFill: 'rgba(0,0,0,.05)',
-      brushStroke: 'rgba(0,0,0,.25)',
-      selectStroke: 'rgb(66, 133, 244)',
-      selectFill: 'rgba(65, 132, 244, 0.05)',
-      background: 'rgb(248, 249, 250)',
-      foreground: 'rgb(51, 51, 51)',
-    }
-
-    let events = {
-      onHoverShape,
-      onUnhoverShape,
-      onKeyDown,
-      onDoubleClickCanvas,
-      onPointShape,
-      onReleaseShape,
-      onDragShape,
-      onShapeChange
-    }
-
     let onClearClick = async () => {
       try { 
         await http.deleteItem(this.document.id)
@@ -281,38 +122,37 @@ export default class App extends React.Component<AppProps> {
         doc.id = original[0]
       })
       this.document = newDoc
-      this.setState({ page: newDoc.pages[0], sync_state: SYNC_STATE.SYNCED })
+      this.setState({ text: this.document.text, sync_state: SYNC_STATE.SYNCED })
       this.persist()
       this.saveToNetwork()
       window.location.href = '/' + original[0]
     }
 
+    let onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      e.preventDefault()
+      this.updateState((doc: AppState) => {
+        // @ts-ignore
+        switch (e.nativeEvent.inputType) {
+          case 'insertText':
+            //@ts-ignore
+            doc.text.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
+            break;
+          case 'deleteContentBackward':
+            //@ts-ignore
+            doc.text.deleteAt(e.target.selectionEnd)
+            break;
+          case 'insertLineBreak':
+            //@ts-ignore
+            doc.text.insertAt(e.target.selectionEnd - 1, '\n')
+            break;
+        }
+      })
+    }
 
-    let meta = {}
-  
     return (
       <div>
         <div className="tldraw">
-          <Renderer
-            shapeUtils={shapeUtils} // Required
-            page={this.state.page} // Required
-            pageState={this.state.pageState} // Required
-            {...events}
-            meta={meta}
-            theme={theme}
-            id={undefined}
-            containerRef={undefined}
-            hideBounds={true}
-            hideIndicators={false}
-            hideHandles={true}
-            hideCloneHandles={true}
-            hideBindingHandles={true}
-            hideRotateHandles={true}
-            userId={undefined}
-            users={undefined}
-            snapLines={undefined}
-            onBoundsChange={undefined}
-          />
+          <textarea value={this.state.text} onChange={onTextChange}></textarea>
         </div>
         <div id="toolbar">
           <div id="toolbar.buttons">
