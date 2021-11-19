@@ -8,7 +8,7 @@ import * as Automerge from 'automerge';
 import * as storage from './storage/localStorage';
 import * as http from './storage/http';
 import { SyncIndicator } from './components/SyncIndicator';
-import { AppState, AppProps, SYNC_STATE } from './types';
+import { Page, AppState, AppProps, SYNC_STATE } from './types';
 import { showOpenFilePicker, showSaveFilePicker } from 'file-system-access';
 
 export const shapeUtils: TLShapeUtilsMap<Shape> = {
@@ -16,11 +16,10 @@ export const shapeUtils: TLShapeUtilsMap<Shape> = {
 }
 
 export default class App extends React.Component<AppProps> {
-  initialDocument: AppState
   document: AppState
   state: {
     message: string
-    page: AppState,
+    page: Page,
     sync_state: SYNC_STATE,
     pageState: TLPageState,
   }
@@ -32,11 +31,14 @@ export default class App extends React.Component<AppProps> {
     
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init('0000'), { time: 0 }, (doc: AppState) => {
       doc.id = props.id
-      doc.shapes = {}
-      doc.bindings = {}
+      doc.pages = [{
+        id: 'index',
+        shapes: {},
+        bindings: {}
+      }]
     }))
     const [ initialDocument , ]= Automerge.applyChanges(Automerge.init<AppState>(), [initialChange])
-    this.initialDocument = this.document = initialDocument 
+    this.document = initialDocument 
     if (saved) {
       console.log('loading locally saved document and overriding initial document')
       this.document = Automerge.load(saved as Automerge.BinaryDocument)
@@ -46,13 +48,9 @@ export default class App extends React.Component<AppProps> {
     this.state = {
       sync_state: SYNC_STATE.LOADING,
       message: 'idle',
-      page: {
-        id: this.props.id,
-        shapes: this.document.shapes,
-        bindings: this.document.bindings,
-      },
+      page: this.document.pages[0],
       pageState: {
-        id: this.props.id,
+        id: 'index',
         selectedIds: [],
         hoveredId: undefined,
         camera: {
@@ -61,15 +59,21 @@ export default class App extends React.Component<AppProps> {
         }
       } as TLPageState
     }
+    console.log(this.state)
   }
 
   _sync(document: Automerge.Doc<AppState>) {
     this.setState({ sync_state: SYNC_STATE.LOADING })
-    http.sync(this.props.id, document).then((document: Automerge.Doc<any>) => {
+    http.sync(this.document.id, document).then((document: Automerge.Doc<any>) => {
       this.document = document as AppState
-      this.setState({ page: document, sync_state: SYNC_STATE.SYNCED })
+      console.log('synced', document.pages[0])
+      this.setState({ page: document.pages[0], sync_state: SYNC_STATE.SYNCED })
+      if (this.props.id !== document.id) {
+        this.setState({message: 'previewing ' + document.id})
+      }
       this.persist()
     }).catch(err => {
+      console.log('got error')
       console.error(err)
     })
   }
@@ -77,15 +81,20 @@ export default class App extends React.Component<AppProps> {
   updateState (changeFn: Automerge.ChangeFn<AppState>) {
     this.setState({ sync_state: SYNC_STATE.LOADING })
     this.document = Automerge.change<AppState>(this.document, changeFn)
+    let page = this.document.pages[0]
     this.setState({
-      page: this.document
+      page,
+      pageState: {
+        ...this.state.pageState,
+        id: page.id 
+      }
     })
     this.persist()
   }
 
   saveToNetwork() {
     this.setState({ message: 'saving to network' })
-    http.setItem(this.props.id, this.document).then(_ => {
+    http.setItem(this.document.id, this.document).then(_ => {
       this.setState({ message: 'idle' })
     }).catch (err => {
       this.setState({ sync_state: SYNC_STATE.OFFLINE })
@@ -93,24 +102,25 @@ export default class App extends React.Component<AppProps> {
   }
 
   persist () {
-    storage.setItem(this.props.id, this.document)
+    storage.setItem(this.document.id, this.document)
   }
 
   render() {
     const onDoubleClickCanvas = (e: TLPointerInfo) => {
+      let page = this.document.pages[0]
       let shape = {
         id: nanoid(),
         type: 'box',
         name: 'Box',
-        parentId: this.props.id,
+        parentId: page.id,
         isLocked: false,
         point: e.point,
         size: [100, 100],
-        childIndex: Object.values(this.document.shapes).length
+        childIndex: Object.values(page.shapes).length
       } as Shape
 
       this.updateState((doc: AppState) => {
-        doc.shapes[shape.id] = shape
+        doc.pages[0].shapes[shape.id] = shape
       })
     }
 
@@ -148,9 +158,10 @@ export default class App extends React.Component<AppProps> {
     const onReleaseShape = (e: TLPointerInfo) => {
       this.setState({message: 'idle'})
       const shape = this.state.page.shapes[e.target]
-      if (this.document.shapes[e.target] === shape) return
+      let page = this.document.pages[0]
+      if (page.shapes[e.target] === shape) return
       this.updateState((doc: AppState) => {
-        doc.shapes[e.target].point = shape.point
+        doc.pages[0].shapes[e.target].point = shape.point
       })
     }
 
@@ -180,7 +191,7 @@ export default class App extends React.Component<AppProps> {
         case 'l': {
           this.updateState((doc: AppState) => {
             this.state.pageState.selectedIds.forEach(id => {
-              doc.shapes[id].isLocked = !doc.shapes[id].isLocked
+              doc.pages[0].shapes[id].isLocked = !doc.pages[0].shapes[id].isLocked
             })
           })
         }
@@ -230,7 +241,7 @@ export default class App extends React.Component<AppProps> {
     }
 
     let onClearClick = () => {
-      http.deleteItem(this.props.id)
+      http.deleteItem(this.document.id)
       localStorage.clear()
     }
 
@@ -243,7 +254,7 @@ export default class App extends React.Component<AppProps> {
 
     let onDownloadClick = async () => {
       let fileHandle = await showSaveFilePicker({
-        suggestedName: this.props.id + '.sesh',
+        suggestedName: this.document.id + '.sesh',
         types: [
           { accept: { "image/png": [ ".sesh" ] } },
         ]
@@ -253,6 +264,27 @@ export default class App extends React.Component<AppProps> {
       let binary = Automerge.save(this.document)
       writer.write(binary)
       writer.close()
+    }
+
+    let onForkClick = async () => {
+      let duplicate = Automerge.change(this.document, (doc: AppState) => {
+        doc.id = doc.id + '_' + nanoid()
+      })
+      storage.setItem(duplicate.id, duplicate)
+      await http.setItem(duplicate.id, duplicate)
+      window.location.href = '/' + duplicate.id
+    }
+
+    let onMergeClick = async () => {
+      let original = this.document.id.split("_")
+      let newDoc = Automerge.change(this.document, (doc: AppState) => {
+        doc.id = original[0]
+      })
+      this.document = newDoc
+      this.setState({ page: newDoc.pages[0], sync_state: SYNC_STATE.SYNCED })
+      this.persist()
+      this.saveToNetwork()
+      window.location.href = '/' + original[0]
     }
 
 
@@ -288,6 +320,8 @@ export default class App extends React.Component<AppProps> {
             <button onClick={onOpenClick}>Open</button>
             <button onClick={onSyncClick}>Sync</button>
             <button onClick={onClearClick}>Delete</button>
+            <button onClick={onForkClick}>Duplicate</button>
+            <button onClick={onMergeClick}>Merge</button>
           </div>
           <SyncIndicator state={this.state.sync_state} />
             {this.state.message}

@@ -2,10 +2,15 @@ import { Shape } from './shapes'
 
 export type Binding = any;
 
-export type AppState = {
+export type Page = {
   id: string,
   shapes: Record<string, Shape>
-  bindings: Record<string, Binding> 
+  bindings: Record<string, Binding>
+}
+
+export type AppState = {
+  id: string,
+  pages: Page[]
 }
 
 export type AppProps = {
