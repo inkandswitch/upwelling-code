@@ -235,11 +235,6 @@ export default class App extends React.Component<AppProps> {
       onShapeChange
     }
 
-    let onSyncClick = async () => {
-      let theirs = await http.getItem(this.document.id) 
-      this._sync(this.document, theirs)
-    }
-
     let onClearClick = async () => {
       try { 
         await http.deleteItem(this.document.id)
