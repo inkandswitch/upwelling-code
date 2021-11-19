@@ -1,4 +1,6 @@
-# Getting Started
+# Session
+
+A collaborative editor that respects creative privacy.
 
 ## Run the server 
 
