@@ -1,8 +1,18 @@
-# @tldraw/core Advanced Example
+# Session
 
-An advanced example project for `@tldraw/core`.
+A proof-of-concept collaborative editor for demonstrating CRDT-based branching and merging behaviors.
 
-To start this project:
+## Run the server 
 
-- run `yarn start` in the root directory
-- open `http://localhost:5420` in your browser
+See README in `server/`
+
+## Install & run
+
+```
+npm i
+npm start
+```
+
+## License
+
+MIT
