@@ -13,6 +13,9 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
     case SYNC_STATE.OFFLINE:
       indicator = <LoadingIcons.Bars fill="grey" speed="0" />
       break;
+    case SYNC_STATE.PREVIEW:
+      indicator = <LoadingIcons.Bars fill="blue" speed="0" />
+      break;
     default:
       indicator = <LoadingIcons.Circles speed="1" stroke="yellow" />
       break;

@@ -10,7 +10,7 @@ import { showOpenFilePicker } from 'file-system-access';
 export default class App extends React.Component<AppProps> {
   document: AppState
   state: {
-    message: string
+    title: string,
     text: string,
     sync_state: SYNC_STATE
   }
@@ -21,7 +21,9 @@ export default class App extends React.Component<AppProps> {
     let saved = storage.getItem(props.id)
     
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init('0000'), { time: 0 }, (doc: AppState) => {
+      doc.parent = props.id
       doc.id = props.id
+      doc.title = new Automerge.Text('')
       doc.text = new Automerge.Text('')
     }))
     const [ initialDocument , ]= Automerge.applyChanges(Automerge.init<AppState>(), [initialChange])
@@ -33,8 +35,8 @@ export default class App extends React.Component<AppProps> {
     }
 
     this.state = {
-      sync_state: SYNC_STATE.LOADING,
-      message: 'idle',
+      sync_state: SYNC_STATE.SYNCED,
+      title: this.document.title.toString(),
       text: this.document.text.toString()
     }
   }
@@ -45,11 +47,7 @@ export default class App extends React.Component<AppProps> {
     let [newDoc, ] = Automerge.applyChanges(ours, changes)
     let document = newDoc
     this.document = document as AppState
-    this.setState({ text: this.document.text, sync_state: SYNC_STATE.SYNCED })
-    if (this.props.id !== document.id) {
-      this.setState({ message: 'previewing ' + document.id })
-    }
-    this.persist()
+    this.setState({ title: this.document.title.toString(), text: this.document.text.toString(), sync_state: SYNC_STATE.SYNCED })
     return document
   }
 
@@ -57,22 +55,30 @@ export default class App extends React.Component<AppProps> {
     this.setState({ sync_state: SYNC_STATE.LOADING })
     this.document = Automerge.change<AppState>(this.document, changeFn)
     this.setState({
+      title: this.document.title.toString(),
       text: this.document.text.toString()
     })
     this.persist()
   }
 
-  saveToNetwork() {
-    this.setState({ message: 'saving to network' })
-    http.setItem(this.document.id, this.document).then(_ => {
-      this.setState({ message: 'idle' })
-    }).catch (err => {
-      this.setState({ sync_state: SYNC_STATE.OFFLINE })
-    })
-  }
-
   persist () {
     storage.setItem(this.document.id, this.document)
+  }
+
+  async _open() {
+    let [fileHandle] = await showOpenFilePicker()
+    const file = await fileHandle.getFile()
+    let binary = new Uint8Array(await file.arrayBuffer())
+    return Automerge.load<AppState>(binary as Automerge.BinaryDocument)
+  }
+
+  _fork(document: Automerge.Doc<AppState>) {
+    let duplicate = Automerge.change(document, (doc: AppState) => {
+      doc.id =  nanoid()
+    })
+    console.log('saving', duplicate.id)
+    storage.setItem(duplicate.id, duplicate)
+    return duplicate
   }
 
   render() {
@@ -87,16 +93,27 @@ export default class App extends React.Component<AppProps> {
     }
 
     let onOpenClick = async () => {
-      let [fileHandle] = await showOpenFilePicker()
-      const file = await fileHandle.getFile()
-      let binary = new Uint8Array(await file.arrayBuffer())
-      let theirs = Automerge.load<AppState>(binary as Automerge.BinaryDocument)
-
-      if (this.document.id.startsWith(theirs.id.split('_')[0])) this._sync(this.document, theirs)
-      else {
-        storage.setItem(theirs.id, theirs)
-        window.location.href = '/' + theirs.id
+      // always make a fork 
+      let fork = this._fork(await this._open())
+      let parent = this.document.parent
+      if (parent === fork.parent) {
+        // merge this document
+        this._sync(this.document, fork)
+        this.setState({ sync_state: SYNC_STATE.PREVIEW })
+        this.persist()
+      } else {
+        window.location.href = '/' + fork.id
       }
+    }
+
+    let onRejectChanges = () => {
+      let saved = storage.getItem(this.props.id)
+      let old = Automerge.load<AppState>(saved as Automerge.BinaryDocument)
+      window.location.href = '/' + old.id
+    }
+
+    let onAcceptChanges = () => {
+      window.location.href = '/' + this.document.id
     }
 
     let onDownloadClick = async () => {
@@ -109,67 +126,54 @@ export default class App extends React.Component<AppProps> {
     }
 
     let onForkClick = async () => {
-      let duplicate = Automerge.change(this.document, (doc: AppState) => {
-        doc.id = doc.id + '_' + nanoid()
-      })
-      storage.setItem(duplicate.id, duplicate)
-      this.saveToNetwork()
-      window.location.href = '/' + duplicate.id
+      this._fork(this.document)
+      window.location.href = '/' + this.document.id
     }
 
-    let onMergeClick = async () => {
-      let original = this.document.id.split("_")
-      let newDoc = Automerge.change(this.document, (doc: AppState) => {
-        doc.id = original[0]
-      })
-      this.document = newDoc
-      this.setState({ text: this.document.text, sync_state: SYNC_STATE.SYNCED })
-      this.persist()
-      this.saveToNetwork()
-      window.location.href = '/' + original[0]
-    }
-
-    let onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    let onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, key: string) => {
       e.preventDefault()
       this.updateState((doc: AppState) => {
         // @ts-ignore
         switch (e.nativeEvent.inputType) {
           case 'insertText':
             //@ts-ignore
-            doc.text.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
+            doc[key].insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
             break;
           case 'deleteContentBackward':
             //@ts-ignore
-            doc.text.deleteAt(e.target.selectionEnd)
+            doc[key].deleteAt(e.target.selectionEnd)
             break;
           case 'insertLineBreak':
             //@ts-ignore
-            doc.text.insertAt(e.target.selectionEnd - 1, '\n')
+            doc[key].insertAt(e.target.selectionEnd - 1, '\n')
             break;
         }
       })
     }
 
     return (
-      <div>
-        <div className="tldraw">
-          <textarea value={this.state.text} onChange={onTextChange}></textarea>
-        </div>
+      <div className="window">
         <div id="toolbar">
-          <div id="toolbar.buttons">
-            <button onClick={onDownloadClick}>Download</button>
-            <button onClick={onOpenClick}>Open</button>
-            <button onClick={onClearClick}>Delete</button>
-            </div>
-
-<div>
-            Experimental: 
-            <button onClick={onForkClick}>Duplicate</button>
-            <button onClick={onMergeClick}>Merge</button>
-          </div>
+            {this.state.sync_state === SYNC_STATE.PREVIEW ? 
+            <div id="toolbar.buttons">
+              <span>Previewing changes.</span>
+                <button onClick={onRejectChanges}>Stop</button>
+                <button onClick={onAcceptChanges}>Merge</button>
+              </div>
+                : 
+                <div id="toolbar.buttons">
+                  <button onClick={onDownloadClick}>Download</button>
+                  <button onClick={onOpenClick}>Open</button>
+                  <button onClick={onClearClick}>Delete</button>
+                  <button onClick={onForkClick}>Copy</button>
+                </div>
+            }
+          <div>
           <SyncIndicator state={this.state.sync_state} />
-            {this.state.message}
         </div>
+      </div>
+          <textarea className="title" value={this.state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
+          <textarea className="text" value={this.state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
       </div>
     )
   }
