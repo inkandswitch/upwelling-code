@@ -4,7 +4,7 @@ import * as Automerge from 'automerge';
 import * as storage from './storage/localStorage';
 import * as http from './storage/http';
 import { SyncIndicator } from './components/SyncIndicator';
-import { AppState, AppProps, SYNC_STATE } from './types';
+import { ListItem, AppState, AppProps, SYNC_STATE } from './types';
 import { showOpenFilePicker } from 'file-system-access';
 
 export default class App extends React.Component<AppProps> {
@@ -12,13 +12,14 @@ export default class App extends React.Component<AppProps> {
   state: {
     title: string,
     text: string,
-    sync_state: SYNC_STATE
+    sync_state: SYNC_STATE,
+    list: ListItem[]
   }
 
   constructor(props: AppProps) {
     super(props)
 
-    let saved = storage.getItem(props.id)
+    let saved = storage.getDoc(props.id)
     
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init('0000'), { time: 0 }, (doc: AppState) => {
       doc.parent = props.id
@@ -31,14 +32,22 @@ export default class App extends React.Component<AppProps> {
     if (saved) {
       console.log('loading locally saved document and overriding initial document')
       this.document = Automerge.load(saved as Automerge.BinaryDocument)
-      console.log(this.document)
     }
 
     this.state = {
       sync_state: SYNC_STATE.SYNCED,
       title: this.document.title.toString(),
-      text: this.document.text.toString()
+      text: this.document.text.toString(),
+      list: this._list()
     }
+  }
+
+  _list() {
+    return storage.list().reduce((acc: any, cur: ListItem) => {
+      if (!acc.length) return [cur]
+      if (acc[0]?.meta?.parent === cur.meta.parent) return acc
+      return acc.concat(cur)
+    }, [])
   }
 
   _sync(ours: Automerge.Doc<AppState>, theirs: Automerge.Doc<AppState>) {
@@ -56,13 +65,14 @@ export default class App extends React.Component<AppProps> {
     this.document = Automerge.change<AppState>(this.document, changeFn)
     this.setState({
       title: this.document.title.toString(),
-      text: this.document.text.toString()
+      text: this.document.text.toString(),
+      list: this._list()
     })
     this.persist()
   }
 
   persist () {
-    storage.setItem(this.document.id, this.document)
+    storage.setDoc(this.document.id, this.document)
   }
 
   async _open() {
@@ -77,7 +87,7 @@ export default class App extends React.Component<AppProps> {
       doc.id =  nanoid()
     })
     console.log('saving', duplicate.id)
-    storage.setItem(duplicate.id, duplicate)
+    storage.setDoc(duplicate.id, duplicate)
     return duplicate
   }
 
@@ -94,20 +104,21 @@ export default class App extends React.Component<AppProps> {
 
     let onOpenClick = async () => {
       // always make a fork 
-      let fork = this._fork(await this._open())
+      let opened = await this._open()
       let parent = this.document.parent
-      if (parent === fork.parent) {
+      if (parent === opened.parent) {
         // merge this document
-        this._sync(this.document, fork)
+        this._sync(this.document, opened)
         this.setState({ sync_state: SYNC_STATE.PREVIEW })
         this.persist()
       } else {
-        window.location.href = '/' + fork.id
+        this._fork(opened)
+        window.location.href = '/' + opened.id
       }
     }
 
     let onRejectChanges = () => {
-      let saved = storage.getItem(this.props.id)
+      let saved = storage.getDoc(this.props.id)
       let old = Automerge.load<AppState>(saved as Automerge.BinaryDocument)
       window.location.href = '/' + old.id
     }
@@ -130,6 +141,10 @@ export default class App extends React.Component<AppProps> {
       window.location.href = '/' + this.document.id
     }
 
+    let onNewClick = () => {
+      window.location.href = '/' 
+    }
+
     let onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, key: string) => {
       e.preventDefault()
       this.updateState((doc: AppState) => {
@@ -150,31 +165,43 @@ export default class App extends React.Component<AppProps> {
         }
       })
     }
-
     return (
-      <div className="window">
-        <div id="toolbar">
-            {this.state.sync_state === SYNC_STATE.PREVIEW ? 
-            <div id="toolbar.buttons">
-              <span>Previewing changes.</span>
-                <button onClick={onRejectChanges}>Stop</button>
-                <button onClick={onAcceptChanges}>Merge</button>
-              </div>
-                : 
-                <div id="toolbar.buttons">
-                  <button onClick={onDownloadClick}>Download</button>
-                  <button onClick={onOpenClick}>Open</button>
-                  <button onClick={onClearClick}>Delete</button>
-                  <button onClick={onForkClick}>Copy</button>
+      <div id="container">
+        <div>
+          <h1>Documents</h1>
+          <button onClick={onClearClick}>Delete All Documents</button>
+        <ul id="list">
+          {this.state.list.map((item:any) => {
+            return <li key={item.id}><a className='button' href={`/${item.id}`}>
+              {item.meta.title}#{item.id.slice(0, 4)} {this.document.id === item.id && "(selected)"}
+            </a></li>
+          })}
+        </ul>
+        </div>
+        <div id="app">
+          <div id="toolbar">
+              {this.state.sync_state === SYNC_STATE.PREVIEW ? 
+              <div id="toolbar.buttons">
+                <span>Previewing changes.</span>
+                  <button onClick={onRejectChanges}>Stop</button>
+                  <button onClick={onAcceptChanges}>Merge</button>
                 </div>
-            }
-          <div>
-          <SyncIndicator state={this.state.sync_state} />
+                  : 
+                  <div id="toolbar.buttons">
+                    <button onClick={onDownloadClick}>Download</button>
+                    <button onClick={onOpenClick}>Open</button>
+                    <button onClick={onForkClick}>Copy</button>
+                    <button onClick={onNewClick}>New</button>
+                  </div>
+              }
+            <div>
+            <SyncIndicator state={this.state.sync_state} />
+          </div>
+        </div>
+            <textarea className="title" value={this.state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
+            <textarea className="text" value={this.state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
         </div>
       </div>
-          <textarea className="title" value={this.state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
-          <textarea className="text" value={this.state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
-      </div>
-    )
+      )
+    }
   }
-}

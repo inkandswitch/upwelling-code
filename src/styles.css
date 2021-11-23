@@ -16,14 +16,30 @@ body {
 	justify-content: space-between;
 }
 
-.window .text {
+#container {
+	display: flex;
+
+}
+
+#app .text {
 	height: 300px;
 }
 
-.window {
+#app {
 	position: relative;
     display: flex;
     flex-direction: column;
     margin: auto;
     width: 600px;
+}
+
+#list {
+	margin: 10px;
+	padding-left: 0px;
+	list-style: none;
+	max-width: 100px;
+}
+
+#list a {
+
 }
