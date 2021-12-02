@@ -23,13 +23,10 @@ export const setDoc = (id: string, document: Automerge.Doc<any>) => {
 
 export const list = (): ListItem[] => {
   let ids = Object.keys(localStorage)
-  let res: ListItem[] = []
-  ids.forEach(id => {
+  return ids.filter((id) => id.startsWith('sesh:')).map(id => {
     let val = localStorage.getItem(id)
-    if (val) {
-      let item: ListItem = JSON.parse(val)
-      res.push({ meta: item.meta, id })
-    } 
+    //@ts-ignore
+    let item: ListItem = JSON.parse(val)
+    return { meta: item.meta, id }
   })
-  return res
 }

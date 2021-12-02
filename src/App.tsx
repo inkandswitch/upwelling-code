@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import * as Automerge from 'automerge';
 import * as storage from './storage/localStorage';
 import * as http from './storage/http';
+import { Map } from './components/Map';
 import { SyncIndicator } from './components/SyncIndicator';
 import { ListItem, AppState, AppProps, SYNC_STATE } from './types';
 import { showOpenFilePicker } from 'file-system-access';
@@ -44,6 +45,8 @@ export default class App extends React.Component<AppProps> {
 
   _list() {
     return storage.list().reduce((acc: any, cur: ListItem) => {
+      console.log(cur)
+      if (!cur) return acc
       if (!acc.length) return [cur]
       if (acc[0]?.meta?.parent === cur.meta.parent) return acc
       return acc.concat(cur)
@@ -84,7 +87,7 @@ export default class App extends React.Component<AppProps> {
 
   _fork(document: Automerge.Doc<AppState>) {
     let duplicate = Automerge.change(document, (doc: AppState) => {
-      doc.id =  nanoid()
+      doc.id =  'sesh:' + nanoid()
     })
     console.log('saving', duplicate.id)
     storage.setDoc(duplicate.id, duplicate)
@@ -145,26 +148,10 @@ export default class App extends React.Component<AppProps> {
       window.location.href = '/' 
     }
 
-    let onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, key: string) => {
-      e.preventDefault()
-      this.updateState((doc: AppState) => {
-        // @ts-ignore
-        switch (e.nativeEvent.inputType) {
-          case 'insertText':
-            //@ts-ignore
-            doc[key].insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
-            break;
-          case 'deleteContentBackward':
-            //@ts-ignore
-            doc[key].deleteAt(e.target.selectionEnd)
-            break;
-          case 'insertLineBreak':
-            //@ts-ignore
-            doc[key].insertAt(e.target.selectionEnd - 1, '\n')
-            break;
-        }
-      })
+    let onMapChange = () => {
+
     }
+
     return (
       <div id="container">
         <div>
@@ -198,8 +185,7 @@ export default class App extends React.Component<AppProps> {
             <SyncIndicator state={this.state.sync_state} />
           </div>
         </div>
-            <textarea className="title" value={this.state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
-            <textarea className="text" value={this.state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
+            <Map onChange={onMapChange}></Map>
         </div>
       </div>
       )
