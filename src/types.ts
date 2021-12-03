@@ -1,12 +1,21 @@
 import * as Automerge from 'automerge';
 
+export type Feature = {
+  id: string,
+  lat: number,
+  lng: number,
+  description?: Automerge.Text | string
+}
+
+export type Tag = string;
+export type Attachment = string;
+
 export type Binding = any;
 
 export type AppState = {
   parent: string,
-  title: Automerge.Text,
   id: string,
-  text: Automerge.Text
+  features: Feature[]
 }
 
 export type AppProps = {
@@ -21,7 +30,7 @@ export enum SYNC_STATE {
   PREVIEW = 4
 }
 
-export type ListItem = {
+export type Document = {
   id: string,
   meta: {
     parent: string,

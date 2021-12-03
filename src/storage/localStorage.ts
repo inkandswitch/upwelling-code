@@ -1,5 +1,22 @@
 import * as Automerge from 'automerge';
-import { ListItem } from '../types';
+import { Document } from '../types';
+
+let channels = new Map()
+
+export const getChannel = (id: string) => {
+  let broadcaster
+  if (channels.has(id)) {
+    broadcaster = channels.get(id)
+  } else {
+    broadcaster = new BroadcastChannel(id)
+    channels.set(id, broadcaster)
+  }
+  return broadcaster
+}
+
+export const deleteItem = (id: string) => {
+  localStorage.removeItem(id)
+}
 
 export const getDoc = (id: string) => {
   let saved = localStorage.getItem(id)
@@ -12,21 +29,24 @@ export const getDoc = (id: string) => {
 
 export const setDoc = (id: string, document: Automerge.Doc<any>) => {
   let binary = Automerge.save(document)
-  localStorage.setItem(id, JSON.stringify({
+  let state = JSON.stringify({
     doc: Buffer.from(binary).toString('base64'),
     meta: {
       parent: document.parent,
-      title: document.title.toString()
+      title: id
     }
-  }))
+  })
+
+  getChannel(id).postMessage(state)
+  localStorage.setItem(id, state)
 }
 
-export const list = (): ListItem[] => {
+export const list = (): Document[] => {
   let ids = Object.keys(localStorage)
   return ids.filter((id) => id.startsWith('sesh:')).map(id => {
     let val = localStorage.getItem(id)
     //@ts-ignore
-    let item: ListItem = JSON.parse(val)
+    let item: Document = JSON.parse(val)
     return { meta: item.meta, id }
   })
 }
