@@ -1,10 +1,8 @@
-# Session
-
-A proof-of-concept collaborative editor for demonstrating CRDT-based branching and merging behaviors.
+# Sesh
 
 [Demo](https://session-demo-drab.vercel.app/)
 
-## Run the server 
+## Run the server (optional)
 
 See README in `server/`
 
