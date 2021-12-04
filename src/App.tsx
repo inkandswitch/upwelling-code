@@ -13,7 +13,8 @@ export default class App extends React.Component<AppProps> {
     title: string,
     text: string,
     sync_state: SYNC_STATE,
-    list: ListItem[]
+    list: ListItem[],
+    patch: Automerge.Patch | null
   }
 
   constructor(props: AppProps) {
@@ -38,7 +39,8 @@ export default class App extends React.Component<AppProps> {
       sync_state: SYNC_STATE.SYNCED,
       title: this.document.title.toString(),
       text: this.document.text.toString(),
-      list: this._list()
+      list: this._list(),
+      patch: null
     }
   }
 
@@ -53,10 +55,16 @@ export default class App extends React.Component<AppProps> {
   _sync(ours: Automerge.Doc<AppState>, theirs: Automerge.Doc<AppState>) {
     this.setState({ sync_state: SYNC_STATE.LOADING })
     let changes = Automerge.getAllChanges(theirs)
-    let [newDoc, ] = Automerge.applyChanges(ours, changes)
+    //@ts-ignore
+    let [newDoc, patch] = Automerge.applyChanges(ours, changes)
     let document = newDoc
     this.document = document as AppState
-    this.setState({ title: this.document.title.toString(), text: this.document.text.toString(), sync_state: SYNC_STATE.SYNCED })
+    this.setState({
+      title: this.document.title.toString(),
+      text: this.document.text.toString(),
+      sync_state: SYNC_STATE.SYNCED,
+      patch
+    })
     return document
   }
 
