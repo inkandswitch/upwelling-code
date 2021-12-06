@@ -1,6 +1,6 @@
 # Sesh
 
-[Demo](https://session-demo-drab.vercel.app/)
+[Demo](https://sesh-seven.vercel.app/)
 
 ## Run the server (optional)
 
