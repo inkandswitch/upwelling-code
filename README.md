@@ -1,4 +1,4 @@
-# Sesh
+# Upwelling
 
 [Demo](https://sesh-seven.vercel.app/)
 
