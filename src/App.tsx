@@ -1,46 +1,35 @@
 import * as React from 'react'
 import { nanoid } from 'nanoid';
-import * as Automerge from 'automerge';
 import * as storage from './storage/localStorage';
 import * as http from './storage/http';
 import { SyncIndicator } from './components/SyncIndicator';
 import { ListItem, AppState, AppProps, SYNC_STATE } from './types';
 import { showOpenFilePicker } from 'file-system-access';
+import ProseEditor from './peritext';
+import Micromerge from './peritext/micromerge';
 
 export default class App extends React.Component<AppProps> {
-  document: AppState
+  document: Micromerge
   state: {
     title: string,
     text: string,
     sync_state: SYNC_STATE,
-    list: ListItem[],
-    patch: Automerge.Patch | null
+    list: ListItem[]
   }
 
   constructor(props: AppProps) {
     super(props)
 
-    let saved = storage.getDoc(props.id)
-    
-    let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init('0000'), { time: 0 }, (doc: AppState) => {
-      doc.parent = props.id
-      doc.id = props.id
-      doc.title = new Automerge.Text('')
-      doc.text = new Automerge.Text('')
-    }))
-    const [ initialDocument , ]= Automerge.applyChanges(Automerge.init<AppState>(), [initialChange])
-    this.document = initialDocument 
+    let saved = localStorage.getItem(props.id)
+    this.document = new Micromerge(props.id)
     if (saved) {
       console.log('loading locally saved document and overriding initial document')
-      this.document = Automerge.load(saved as Automerge.BinaryDocument)
+      this.document = Micromerge.load(saved)
     }
 
     this.state = {
       sync_state: SYNC_STATE.SYNCED,
-      title: this.document.title.toString(),
-      text: this.document.text.toString(),
-      list: this._list(),
-      patch: null
+      list: this._list()
     }
   }
 
@@ -52,51 +41,11 @@ export default class App extends React.Component<AppProps> {
     }, [])
   }
 
-  _sync(ours: Automerge.Doc<AppState>, theirs: Automerge.Doc<AppState>) {
-    this.setState({ sync_state: SYNC_STATE.LOADING })
-    let changes = Automerge.getAllChanges(theirs)
-    //@ts-ignore
-    let [newDoc, patch] = Automerge.applyChanges(ours, changes)
-    let document = newDoc
-    this.document = document as AppState
-    this.setState({
-      title: this.document.title.toString(),
-      text: this.document.text.toString(),
-      sync_state: SYNC_STATE.SYNCED,
-      patch
-    })
-    return document
-  }
-
-  updateState (changeFn: Automerge.ChangeFn<AppState>) {
-    this.setState({ sync_state: SYNC_STATE.LOADING })
-    this.document = Automerge.change<AppState>(this.document, changeFn)
-    this.setState({
-      title: this.document.title.toString(),
-      text: this.document.text.toString(),
-      list: this._list()
-    })
-    this.persist()
-  }
-
-  persist () {
-    storage.setDoc(this.document.id, this.document)
-  }
-
   async _open() {
     let [fileHandle] = await showOpenFilePicker()
     const file = await fileHandle.getFile()
-    let binary = new Uint8Array(await file.arrayBuffer())
-    return Automerge.load<AppState>(binary as Automerge.BinaryDocument)
-  }
-
-  _fork(document: Automerge.Doc<AppState>) {
-    let duplicate = Automerge.change(document, (doc: AppState) => {
-      doc.id =  nanoid()
-    })
-    console.log('saving', duplicate.id)
-    storage.setDoc(duplicate.id, duplicate)
-    return duplicate
+    let binary = await file.text()
+    return Micromerge.load(binary)
   }
 
   render() {
@@ -125,15 +74,6 @@ export default class App extends React.Component<AppProps> {
       }
     }
 
-    let onRejectChanges = () => {
-      let saved = storage.getDoc(this.props.id)
-      let old = Automerge.load<AppState>(saved as Automerge.BinaryDocument)
-      window.location.href = '/' + old.id
-    }
-
-    let onAcceptChanges = () => {
-      window.location.href = '/' + this.document.id
-    }
 
     let onDownloadClick = async () => {
       let filename = this.document.id + '.sesh'
@@ -153,35 +93,19 @@ export default class App extends React.Component<AppProps> {
       window.location.href = '/' 
     }
 
-    let onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>, key: string) => {
-      e.preventDefault()
-      this.updateState((doc: AppState) => {
-        // @ts-ignore
-        switch (e.nativeEvent.inputType) {
-          case 'insertText':
-            //@ts-ignore
-            doc[key].insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
-            break;
-          case 'deleteContentBackward':
-            //@ts-ignore
-            doc[key].deleteAt(e.target.selectionEnd)
-            break;
-          case 'insertLineBreak':
-            //@ts-ignore
-            doc[key].insertAt(e.target.selectionEnd - 1, '\n')
-            break;
-        }
-      })
+    let onChange = (doc: Micromerge) => {
+      let buf = doc.save()
     }
+
     return (
       <div id="container">
         <div>
           <h1>Documents</h1>
-          <button onClick={onClearClick}>Delete All Documents</button>
         <ul id="list">
           {this.state.list.map((item:any) => {
-            return <li key={item.id}><a className='button' href={`/${item.id}`}>
-              {item.meta.title}#{item.id.slice(0, 4)} {this.document.id === item.id && "(selected)"}
+            let className = `button ${this.document.id === item.id && "selected"}`
+            return <li key={item.id}><a className={className} href={`/${item.id}`}>
+              {item.meta.title} 
             </a></li>
           })}
         </ul>
@@ -206,8 +130,7 @@ export default class App extends React.Component<AppProps> {
             <SyncIndicator state={this.state.sync_state} />
           </div>
         </div>
-            <textarea className="title" value={this.state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
-            <textarea className="text" value={this.state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
+            <ProseEditor onChange={onChange} />
         </div>
       </div>
       )
