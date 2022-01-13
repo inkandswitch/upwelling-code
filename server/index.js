@@ -20,7 +20,6 @@ try {
 	} 
 }
 
-
 app.use(cors())
 
 app.get('/:id', (req, res) => {

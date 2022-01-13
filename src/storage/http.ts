@@ -6,6 +6,18 @@ export function getURI(id: string): string {
   return `${BASE}/${id}`
 }
 
+export function sync (id: string, ours: Automerge.Doc<any>, theirs: Automerge.Doc<any>): Automerge.Doc<any> { 
+  let document = ours
+  try { 
+    let changes = Automerge.getAllChanges(theirs)
+    let [newDoc, ] = Automerge.applyChanges(ours, changes)
+    document = newDoc
+  } catch (err) {
+    console.log('error', err)
+  }
+  return document
+}
+
 export async function getItem (id: string, actorId?: string): Promise<Automerge.Doc<any>> { 
   const response = await fetch(getURI(id))
   if (response.status !== 200) throw new Error('No saved draft for doc with id=' + id)
