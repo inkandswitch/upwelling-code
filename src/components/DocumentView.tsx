@@ -3,7 +3,6 @@ import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
 import { showOpenFilePicker } from 'file-system-access';
 import Documents, { UpwellingDoc } from '../documents';
-import { useLocation } from 'wouter';
 
 let documents = Documents()
 
@@ -23,7 +22,6 @@ export default function DocumentView({
 }: DocumentProps) {
   let [status, setStatus] = React.useState(SYNC_STATE.SYNCED)
   let [state, setState] = React.useState(doc.view())
-  let [, setLocation] = useLocation()
 
   function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>, key: string) {
     e.preventDefault()
