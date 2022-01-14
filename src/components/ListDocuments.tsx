@@ -9,7 +9,6 @@ export default function ListDocuments() {
       {documents.list().map((value: UpwellingDocMetadata) => {
         return <li><a href={`/doc/${value.id}`}>{value.title}</a></li>
       })}
-      <li><a href="/new">New</a></li>
     </ul>
   </div>
 }

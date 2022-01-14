@@ -1,5 +1,6 @@
 import { nanoid } from 'nanoid';
-import { UpwellingDoc }  from './';
+import { UpwellingDoc }  from '.';
+import * as http from '../storage/http'
 
 export interface Storage {
   setItem: (id: string, binary: string) => void,
@@ -17,12 +18,12 @@ export default class Upwelling {
 
   add(binary: Uint8Array) {
     let doc: UpwellingDoc = UpwellingDoc.load(binary)
-    this.save(doc)
+    this.persist(doc)
     return doc
   }
 
-  save(doc: UpwellingDoc): void {
-    let payload = UpwellingDoc.serialize(doc)
+  persist(doc: UpwellingDoc): void {
+    let payload = doc.toString()
     this.setMeta({
       id: doc.id,
       title: doc.title,
@@ -30,16 +31,40 @@ export default class Upwelling {
     this.db.setItem(doc.id, payload)
   }
 
-  load(id: string): UpwellingDoc | null { 
+  async syncWithServer(doc: UpwellingDoc) {
+    try {
+      let theirs = UpwellingDoc.load(await http.getItem(doc.root))
+      doc.sync(theirs)
+      this.persist(doc)
+    } catch (err) {
+      console.error(err)
+      // this is no big deal. this just means there was no server item 
+    }
+    return http.setItem(doc.root, doc.save())
+  }
+
+  async get(id: string): Promise<UpwellingDoc | null> { 
     let saved = this.db.getItem(id)
-    if (saved) return UpwellingDoc.deserialize(saved)
-    else return null
+    if (saved) return UpwellingDoc.fromString(saved)
+    else {
+      try {
+        let remote = await http.getItem(id)
+        if (remote) return UpwellingDoc.load(remote)
+        else return null
+      } catch (err) {
+        return null
+      }
+    }
+  }
+
+  exists(id: string): boolean {
+    return this.db.getItem(id) !== null
   }
 
   create(title: string) : UpwellingDoc {
     let id = nanoid()
     let document: UpwellingDoc = UpwellingDoc.create(id, title)
-    this.save(document)
+    this.persist(document)
     return document
   }
 

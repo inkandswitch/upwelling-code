@@ -1,27 +1,38 @@
-import * as React from 'react'
+import React, { useEffect } from 'react'
 import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
-import { showOpenFilePicker } from 'file-system-access';
 import Documents, { UpwellingDoc } from '../documents';
 
 let documents = Documents()
 
 export type DocumentProps = {
-  doc: UpwellingDoc
+  id: string
 }
 
-async function open (): Promise<UpwellingDoc> {
-  let [fileHandle] = await showOpenFilePicker()
-  const file = await fileHandle.getFile()
-  let binary = new Uint8Array(await file.arrayBuffer())
-  return documents.add(binary)
-}
-
-export default function DocumentView({
-  doc 
-}: DocumentProps) {
-  let [status, setStatus] = React.useState(SYNC_STATE.SYNCED)
+function DocumentView(props: {doc: UpwellingDoc}) {
+  const { doc } = props
+  let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
   let [state, setState] = React.useState(doc.view())
+
+  let onDownloadClick = async () => {
+    let filename = doc.title + '.up'
+    let el = window.document.createElement('a')
+    let buf = doc.toString()
+    el.setAttribute('href', 'data:application/octet-stream;base64,' + buf);
+    el.setAttribute('download', filename)
+    el.click()
+  }
+
+  let onSyncClick = async () => {
+    try {
+      setStatus(SYNC_STATE.LOADING)
+      await documents.syncWithServer(doc)
+      setState(doc.view())
+      setStatus(SYNC_STATE.SYNCED)
+    } catch (err) {
+      setStatus(SYNC_STATE.OFFLINE)
+    }
+  }
 
   function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>, key: string) {
     e.preventDefault()
@@ -44,53 +55,18 @@ export default function DocumentView({
       }
     })
     setState(doc.view())
-    documents.save(doc)
+    documents.persist(doc)
     setStatus(SYNC_STATE.SYNCED)
-  }
-
-  let onOpenClick = async () => {
-    let opened = await open()
-    let parent = doc.doc.parent
-    if (parent === opened.doc.parent) {
-      // we know about this document already.
-      // merge this document
-      setStatus(SYNC_STATE.LOADING)
-      doc.sync(opened)
-      setState(doc.view())
-      setStatus(SYNC_STATE.PREVIEW)
-      documents.save(doc)
-    } else {
-      // we don't know about this document yet
-      // always make a fork 
-      let duplicate = opened.fork()
-      documents.save(duplicate)
-      window.location.href = '/' + duplicate.id
-    }
-  }
-
-  let onDownloadClick = async () => {
-    let filename = doc.title + '.up'
-    let el = window.document.createElement('a')
-    let buf = UpwellingDoc.serialize(doc)
-    el.setAttribute('href', 'data:application/octet-stream;base64,' + buf);
-    el.setAttribute('download', filename)
-    el.click()
   }
 
   return (
     <div id="container">
       <div id="app">
         <div id="toolbar">
-          {status === SYNC_STATE.PREVIEW ?
-            <div id="toolbar.buttons">
-              <span>Previewing changes.</span>
-            </div>
-            :
             <div id="toolbar.buttons">
               <button onClick={onDownloadClick}>Download</button>
-              <button onClick={onOpenClick}>Open</button>
+              <button onClick={onSyncClick}>Sync</button>
             </div>
-          }
           <div>
             <SyncIndicator state={status} />
           </div>
@@ -98,6 +74,30 @@ export default function DocumentView({
         <textarea className="title" value={state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
         <textarea className="text" value={state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
       </div>
+      <div id="debug">
+        root: {doc.root}
+        <br></br>
+        id: {doc.id}
+      </div>
     </div>
   )
+}
+
+export default function MaybeDocumentView({
+  id
+}: DocumentProps) {
+  let [doc, setState] = React.useState<UpwellingDoc | null>(null)
+
+  useEffect(() => {
+    documents.get(id).then(doc => {
+      if (doc) setState(doc)
+      else {
+        doc = UpwellingDoc.create(id)
+      }
+    })
+  }, [id])
+
+  if (doc) return <DocumentView doc={doc} />
+  else return <div>Loading...</div>
+
 }

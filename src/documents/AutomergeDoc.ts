@@ -2,17 +2,25 @@ import * as Automerge from 'automerge';
 import { nanoid } from 'nanoid';
 
 export interface DocFields  {
-  parent: string 
+  root: string 
   id: string 
   text: Automerge.Text
-  title: string
+  title: Automerge.Text
 }
+
+export type Subscriber = (doc: DocFields) => void 
 
 export class UpwellingDoc {
   doc: Automerge.Doc<DocFields>
+  observer: Automerge.Observable
 
-  constructor(doc: Automerge.Doc<DocFields>) {
+  constructor(doc: Automerge.Doc<DocFields>, observer: Automerge.Observable) {
     this.doc = doc
+    this.observer = observer
+  }
+
+  get root () {
+    return this.doc.root
   }
 
   get id() {
@@ -24,20 +32,21 @@ export class UpwellingDoc {
   }
 
   get title () {
-    return this.doc.title
-  }
-
-  set title(title: string) {
-    this.change(doc => {
-      doc.title = title
-    })
+    return this.doc.title.toString()
   }
 
   view() {
     return {
+      root: this.root,
       text: this.text,
       title: this.title
     }
+  }
+
+  subscribe(onChange: Subscriber) {
+    this.observer.observe(this.doc, (diff, before, after, local, changes) => {
+      onChange(after)
+    })
   }
 
   change(fn: Automerge.ChangeFn<DocFields>) {
@@ -45,42 +54,50 @@ export class UpwellingDoc {
     this.doc = newDoc
   }
 
-  static load(binary: Uint8Array): UpwellingDoc {
-    return new UpwellingDoc(Automerge.load(binary as Automerge.BinaryDocument))
+  save (): Uint8Array {
+    return Automerge.save(this.doc)
   }
 
-  static deserialize(payload: string): UpwellingDoc {
+  static load(binary: Uint8Array): UpwellingDoc {
+    let observable = new Automerge.Observable()
+    let doc = Automerge.load<DocFields>(binary as Automerge.BinaryDocument, {observable})
+    return new UpwellingDoc(doc, observable)
+  }
+
+  static fromString(payload: string): UpwellingDoc {
     let binary = Uint8Array.from(Buffer.from(payload, 'base64'))
     return UpwellingDoc.load(binary)
   }
 
-  static serialize(doc: UpwellingDoc): string {
-    let binary = Automerge.save(doc.doc)
+  toString(): string {
+    let binary = Automerge.save(this.doc)
     let payload = Buffer.from(binary).toString('base64')
     return payload
   }
 
-  static create(id: string, title: string): UpwellingDoc {
+  static create(id: string, title?: string): UpwellingDoc {
+    let observable = new Automerge.Observable()
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init<DocFields>('0000'), { time: 0 }, (doc: DocFields) => {
-      doc.id = id
-      doc.parent = id 
-      doc.title = title 
+      doc.root = id
+      doc.id = nanoid()
+      doc.title = new Automerge.Text(title || 'Untitled Document')
       doc.text = new Automerge.Text()
     }))
-    let [ document , ]= Automerge.applyChanges<DocFields>(Automerge.init(), [initialChange])
-    return new UpwellingDoc(document)
+    let [ document , ]= Automerge.applyChanges<DocFields>(Automerge.init({observable}), [initialChange])
+    return new UpwellingDoc(document, observable)
   }
 
   fork(): UpwellingDoc {
+    let observable = new Automerge.Observable()
     let duplicate = Automerge.change(this.doc, (doc: DocFields) => {
       doc.id = nanoid()
     })
-    return new UpwellingDoc(duplicate)
+    let doc = Automerge.clone(duplicate, { observable })
+    return new UpwellingDoc(doc, observable)
   }
 
   sync(theirs: UpwellingDoc) {
     let changes = Automerge.getAllChanges(theirs.doc)
-    //@ts-ignore
     let [newDoc, patch] = Automerge.applyChanges(this.doc, changes)
     this.doc = newDoc
     return patch

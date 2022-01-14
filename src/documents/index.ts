@@ -1,6 +1,6 @@
-import Upwelling from './Upwelling'
+import Upwelling from './Documents'
 import * as storage from '../storage/localStorage'
-export * from './Upwelling'
+export * from './Documents'
 export * from './AutomergeDoc'
 
 let upwelling = new Upwelling(storage)
