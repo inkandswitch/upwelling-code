@@ -1,31 +1,27 @@
 import * as React from 'react'
-import * as Automerge from 'automerge';
-import * as storage from './storage/localStorage';
-import { SyncIndicator } from './components/SyncIndicator';
-import { SYNC_STATE } from './types';
+import { SyncIndicator } from './SyncIndicator';
+import { SYNC_STATE } from '../types';
 import { showOpenFilePicker } from 'file-system-access';
-import { ForkableDocument } from './ForkableDocument';
+import Documents, { UpwellingDoc } from '../documents';
+
+let documents = Documents()
 
 export type DocumentProps = {
-  doc: ForkableDocument
+  doc: UpwellingDoc
 }
 
-async function open (): Promise<ForkableDocument> {
+async function open (): Promise<UpwellingDoc> {
   let [fileHandle] = await showOpenFilePicker()
   const file = await fileHandle.getFile()
   let binary = new Uint8Array(await file.arrayBuffer())
-  return ForkableDocument.load(binary)
+  return documents.add(binary)
 }
 
-export default function Document({
+export default function DocumentView({
   doc 
 }: DocumentProps) {
   let [status, setStatus] = React.useState(SYNC_STATE.SYNCED)
-  let [state, setState] = React.useState({
-    title: doc.doc.title.toString(),
-    text: doc.doc.text.toString(),
-    list: storage.list()
-  })
+  let [state, setState] = React.useState(doc.view())
 
   function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>, key: string) {
     e.preventDefault()
@@ -47,14 +43,10 @@ export default function Document({
           break;
       }
     })
-    setState({
-      title: doc.doc.title.toString(),
-      text: doc.doc.text.toString(),
-      list: storage.list()
-    })
-    storage.setDoc(doc.id, doc.doc)
+    setState(doc.view())
+    documents.save(doc)
+    setStatus(SYNC_STATE.SYNCED)
   }
-
 
   let onOpenClick = async () => {
     let opened = await open()
@@ -64,20 +56,14 @@ export default function Document({
       // merge this document
       setStatus(SYNC_STATE.LOADING)
       doc.sync(opened)
-
-      setState({
-        title: doc.doc.title.toString(),
-        text: doc.doc.text.toString(),
-        list: storage.list()
-      })
-
+      setState(doc.view())
       setStatus(SYNC_STATE.PREVIEW)
-      storage.setDoc(doc.id, doc.doc)
+      documents.save(doc)
     } else {
       // we don't know about this document yet
       // always make a fork 
       let duplicate = opened.fork()
-      storage.setDoc(duplicate.id, duplicate.doc)
+      documents.save(duplicate)
       window.location.href = '/' + duplicate.id
     }
   }
@@ -88,26 +74,16 @@ export default function Document({
   }
 
   let onDownloadClick = async () => {
-    let filename = doc.id + '.sesh'
+    let filename = doc.title + '.up'
     let el = window.document.createElement('a')
-    let buf = Automerge.save(doc.doc)
-    el.setAttribute('href', 'data:application/octet-stream;base64,' + Buffer.from(buf).toString('base64'));
+    let buf = UpwellingDoc.serialize(doc)
+    el.setAttribute('href', 'data:application/octet-stream;base64,' + buf);
     el.setAttribute('download', filename)
     el.click()
   }
 
   return (
     <div id="container">
-      <div>
-        <h1>Documents</h1>
-        <ul id="list">
-          {state.list.map((item: any) => {
-            return <li key={item.id}><a className='button' href={`/${item.id}`}>
-              {item.meta.title}#{item.id.slice(0, 4)} {doc.id === item.id && "(selected)"}
-            </a></li>
-          })}
-        </ul>
-      </div>
       <div id="app">
         <div id="toolbar">
           {status === SYNC_STATE.PREVIEW ?

@@ -7,11 +7,3 @@ export enum SYNC_STATE {
   OFFLINE = 3,
   PREVIEW = 4
 }
-
-export type ListItem = {
-  id: string,
-  meta: {
-    parent: string,
-    title: string
-  }
-}

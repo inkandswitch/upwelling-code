@@ -1,5 +1,5 @@
 {
-  "name": "session",
+  "name": "upwelling",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -20,7 +20,8 @@
     "react-scripts": "4.0.3",
     "simple-peer": "^9.11.0",
     "typescript": "^4.1.2",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "wouter": "^2.8.0-alpha.2"
   },
   "scripts": {
     "start": "react-scripts start",
