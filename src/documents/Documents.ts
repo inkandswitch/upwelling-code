@@ -61,7 +61,7 @@ export default class Upwelling {
     return this.db.getItem(id) !== null
   }
 
-  create(title: string) : UpwellingDoc {
+  create(title?: string) : UpwellingDoc {
     let id = nanoid()
     let document: UpwellingDoc = UpwellingDoc.create(id, title)
     this.persist(document)
