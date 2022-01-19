@@ -33,14 +33,14 @@ export default class Upwelling {
 
   async syncWithServer(doc: UpwellingDoc) {
     try {
-      let theirs = UpwellingDoc.load(await http.getItem(doc.root))
+      let theirs = UpwellingDoc.load(await http.getItem(doc.id))
       doc.sync(theirs)
       this.persist(doc)
     } catch (err) {
       console.error(err)
       // this is no big deal. this just means there was no server item 
     }
-    return http.setItem(doc.root, doc.save())
+    return http.setItem(doc.id, doc.save())
   }
 
   async get(id: string): Promise<UpwellingDoc | null> { 
