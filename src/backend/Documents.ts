@@ -1,14 +1,14 @@
 import { nanoid } from 'nanoid';
 import { sia, desia } from 'sializer';
-import { UpwellingDoc }  from '.';
-import AsyncStorage from '../storage'
+import { UpwellingDoc } from './AutomergeDoc';
+import AsyncStorage from './storage'
 
 // Multiple UpwellingDocs that are persisted on disc
-export default class Upwelling {
+export default class Documents {
   db: AsyncStorage 
-  remote: AsyncStorage 
+  remote: AsyncStorage | undefined
 
-  constructor(db: AsyncStorage, remote: AsyncStorage) {
+  constructor(db: AsyncStorage, remote?: AsyncStorage) {
     this.db = db
     this.remote = remote
   }
@@ -28,6 +28,7 @@ export default class Upwelling {
   }
 
   async syncWithServer(doc: UpwellingDoc) {
+    if (!this.remote) throw new Error('Server not configured. Must supply remote to constructor.')
     try {
       let binary = await this.remote.getItem(doc.id)
       if (binary) {
@@ -44,9 +45,10 @@ export default class Upwelling {
   }
 
   async get(id: string): Promise<UpwellingDoc | null> { 
+    // local-first
     let saved = await this.db.getItem(id)
     if (saved) return UpwellingDoc.load(saved)
-    else {
+    else if (this.remote) {
       try {
         let remote = await this.remote.getItem(id)
         if (remote) return UpwellingDoc.load(remote)
@@ -54,7 +56,7 @@ export default class Upwelling {
       } catch (err) {
         return null
       }
-    }
+    } else return null
   }
 
   exists(id: string): boolean {

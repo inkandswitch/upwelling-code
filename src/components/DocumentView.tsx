@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
-import Documents, { UpwellingDoc } from '../documents';
+import Documents, { UpwellingDoc } from '../backend';
 
 let documents = Documents()
 

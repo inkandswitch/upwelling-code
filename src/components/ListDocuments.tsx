@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import Documents, { UpwellingDocMetadata }  from '../documents'
+import Documents, { UpwellingDocMetadata }  from '../backend'
 
 let documents = Documents()
 

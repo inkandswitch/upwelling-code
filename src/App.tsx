@@ -2,7 +2,7 @@ import React from 'react'
 import DocumentView from './components/DocumentView'
 import ListDocuments from './components/ListDocuments'
 import NewDocument from './components/NewDocument'
-import Documents, {UpwellingDoc} from './documents/'
+import Documents, {UpwellingDoc} from './backend'
 import { Route, useLocation } from "wouter";
 import { showOpenFilePicker } from 'file-system-access';
 

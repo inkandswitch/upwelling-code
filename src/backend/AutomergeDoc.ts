@@ -1,7 +1,7 @@
 import * as Automerge from 'automerge';
 import { nanoid } from 'nanoid';
 
-export interface DocFields  {
+export type DocFields = {
   root: string 
   id: string 
   text: Automerge.Text
@@ -50,7 +50,7 @@ export class UpwellingDoc {
   }
 
   change(fn: Automerge.ChangeFn<DocFields>) {
-    let newDoc = Automerge.change(this.doc, fn)
+    let newDoc = Automerge.change<DocFields>(this.doc, fn)
     this.doc = newDoc
   }
 

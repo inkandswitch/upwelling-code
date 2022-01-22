@@ -49,6 +49,9 @@
     ]
   },
   "devDependencies": {
-    "@types/simple-peer": "^9.11.3"
+    "@peculiar/webcrypto": "^1.2.3",
+    "@types/simple-peer": "^9.11.3",
+    "fake-indexeddb": "^3.1.7",
+    "web-encoding": "^1.1.5"
   }
 }

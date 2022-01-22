@@ -1,5 +1,5 @@
 import React, { FormEventHandler, useState } from 'react';
-import Documents  from '../documents'
+import Documents  from '../backend'
 import { useLocation } from 'wouter';
 
 let documents = Documents()
