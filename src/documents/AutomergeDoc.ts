@@ -64,17 +64,6 @@ export class UpwellingDoc {
     return new UpwellingDoc(doc, observable)
   }
 
-  static fromString(payload: string): UpwellingDoc {
-    let binary = Uint8Array.from(Buffer.from(payload, 'base64'))
-    return UpwellingDoc.load(binary)
-  }
-
-  toString(): string {
-    let binary = Automerge.save(this.doc)
-    let payload = Buffer.from(binary).toString('base64')
-    return payload
-  }
-
   static create(id: string, title?: string): UpwellingDoc {
     let observable = new Automerge.Observable()
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init<DocFields>('0000'), { time: 0 }, (doc: DocFields) => {

@@ -1,19 +1,16 @@
 import { nanoid } from 'nanoid';
+import { sia, desia } from 'sializer';
 import { UpwellingDoc }  from '.';
-import * as http from '../storage/http'
-
-export interface Storage {
-  setItem: (id: string, binary: string) => void,
-  getItem: (id: string) => string | null,
-  ids: () => string[]
-}
+import AsyncStorage from '../storage'
 
 // Multiple UpwellingDocs that are persisted on disc
 export default class Upwelling {
-  db: Storage 
+  db: AsyncStorage 
+  remote: AsyncStorage 
 
-  constructor(db: Storage) {
+  constructor(db: AsyncStorage, remote: AsyncStorage) {
     this.db = db
+    this.remote = remote
   }
 
   add(binary: Uint8Array) {
@@ -23,32 +20,35 @@ export default class Upwelling {
   }
 
   persist(doc: UpwellingDoc): void {
-    let payload = doc.toString()
     this.setMeta({
       id: doc.id,
       title: doc.title,
     })
-    this.db.setItem(doc.id, payload)
+    this.db.setItem(doc.id, doc.save())
   }
 
   async syncWithServer(doc: UpwellingDoc) {
     try {
-      let theirs = UpwellingDoc.load(await http.getItem(doc.id))
-      doc.sync(theirs)
-      this.persist(doc)
+      let binary = await this.remote.getItem(doc.id)
+      if (binary) {
+        let theirs = UpwellingDoc.load(binary)
+        doc.sync(theirs)
+        this.persist(doc)
+      }
     } catch (err) {
-      console.error(err)
+      console.log('No remote item exists for document with id=', doc.id)
       // this is no big deal. this just means there was no server item 
+      // so we fail gracefully
     }
-    return http.setItem(doc.id, doc.save())
+    return this.remote.setItem(doc.id, doc.save())
   }
 
   async get(id: string): Promise<UpwellingDoc | null> { 
-    let saved = this.db.getItem(id)
-    if (saved) return UpwellingDoc.fromString(saved)
+    let saved = await this.db.getItem(id)
+    if (saved) return UpwellingDoc.load(saved)
     else {
       try {
-        let remote = await http.getItem(id)
+        let remote = await this.remote.getItem(id)
         if (remote) return UpwellingDoc.load(remote)
         else return null
       } catch (err) {
@@ -61,32 +61,33 @@ export default class Upwelling {
     return this.db.getItem(id) !== null
   }
 
-  create(title?: string) : UpwellingDoc {
+  create(title?: string): UpwellingDoc {
     let id = nanoid()
     let document: UpwellingDoc = UpwellingDoc.create(id, title)
     this.persist(document)
     return document
   }
 
-  setMeta(meta: UpwellingDocMetadata) : void {
-    this.db.setItem(`meta-${meta.id}`, UpwellingDocMetadata.serialize(meta))
+  setMeta(meta: UpwellingDocMetadata): Promise<void> {
+    return this.db.setItem(`meta-${meta.id}`, UpwellingDocMetadata.serialize(meta))
   }
 
-  getMeta(id: string) : UpwellingDocMetadata | null {
-    let item = this.db.getItem(`meta-${id}`) as string
+  async getMeta(id: string) : Promise<UpwellingDocMetadata | null> {
+    let item = await this.db.getItem(`meta-${id}`) 
     if (item) {
       return UpwellingDocMetadata.deserialize(item)
     }
     return null
   }
 
-  list(): UpwellingDocMetadata[] {
-    let ids = this.db.ids()
+  async list(): Promise<UpwellingDocMetadata[]> {
+    let ids = await this.db.ids()
     let res: UpwellingDocMetadata[] = []
     ids.forEach(id => {
       if (id.startsWith('meta')) {
-        let value = this.db.getItem(id)
-        if (value) res.push(UpwellingDocMetadata.deserialize(value))
+        this.db.getItem(id).then(value => {
+          if (value) res.push(UpwellingDocMetadata.deserialize(value))
+        })
       }
     })
     return res
@@ -103,12 +104,12 @@ export class UpwellingDocMetadata {
     throw new Error('New instances of this class cannot be created.')
   }
 
-  static deserialize(payload: string): UpwellingDocMetadata {
-    return JSON.parse(payload)
+  static deserialize(payload: Uint8Array): UpwellingDocMetadata {
+    return desia(payload)
   }
 
-  static serialize(meta: UpwellingDocMetadata): string {
-    return JSON.stringify({
+  static serialize(meta: UpwellingDocMetadata): Uint8Array {
+    return sia({
       title: meta.title,
       id: meta.id
     })

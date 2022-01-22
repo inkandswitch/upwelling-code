@@ -1,10 +1,11 @@
-import Upwelling from './Documents'
-import * as storage from '../storage/localStorage'
+import Documents from './Documents'
+import * as local from '../storage/localStorage'
+import * as http from '../storage/http'
 export * from './Documents'
 export * from './AutomergeDoc'
 
-let upwelling = new Upwelling(storage)
+let d = new Documents(local, http)
 
-export default function get () {
-  return upwelling
+export default function init () {
+  return d 
 }

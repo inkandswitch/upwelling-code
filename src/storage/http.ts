@@ -4,6 +4,10 @@ export function getURI(id: string): string {
   return `${BASE}/${id}`
 }
 
+export async function ids(): Promise<string[]> {
+  throw new Error('unimplemented')
+}
+
 export async function getItem (id: string, actorId?: string): Promise<Uint8Array> { 
   const response = await fetch(getURI(id))
   if (response.status !== 200) throw new Error('No saved draft for doc with id=' + id)
@@ -12,14 +16,18 @@ export async function getItem (id: string, actorId?: string): Promise<Uint8Array
   return new Uint8Array(respbuffer)
 }
 
-export async function setItem (id: string, binary: Uint8Array): Promise<Response> {
-  return fetch(getURI(id), {
+export async function setItem (id: string, binary: Uint8Array): Promise<void> {
+  let res = fetch(getURI(id), {
     body: binary,
     method: "post",
     headers: {
       "Content-Type": "application/octet-stream",
     }
   })
+  res.catch(err => {
+    console.error(err)
+  })
+  return
 }
 
 export async function deleteItem(id: string): Promise<Response> {
