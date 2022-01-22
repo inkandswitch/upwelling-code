@@ -1,6 +1,6 @@
 # Upwelling
 
-[Demo](https://sesh-seven.vercel.app/)
+[Demo](https://upwelling.vercel.app/)
 
 ## Run the server (optional)
 
