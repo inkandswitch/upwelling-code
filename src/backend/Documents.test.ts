@@ -51,3 +51,67 @@ it('subscribes to document changes', () => {
   expect(1).toEqual(1)
 })
 
+
+it('saves and loads from a file', async () => {
+  let storage = new memoryStore()
+  let d = new Documents(storage)
+  let e = new Documents(storage)
+
+  let ddoc: UpwellingDoc = d.create('Upwelling: Collaboration Engine')
+  let file = ddoc.save()
+  let edoc = await e.merge(file)
+
+  ddoc.change((doc) => {
+    doc.title = 'Upwelling: Contextual Writing'
+  })
+
+  let binary = ddoc.save()
+  let edocAfterSync = await e.merge(binary)
+  expect(edocAfterSync.title).toEqual(ddoc.title)
+})
+
+
+it('creates named versions', async () => {
+  let storage = new memoryStore()
+  let d = new Documents(storage)
+  let doc = d.create('Upwelling: Local-first Collaborative Writing')
+
+  doc.change((doc: DocFields) => {
+    doc.text.insertAt(0, 'H')
+    doc.text.insertAt(1, 'e')
+    doc.text.insertAt(2, 'l')
+    doc.text.insertAt(3, 'l')
+    doc.text.insertAt(4, 'o')
+  })
+  expect(doc.text).toEqual('Hello')
+
+  let versionName = 'Started typing on the train' 
+  doc.createVersion(versionName)
+  d.persist(doc)
+
+  doc.change((doc: DocFields) => {
+    doc.text.insertAt(0, 'H')
+    doc.text.deleteAt(1)
+    doc.text.insertAt(1, 'o')
+    doc.text.deleteAt(2)
+    doc.text.deleteAt(3)
+    doc.text.insertAt(3, 'a')
+    doc.text.deleteAt(4)
+  })
+  expect(doc.text).toEqual('Hola')
+
+  let versionName2 = 'Translated to spanish'
+  doc.createVersion(versionName2)
+  d.persist(doc)
+
+  expect(doc.version.message).toEqual(versionName2)
+
+  let history = doc.getVersionHistory()
+  expect(history.length).toEqual(3)
+  expect(history[0].version.message).toEqual('Document initialized')
+  expect(history[1].version.message).toEqual(versionName)
+  expect(history[2].version.message).toEqual(versionName2)
+
+  let version2 = await d.get(history[1].version.id)
+  expect(version2?.text).toEqual('Hello')
+})

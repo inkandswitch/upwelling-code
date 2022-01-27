@@ -77,7 +77,9 @@ function DocumentView(props: {doc: UpwellingDoc}) {
       <div id="debug">
         root: {doc.root}
         <br></br>
-        id: {doc.id}
+        id: {doc.version.id}
+        <br></br>
+        message: {doc.version.message}
       </div>
     </div>
   )

@@ -3,7 +3,10 @@ import { nanoid } from 'nanoid';
 
 export type DocFields = {
   root: string 
-  id: string 
+  version: {
+    id: string,
+    message: string
+  },
   text: Automerge.Text
   title: Automerge.Text
 }
@@ -23,8 +26,8 @@ export class UpwellingDoc {
     return this.doc.root
   }
 
-  get id() {
-    return this.doc.id
+  get version () {
+    return this.doc.version
   }
 
   get text () {
@@ -68,7 +71,10 @@ export class UpwellingDoc {
     let observable = new Automerge.Observable()
     let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init<DocFields>('0000'), { time: 0 }, (doc: DocFields) => {
       doc.root = id
-      doc.id = nanoid()
+      doc.version = {
+        id: nanoid(),
+        message: 'Document initialized'
+      }
       doc.title = new Automerge.Text(title || 'Untitled Document')
       doc.text = new Automerge.Text()
     }))
@@ -76,13 +82,27 @@ export class UpwellingDoc {
     return new UpwellingDoc(document, observable)
   }
 
-  fork(): UpwellingDoc {
-    let observable = new Automerge.Observable()
-    let duplicate = Automerge.change(this.doc, (doc: DocFields) => {
-      doc.id = nanoid()
+  getVersionHistory(): DocFields[] {
+    let history = Automerge.getHistory(this.doc)
+    let last = history[0].snapshot
+    let res = [last]
+    for (let i = 1; i < history.length; i++) {
+      let snapshot = history[i].snapshot
+      if (snapshot.version.id !== last.version.id) {
+        res.push(snapshot)
+      }
+      last = snapshot
+    }
+    return res
+  }
+
+  createVersion(message: string): void {
+    this.change((doc: DocFields) => {
+      doc.version = {
+        id: nanoid(),
+        message
+      }
     })
-    let doc = Automerge.clone(duplicate, { observable })
-    return new UpwellingDoc(doc, observable)
   }
 
   sync(theirs: UpwellingDoc) {
