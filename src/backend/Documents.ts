@@ -13,8 +13,7 @@ export default class Documents {
     this.remote = remote
   }
 
-
-  async merge(binary: Uint8Array): Promise<UpwellingDoc> {
+  async add(binary: Uint8Array): Promise<UpwellingDoc> {
     let opened = UpwellingDoc.load(binary)
     let existing = await this.get(opened.root)
     if (existing) {

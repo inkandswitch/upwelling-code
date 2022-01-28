@@ -21,7 +21,7 @@ export default function App() {
     let binary: Uint8Array = await open()
     // this is a hack for demos as of December 21, we probably want to do something
     // totally different
-    let doc = await documents.merge(binary)
+    let doc = await documents.add(binary)
     window.location.href = '/doc/' + doc.version.id
   }
 

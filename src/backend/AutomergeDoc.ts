@@ -11,6 +11,10 @@ export type DocFields = {
   title: Automerge.Text
 }
 
+export type ChangeOptions = {
+  author: string
+}
+
 export type Subscriber = (doc: DocFields) => void 
 
 export class UpwellingDoc {
@@ -52,8 +56,9 @@ export class UpwellingDoc {
     })
   }
 
-  change(fn: Automerge.ChangeFn<DocFields>) {
-    let newDoc = Automerge.change<DocFields>(this.doc, fn)
+  change(fn: Automerge.ChangeFn<DocFields>, opts?: ChangeOptions): void {
+    let message = JSON.stringify(opts)
+    let newDoc = Automerge.change<DocFields>(this.doc, message, fn)
     this.doc = newDoc
   }
 
@@ -96,13 +101,14 @@ export class UpwellingDoc {
     return res
   }
 
-  createVersion(message: string): void {
-    this.change((doc: DocFields) => {
+  createVersion(message: string, opts?: ChangeOptions): void {
+    let changeFn = (doc: DocFields) => {
       doc.version = {
         id: nanoid(),
         message
       }
-    })
+    }
+    return this.change(changeFn, opts)
   }
 
   sync(theirs: UpwellingDoc) {
