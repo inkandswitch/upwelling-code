@@ -1,4 +1,5 @@
-import * as Automerge from 'automerge';
+import { Doc } from 'automerge';
+import * as Automerge from 'automerge-wasm';
 import { nanoid } from 'nanoid';
 
 export type DocFields = {
@@ -7,8 +8,8 @@ export type DocFields = {
     id: string,
     message: string
   },
-  text: Automerge.Text
-  title: Automerge.Text
+  text: string
+  title: string
 }
 
 export type ChangeOptions = {
@@ -18,32 +19,33 @@ export type ChangeOptions = {
 export type Subscriber = (doc: DocFields) => void 
 
 export class UpwellingDoc {
-  doc: Automerge.Doc<DocFields>
-  observer: Automerge.Observable
+  doc: Automerge.Automerge
+  observer?: Subscriber 
+  _root: string = '_root'
 
-  constructor(doc: Automerge.Doc<DocFields>, observer: Automerge.Observable) {
+  constructor(doc: Automerge.Automerge) {
     this.doc = doc
-    this.observer = observer
   }
 
   get root () {
-    return this.doc.root
+    return this.doc.value(this._root, 'root')
   }
 
   get version () {
-    return this.doc.version
+    return this.doc.value(this._root, 'version')
   }
 
   get text () {
-    return this.doc.text.toString()
+    return this.doc.text('text')
   }
 
   get title () {
-    return this.doc.title.toString()
+    return this.doc.value(this._root, 'title') 
   }
 
   view() {
     return {
+      version: this.version,
       root: this.root,
       text: this.text,
       title: this.title
@@ -51,44 +53,42 @@ export class UpwellingDoc {
   }
 
   subscribe(onChange: Subscriber) {
-    this.observer.observe(this.doc, (diff, before, after, local, changes) => {
-      onChange(after)
-    })
+    this.observer = onChange
   }
 
-  change(fn: Automerge.ChangeFn<DocFields>, opts?: ChangeOptions): void {
-    let message = JSON.stringify(opts)
-    let newDoc = Automerge.change<DocFields>(this.doc, message, fn)
-    this.doc = newDoc
+  setTitle(value: string) {
+    this.doc.set(this._root, 'title', value, 'string')
+  }
+
+  insertAt(position: number, value: string) {
+    this.doc.splice('text', position, 0, value)
   }
 
   save (): Uint8Array {
-    return Automerge.save(this.doc)
+    return this.doc.save()
   }
 
   static load(binary: Uint8Array): UpwellingDoc {
-    let observable = new Automerge.Observable()
-    let doc = Automerge.load<DocFields>(binary as Automerge.BinaryDocument, {observable})
-    return new UpwellingDoc(doc, observable)
+    let doc = Automerge.loadDoc(binary)
+    return new UpwellingDoc(doc)
   }
 
   static create(id: string, title?: string): UpwellingDoc {
-    let observable = new Automerge.Observable()
-    let initialChange = Automerge.getLastLocalChange(Automerge.change(Automerge.init<DocFields>('0000'), { time: 0 }, (doc: DocFields) => {
-      doc.root = id
-      doc.version = {
-        id: nanoid(),
-        message: 'Document initialized'
-      }
-      doc.title = new Automerge.Text(title || 'Untitled Document')
-      doc.text = new Automerge.Text()
-    }))
-    let [ document , ]= Automerge.applyChanges<DocFields>(Automerge.init({observable}), [initialChange])
-    return new UpwellingDoc(document, observable)
+    let doc = Automerge.create()
+    let ROOT = '_root'
+    doc.set(ROOT, 'id', id)
+    doc.set(ROOT, 'version', {
+      id: nanoid(),
+      message: 'Document initialized'
+    })
+    doc.set(ROOT, 'title', Automerge.TEXT)
+    doc.set(ROOT, 'text', Automerge.TEXT)
+    return new UpwellingDoc(doc)
   }
 
+  /*
   getVersionHistory(): DocFields[] {
-    let history = Automerge.getHistory(this.doc)
+    let history = this.doc.getChanges()
     let last = history[0].snapshot
     let res = [last]
     for (let i = 1; i < history.length; i++) {
@@ -100,21 +100,17 @@ export class UpwellingDoc {
     }
     return res
   }
+  */
 
-  createVersion(message: string, opts?: ChangeOptions): void {
-    let changeFn = (doc: DocFields) => {
-      doc.version = {
-        id: nanoid(),
-        message
-      }
-    }
-    return this.change(changeFn, opts)
+  createVersion(message: string): void {
+    this.doc.set(this._root, 'version', {
+      id: nanoid(),
+      message
+    })
   }
 
   sync(theirs: UpwellingDoc) {
-    let changes = Automerge.getAllChanges(theirs.doc)
-    let [newDoc, patch] = Automerge.applyChanges(this.doc, changes)
-    this.doc = newDoc
-    return patch
+    let changes = theirs.doc.getChanges(this.doc.getHeads())
+    this.doc.applyChanges(changes)
   }
 }

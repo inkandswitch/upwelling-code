@@ -12,6 +12,7 @@
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "automerge": "^1.0.1-preview.6",
+    "automerge-wasm": "file:../automerge-rs/automerge-wasm/automerge-wasm-v0.1.0.tgz",
     "file-system-access": "^1.0.2",
     "nanoid": "^3.1.30",
     "react": "^17.0.2",
