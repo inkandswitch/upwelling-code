@@ -19,22 +19,10 @@ export default function App() {
 
   let onOpenClick = async () => {
     let binary: Uint8Array = await open()
-
-    let opened = UpwellingDoc.load(binary)
-    let existing = await documents.get(opened.root)
-    if (existing) {
-      // we know about this document already.
-      // merge this document with our existing document
-      opened.sync(existing)
-      documents.persist(opened)
-      window.location.href = '/doc/' + opened.id
-    } else {
-      // we don't know about this document yet
-      // always make a fork 
-      let duplicate = opened.fork()
-      documents.persist(duplicate)
-      window.location.href = '/doc/' + duplicate.id
-    }
+    // this is a hack for demos as of December 21, we probably want to do something
+    // totally different
+    let doc = await documents.add(binary)
+    window.location.href = '/doc/' + doc.version.id
   }
 
   let onNewClick = () => {

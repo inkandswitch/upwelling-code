@@ -21,7 +21,7 @@ export function ListDocuments({ list }: Props) {
   return <div>
     <ul>
       {list.map((value: UpwellingDocMetadata) => {
-        return <li><a href={`/doc/${value.id}`}>{value.title}</a></li>
+        return <li><a href={`/doc/${value.version.id}`}>{value.title}</a></li>
       })}
     </ul>
   </div>
