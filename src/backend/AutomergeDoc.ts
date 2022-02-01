@@ -12,7 +12,7 @@ export type Subscriber = (doc: UpwellingDoc) => void
 
 export class UpwellingDoc {
   doc: Automerge.Automerge
-  heads: Heads = []
+  heads?: Heads;
   textObj?: Automerge.ObjID 
   subscriber?: Subscriber 
 
@@ -66,7 +66,7 @@ export class UpwellingDoc {
   }
 
   checkout(heads?: Heads) {
-    this.heads = heads || []
+    this.heads = heads
   }
 
   view() {
