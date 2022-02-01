@@ -89,11 +89,10 @@ export default function MaybeDocumentView({
   let [doc, setState] = React.useState<UpwellingDoc | null>(null)
 
   useEffect(() => {
+    // FIXME: what if the id isn't a real one (and just junk?) 
+    // Make sure to handle errors gracefully (either redirect to list or just make a new document)
     documents.get(id).then(doc => {
-      if (doc) setState(doc)
-      else {
-        doc = UpwellingDoc.create(id)
-      }
+      setState(doc)
     }).catch(err => {
       console.error('got error', err)
 
