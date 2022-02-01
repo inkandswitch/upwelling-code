@@ -23,7 +23,7 @@ export default class Documents {
       this.persist(opened)
       return opened
     }  else {
-      opened.createVersion('Copied')
+      opened.createVersion('Copied', 'Anonymous Elephant')
       this.persist(opened)
       return opened
     }
@@ -31,27 +31,28 @@ export default class Documents {
 
   persist(doc: UpwellingDoc): void {
     this.setMeta({
-      version: doc.version,
+      id: doc.id,
+      message: doc.message,
       title: doc.title,
     })
-    this.db.setItem(doc.version.id, doc.save())
+    this.db.setItem(doc.id, doc.save())
   }
 
   async syncWithServer(doc: UpwellingDoc) {
     if (!this.remote) throw new Error('Server not configured. Must supply remote to constructor.')
     try {
-      let binary = await this.remote.getItem(doc.version.id)
+      let binary = await this.remote.getItem(doc.id)
       if (binary) {
         let theirs = UpwellingDoc.load(binary)
         doc.sync(theirs)
         this.persist(doc)
       }
     } catch (err) {
-      console.log('No remote item exists for document with id=', doc.version.id)
+      console.log('No remote item exists for document with id=', doc.id)
       // this is no big deal. this just means there was no server item 
       // so we fail gracefully
     }
-    return this.remote.setItem(doc.version.id, doc.save())
+    return this.remote.setItem(doc.id, doc.save())
   }
 
   async get(id: string): Promise<UpwellingDoc | null> { 
@@ -73,15 +74,15 @@ export default class Documents {
     return this.db.getItem(id) !== null
   }
 
-  create(title?: string): UpwellingDoc {
+  create(): UpwellingDoc {
     let id = nanoid()
-    let document: UpwellingDoc = UpwellingDoc.create(id, title)
+    let document: UpwellingDoc = UpwellingDoc.create(id)
     this.persist(document)
     return document
   }
 
   setMeta(meta: UpwellingDocMetadata): Promise<void> {
-    return this.db.setItem(`meta-${meta.version.id}`, UpwellingDocMetadata.serialize(meta))
+    return this.db.setItem(`meta-${meta.id}`, UpwellingDocMetadata.serialize(meta))
   }
 
   async getMeta(id: string) : Promise<UpwellingDocMetadata | null> {
@@ -108,16 +109,13 @@ export default class Documents {
 
 export class UpwellingDocMetadata {
   title: string
-  version: {
-    id: string,
-    message: string
-  }
+  id: string
+  message: string
 
   constructor(title: string, id: string, message: string) {
     this.title = title
-    this.version = {
-      id, message
-    }
+    this.id = id
+    this.message = message
     throw new Error('New instances of this class cannot be created.')
   }
 
@@ -128,7 +126,8 @@ export class UpwellingDocMetadata {
   static serialize(meta: UpwellingDocMetadata): Uint8Array {
     return sia({
       title: meta.title,
-      version: meta.version
+      id: meta.id,
+      message: meta.message
     })
   }
 }

@@ -37,23 +37,21 @@ function DocumentView(props: {doc: UpwellingDoc}) {
   function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>, key: string) {
     e.preventDefault()
     setStatus(SYNC_STATE.LOADING)
-    doc.change((doc) => {
-      // @ts-ignore
-      switch (e.nativeEvent.inputType) {
-        case 'insertText':
-          //@ts-ignore
-          doc[key].insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
-          break;
-        case 'deleteContentBackward':
-          //@ts-ignore
-          doc[key].deleteAt(e.target.selectionEnd)
-          break;
-        case 'insertLineBreak':
-          //@ts-ignore
-          doc[key].insertAt(e.target.selectionEnd - 1, '\n')
-          break;
-      }
-    })
+    // @ts-ignore
+    switch (e.nativeEvent.inputType) {
+      case 'insertText':
+        //@ts-ignore
+        doc.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
+        break;
+      case 'deleteContentBackward':
+        //@ts-ignore
+        doc.deleteAt(e.target.selectionEnd)
+        break;
+      case 'insertLineBreak':
+        //@ts-ignore
+        doc.insertAt(e.target.selectionEnd - 1, '\n')
+        break;
+    }
     setState(doc.view())
     documents.persist(doc)
     setStatus(SYNC_STATE.SYNCED)
@@ -77,9 +75,9 @@ function DocumentView(props: {doc: UpwellingDoc}) {
       <div id="debug">
         root: {doc.root}
         <br></br>
-        id: {doc.version.id}
+        id: {doc.id}
         <br></br>
-        message: {doc.version.message}
+        message: {doc.message}
       </div>
     </div>
   )
@@ -96,6 +94,9 @@ export default function MaybeDocumentView({
       else {
         doc = UpwellingDoc.create(id)
       }
+    }).catch(err => {
+      console.error('got error', err)
+
     })
   }, [id])
 

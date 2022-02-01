@@ -1,6 +1,7 @@
-import { Doc } from 'automerge';
-import * as Automerge from 'automerge-wasm';
 import { nanoid } from 'nanoid';
+import * as Automerge from 'automerge-wasm';
+
+const ROOT = '_root'
 
 export type DocFields = {
   root: string 
@@ -16,52 +17,92 @@ export type ChangeOptions = {
   author: string
 }
 
+export type Heads = string[];
+
 export type Subscriber = (doc: DocFields) => void 
 
 export class UpwellingDoc {
   doc: Automerge.Automerge
-  observer?: Subscriber 
-  _root: string = '_root'
+  heads: Automerge.Heads = []
+  textObj?: Automerge.ObjID 
+  subscriber?: Subscriber 
 
   constructor(doc: Automerge.Automerge) {
     this.doc = doc
+    let value = this.doc.value(ROOT, 'text')
+    if (value && value[0] === 'text') {
+      this.textObj = value[1]
+    } 
   }
 
   get root () {
-    return this.doc.value(this._root, 'root')
+    return this.doc.value(ROOT, 'root')![1] as string;
   }
 
-  get version () {
-    return this.doc.value(this._root, 'version')
+  set root (value: string) {
+    this.doc.set(ROOT, 'root', value)
+  }
+
+  get id (): string {
+    return this.doc.value(ROOT, 'id')![1] as string;
+  }
+
+  set id (value: string) {
+    this.doc.set(ROOT, 'id', value)
+  }
+
+  get message (): string {
+    return this.doc.value(ROOT, 'message')![1] as string;
+  }
+
+  set message(value: string) {
+    this.doc.set(ROOT, 'message', value)
   }
 
   get text () {
-    return this.doc.text('text')
+    if (this.textObj) return this.doc.text(this.textObj)
+    else return ''
   }
 
-  get title () {
-    return this.doc.value(this._root, 'title') 
+  get title (): string {
+    return this.doc.value(ROOT, 'title')![1] as string
+  }
+
+  set title(value: string) {
+    this.doc.set(ROOT, 'title', value, 'str')
+  }
+
+  checkout(heads: Automerge.Heads) {
+    this.heads = heads
   }
 
   view() {
     return {
-      version: this.version,
+      id: this.id,
+      message: this.message,
       root: this.root,
       text: this.text,
       title: this.title
     }
   }
 
-  subscribe(onChange: Subscriber) {
-    this.observer = onChange
-  }
-
-  setTitle(value: string) {
-    this.doc.set(this._root, 'title', value, 'string')
+  subscribe(subscriber: Subscriber) {
+    this.subscriber = subscriber  
   }
 
   insertAt(position: number, value: string) {
-    this.doc.splice('text', position, 0, value)
+    if (!this.textObj) throw new Error('Text field not properly initialized')
+    this.doc.splice(this.textObj, position, 0, value)
+  }
+
+  deleteAt(position: number) {
+    if (!this.textObj) throw new Error('Text field not properly initialized')
+    this.doc.splice(this.textObj, position, 1, '')
+  }
+
+  mark(range: string, value: Automerge.Value) {
+    if (!this.textObj) throw new Error('Text field not properly initialized')
+    this.doc.mark(ROOT, this.textObj, range, value)
   }
 
   save (): Uint8Array {
@@ -73,15 +114,13 @@ export class UpwellingDoc {
     return new UpwellingDoc(doc)
   }
 
-  static create(id: string, title?: string): UpwellingDoc {
+  static create(id: string): UpwellingDoc {
     let doc = Automerge.create()
-    let ROOT = '_root'
-    doc.set(ROOT, 'id', id)
-    doc.set(ROOT, 'version', {
-      id: nanoid(),
-      message: 'Document initialized'
-    })
-    doc.set(ROOT, 'title', Automerge.TEXT)
+    doc.set(ROOT, 'root', id)
+    doc.set(ROOT, 'id', nanoid())
+    doc.set(ROOT, 'message', 'Document initialized')
+    doc.set(ROOT, 'author', 'Unknown')
+    doc.set(ROOT, 'title', 'Untitled Document')
     doc.set(ROOT, 'text', Automerge.TEXT)
     return new UpwellingDoc(doc)
   }
@@ -102,11 +141,12 @@ export class UpwellingDoc {
   }
   */
 
-  createVersion(message: string): void {
-    this.doc.set(this._root, 'version', {
-      id: nanoid(),
-      message
-    })
+  createVersion(message: string, author: string): Heads {
+    this.doc.set(ROOT, 'id', nanoid())
+    this.doc.set(ROOT, 'message', message)
+    this.doc.set(ROOT, 'author', author)
+    let metadata = JSON.stringify({ message, author } )
+    return this.doc.commit(metadata)
   }
 
   sync(theirs: UpwellingDoc) {

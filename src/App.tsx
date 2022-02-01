@@ -1,8 +1,7 @@
 import React from 'react'
 import DocumentView from './components/DocumentView'
 import ListDocuments from './components/ListDocuments'
-import NewDocument from './components/NewDocument'
-import Documents, {UpwellingDoc} from './backend'
+import Documents from './backend'
 import { Route, useLocation } from "wouter";
 import { showOpenFilePicker } from 'file-system-access';
 
@@ -22,11 +21,12 @@ export default function App() {
     // this is a hack for demos as of December 21, we probably want to do something
     // totally different
     let doc = await documents.add(binary)
-    window.location.href = '/doc/' + doc.version.id
+    window.location.href = '/doc/' + doc.id
   }
 
   let onNewClick = () => {
-    setLocation('/new')
+    let document = documents.create()
+    setLocation(`/doc/${document.id}`)
   }
 
   let onListClick = () => {
@@ -35,12 +35,11 @@ export default function App() {
 
   return <div>
     <button onClick={onListClick}>List</button>
-    {location !== '/new' && <button onClick={onNewClick}>New</button>}
+    <button onClick={onNewClick}>New</button>
     <button onClick={onOpenClick}>Open</button>
     <Route path="/doc/:id">
       {(params) => <DocumentView id={params.id} />}
     </Route>
     <Route path="/" component={ListDocuments}>  </Route>
-    <Route path="/new" component={NewDocument}>  </Route>
   </div>
 }
