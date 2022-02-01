@@ -6,14 +6,13 @@ const ROOT = '_root'
 export type ChangeOptions = {
   author: string
 }
-
 export type Heads = string[];
 
 export type Subscriber = (doc: UpwellingDoc) => void 
 
 export class UpwellingDoc {
   doc: Automerge.Automerge
-  heads: Automerge.Heads = []
+  heads: Heads = []
   textObj?: Automerge.ObjID 
   subscriber?: Subscriber 
 
@@ -66,7 +65,7 @@ export class UpwellingDoc {
     this.doc.set(ROOT, 'title', value, 'str')
   }
 
-  checkout(heads?: Automerge.Heads) {
+  checkout(heads?: Heads) {
     this.heads = heads || []
   }
 
