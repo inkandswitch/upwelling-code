@@ -25,8 +25,12 @@ export class UpwellingDoc {
     } 
   }
 
+  private _getValue(prop: string) {
+    return this.doc.value(ROOT, prop, this.heads)![1]
+  }
+
   get root () {
-    return this.doc.value(ROOT, 'root')![1] as string;
+    return this._getValue('root') as string;
   }
 
   set root (value: string) {
@@ -34,7 +38,7 @@ export class UpwellingDoc {
   }
 
   get id (): string {
-    return this.doc.value(ROOT, 'id')![1] as string;
+    return this._getValue('id') as string;
   }
 
   set id (value: string) {
@@ -42,7 +46,7 @@ export class UpwellingDoc {
   }
 
   get message (): string {
-    return this.doc.value(ROOT, 'message')![1] as string;
+    return this._getValue('message') as string;
   }
 
   set message(value: string) {
@@ -50,20 +54,20 @@ export class UpwellingDoc {
   }
 
   get text () {
-    if (this.textObj) return this.doc.text(this.textObj)
+    if (this.textObj) return this.doc.text(this.textObj, this.heads)
     else return ''
   }
 
   get title (): string {
-    return this.doc.value(ROOT, 'title')![1] as string
+    return this._getValue('title') as string;
   }
 
   set title(value: string) {
     this.doc.set(ROOT, 'title', value, 'str')
   }
 
-  checkout(heads: Automerge.Heads) {
-    this.heads = heads
+  checkout(heads?: Automerge.Heads) {
+    this.heads = heads || []
   }
 
   view() {
