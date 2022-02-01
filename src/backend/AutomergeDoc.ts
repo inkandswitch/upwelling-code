@@ -3,23 +3,13 @@ import * as Automerge from 'automerge-wasm';
 
 const ROOT = '_root'
 
-export type DocFields = {
-  root: string 
-  version: {
-    id: string,
-    message: string
-  },
-  text: string
-  title: string
-}
-
 export type ChangeOptions = {
   author: string
 }
 
 export type Heads = string[];
 
-export type Subscriber = (doc: DocFields) => void 
+export type Subscriber = (doc: UpwellingDoc) => void 
 
 export class UpwellingDoc {
   doc: Automerge.Automerge

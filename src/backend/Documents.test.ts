@@ -1,5 +1,5 @@
 import Documents from './Documents'
-import { DocFields, UpwellingDoc } from './AutomergeDoc';
+import { UpwellingDoc } from './AutomergeDoc';
 
 class memoryStore {
   store = new Map<string, Uint8Array>()
@@ -24,25 +24,27 @@ it('subscribes to document changes', () => {
   let doc: UpwellingDoc = d.create()
 
   let times = 0
-  doc.subscribe((doc: DocFields) => {
+  doc.subscribe((doc: UpwellingDoc) => {
     times++
-    if (times === 1) expect(doc.text.toString()).toEqual('Hello')
-    if (times === 2) expect(doc.text.toString()).toEqual('Hola')
+    if (times === 1) expect(doc.text).toEqual('Hello')
+    if (times === 2) expect(doc.text).toEqual('Hola')
   })
 
-    doc.insertAt(0, 'H')
-    doc.insertAt(1, 'e')
-    doc.insertAt(2, 'l')
-    doc.insertAt(3, 'l')
-    doc.insertAt(4, 'o')
+  doc.insertAt(0, 'H')
+  doc.insertAt(1, 'e')
+  doc.insertAt(2, 'l')
+  doc.insertAt(3, 'l')
+  doc.insertAt(4, 'o')
+  doc.createVersion('Added hello', 'john')
 
-    doc.insertAt(0, 'H')
-    doc.deleteAt(1)
-    doc.insertAt(1, 'o')
-    doc.deleteAt(2)
-    doc.deleteAt(3)
-    doc.insertAt(3, 'a')
-    doc.deleteAt(4)
+  doc.insertAt(0, 'H')
+  doc.deleteAt(1)
+  doc.insertAt(1, 'o')
+  doc.deleteAt(2)
+  doc.deleteAt(3)
+  doc.insertAt(3, 'a')
+  doc.deleteAt(4)
+  doc.createVersion('Translated to Spanish', 'jose')
 
   expect(1).toEqual(1)
 })
