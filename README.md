@@ -30,7 +30,7 @@ nvm alias default 16
 ```
 git submodule update --init
 cd automerge-rs/automerge-wasm
-yarn && yarn build 
+yarn && yarn pkg 
 cd ../..
 ```
 
