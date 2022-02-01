@@ -1,5 +1,5 @@
-import Documents from './Documents'
-import { UpwellingDoc } from './AutomergeDoc';
+import Documents from './Upwell'
+import { UpwellingDoc } from './UpwellDoc';
 
 class memoryStore {
   store = new Map<string, Uint8Array>()

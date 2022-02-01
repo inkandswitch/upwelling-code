@@ -1,11 +1,11 @@
 import React from 'react'
 import DocumentView from './components/DocumentView'
 import ListDocuments from './components/ListDocuments'
-import Documents from './backend'
+import Upwell from './backend'
 import { Route, useLocation } from "wouter";
 import { showOpenFilePicker } from 'file-system-access';
 
-let documents = Documents()
+let documents = Upwell()
 
 async function open (): Promise<Uint8Array> {
   let [fileHandle] = await showOpenFilePicker()

@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid';
+import { sia, desia } from 'sializer';
 import * as Automerge from 'automerge-wasm';
 
 const ROOT = '_root'
@@ -28,12 +29,22 @@ export class UpwellingDoc {
     return this.doc.value(ROOT, prop, this.heads)![1]
   }
 
-  get root () {
-    return this._getValue('root') as string;
+  get version () {
+    return this._getValue('version') as string;
   }
 
-  set root (value: string) {
-    this.doc.set(ROOT, 'root', value)
+  get meta() {
+    return {
+      version: this.version,
+      id: this.id,
+      author: this.author,
+      message: this.message,
+      title: this.title,
+    }
+  }
+
+  set version (value: string) {
+    this.doc.set(ROOT, 'version', value)
   }
 
   get id (): string {
@@ -57,6 +68,11 @@ export class UpwellingDoc {
     else return ''
   }
 
+  get author(): string {
+    return this._getValue('author') as string
+
+  }
+
   get title (): string {
     return this._getValue('title') as string;
   }
@@ -69,11 +85,12 @@ export class UpwellingDoc {
     this.heads = heads
   }
 
-  view() {
+  toJSON() : UpwellingDocMetadata {
     return {
       id: this.id,
       message: this.message,
-      root: this.root,
+      author: this.author,
+      version: this.version,
       text: this.text,
       title: this.title
     }
@@ -109,8 +126,8 @@ export class UpwellingDoc {
 
   static create(id: string): UpwellingDoc {
     let doc = Automerge.create()
-    doc.set(ROOT, 'root', id)
-    doc.set(ROOT, 'id', nanoid())
+    doc.set(ROOT, 'id', id)
+    doc.set(ROOT, 'version', nanoid())
     doc.set(ROOT, 'message', 'Document initialized')
     doc.set(ROOT, 'author', 'Unknown')
     doc.set(ROOT, 'title', 'Untitled Document')
@@ -135,7 +152,7 @@ export class UpwellingDoc {
   */
 
   createVersion(message: string, author: string): Heads {
-    this.doc.set(ROOT, 'id', nanoid())
+    this.doc.set(ROOT, 'version', nanoid())
     this.doc.set(ROOT, 'message', message)
     this.doc.set(ROOT, 'author', author)
     let metadata = JSON.stringify({ message, author } )
@@ -145,5 +162,32 @@ export class UpwellingDoc {
   sync(theirs: UpwellingDoc) {
     let changes = theirs.doc.getChanges(this.doc.getHeads())
     this.doc.applyChanges(changes)
+  }
+}
+
+export class UpwellingDocMetadata {
+  title: string
+  id: string
+  author: string
+  text?: string
+  message: string
+  version: string
+
+  constructor() {
+    throw new Error('New instances of this class should not be created. Use static methods.')
+  }
+
+  static deserialize(payload: Uint8Array): UpwellingDocMetadata {
+    return desia(payload)
+  }
+
+  static serialize(meta: UpwellingDocMetadata): Uint8Array {
+    return sia({
+      version: meta.version,
+      title: meta.title,
+      id: meta.id,
+      message: meta.message,
+      author: meta.author
+    })
   }
 }

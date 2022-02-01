@@ -1,10 +1,9 @@
 import { nanoid } from 'nanoid';
-import { sia, desia } from 'sializer';
-import { UpwellingDoc } from './AutomergeDoc';
+import { UpwellingDoc, UpwellingDocMetadata  } from './UpwellDoc';
 import AsyncStorage from './storage'
 
-// Multiple UpwellingDocs that are persisted on disc
-export default class Documents {
+// An Upwell that is persisted on disk
+export default class Upwell {
   db: AsyncStorage 
   remote: AsyncStorage | undefined
 
@@ -13,9 +12,14 @@ export default class Documents {
     this.remote = remote
   }
 
+  async getRelatedDocuments(doc: UpwellingDoc): Promise<UpwellingDocMetadata[]> {
+    // Get all documents with the same root id
+    return (await this.list()).filter(meta => meta.id === doc.id)
+  }
+
   async add(binary: Uint8Array): Promise<UpwellingDoc> {
     let opened = UpwellingDoc.load(binary)
-    let existing = await this.get(opened.root)
+    let existing = await this.get(opened.id)
     if (existing) {
       // we know about this document already.
       // merge this document with our existing document
@@ -30,11 +34,7 @@ export default class Documents {
   }
 
   persist(doc: UpwellingDoc): void {
-    this.setMeta({
-      id: doc.id,
-      message: doc.message,
-      title: doc.title,
-    })
+    this.setMeta(doc.meta)
     this.db.setItem(doc.id, doc.save())
   }
 
@@ -104,30 +104,5 @@ export default class Documents {
       }
     })
     return res
-  }
-}
-
-export class UpwellingDocMetadata {
-  title: string
-  id: string
-  message: string
-
-  constructor(title: string, id: string, message: string) {
-    this.title = title
-    this.id = id
-    this.message = message
-    throw new Error('New instances of this class cannot be created.')
-  }
-
-  static deserialize(payload: Uint8Array): UpwellingDocMetadata {
-    return desia(payload)
-  }
-
-  static serialize(meta: UpwellingDocMetadata): Uint8Array {
-    return sia({
-      title: meta.title,
-      id: meta.id,
-      message: meta.message
-    })
   }
 }

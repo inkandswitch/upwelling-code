@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import Documents, { UpwellingDocMetadata }  from '../backend'
+import Upwell, { UpwellingDocMetadata }  from '../backend'
 
-let documents = Documents()
+let documents = Upwell()
 
 type Props = {
   list: UpwellingDocMetadata[]

@@ -1,11 +1,11 @@
-import Documents from './Documents'
+import Upwell from './Upwell'
 import * as local from './storage/localStorage'
 import * as http from './storage/http'
-export * from './Documents'
-export * from './AutomergeDoc'
+export * from './Upwell'
+export * from './UpwellDoc'
 
-let d = new Documents(local, http)
+let upwell = new Upwell (local, http)
 
 export default function init () {
-  return d 
+  return upwell
 }
