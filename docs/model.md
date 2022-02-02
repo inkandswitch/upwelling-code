@@ -9,23 +9,61 @@ An upwell is a file format that contains multiple versions of unmerged UpwellDoc
 An upwell is a tar file that contains multiple files. One is special, called 'metadata'. Each file will have:
 
 | filename | type | description
-| --- | type |--- | 
-| metadata.automerge | UpwellIndex | An automerge document of indexable metadata 
-|{version_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
-
-## UpwellIndex
-
-The UpwellIndex is an automerge document that contains an index of the information you need to know before opening any particular version. It adds context to the collection of documents that otherwise couldn't be captured in a single document. 
-
-UpwellIndex has the following properties:
-
-| prop | type | description
 | --- | --- | --- | 
-| upwell_id | nanoid  | A unique identifier for the upwell
-| authors | Map<author_id, string> | A map of author_id to author name. 
-| documents | Array<version_id> | A list of version_ids that are part of this Upwell
+| {version_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
+| root.txt | string | deadbeef
+| upwell.automerge | nanoid | A text file with the upwell id in it
+| authors.automerge | Author | A file with the author
 
-## UpwellDoc
+
+### Checking out older commits in a version 
+
+
+Version
+ -> Array<Change>
+    -> Change (message, ops)
+
+
+```js
+doc.title = 'le papier' // change (message = null)
+let prev = doc.commit('translated to french') // change (message = 'translated to french')
+
+doc.insertAt(3, 'l') // starts a new transaction
+
+
+doc.insertAt(0, 'H')// change (message = null)
+doc.insertAt(1, 'e')// change (message = null)
+doc.title = 'le papier!' // change (message = null)
+let next = doc.commit('got feedback from a native french speaker')  // change (message = 'got feedback ...')
+//transaction closed
+
+
+
+doc.history.push(heads)
+
+let oldTitle = doc.value('title', prev)
+// oldTitle === le papier
+
+// What we want from automerge that doesn't exist
+doc.getAllChanges().filter(doc => doc.message !== null) 
+-> 2 changes
+
+
+```
+
+
+### Files
+#### upwell.automerge
+
+The Upwell is an Automerge document that contains an index of the information you need to know about all of the information in this Upwell. It has the following properties:
+
+| prop | type | description 
+| --- | --- | --- 
+| id | string | The id of this upwell
+| title | string | The title of this upwell
+| authors | Map<author_id, Map> | A map of author_id to author metadta (e.g., { name: string, email: string }). 
+
+#### {version_id}.automerge
 
 A document is an encapsulated class around an Automerge document. Each UpwellDoc also is assigned a version id which is unique to the document.
 
@@ -33,11 +71,9 @@ UpwellDoc has the following properties:
 
 | prop | type | description
 | --- | --- | --- | 
-| text | string | A growable array CRDT that implements the Peritext algorithm.
-| title | string | A human-readable title of the document.
-| meta | Map<string, string> | A representation of the UpwellDocMetadata
-
-## UpwellDocMetadata
+| text | Automerge.TEXT | A growable array CRDT that implements the Peritext algorithm.
+| title | Automerge.TEXT | A human-readable title of the document.
+| meta | UpwellDocMetadata | A representation of the UpwellDocMetadata
 
 UpwellDocMetadata has the following properties:
 
@@ -49,7 +85,5 @@ UpwellDocMetadata has the following properties:
 | message | string | A human-readable message to describe the version.
 
 #### Notes
-
-The author is currently a string. In general, an author could be more complicated. For now, punting on making decisions on this until we have more insight into how an "author" will behave in the system.
 
 This architecture prevents us from leaking any Automerge calls to the React frontend, which enables frontend and backend teams to iterate in parallel. It also helps us create a test suite and improve the reliability of the system which is crucial for making sure demos go hopefully slightly better than average :)

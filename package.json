@@ -36,6 +36,11 @@
       "react-app/jest"
     ]
   },
+  "jest": {
+    "transform": {
+      "^.+\\.[t|j]sx?$": "babel-jest"
+    }
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -53,6 +58,7 @@
     "@types/react": "^17.0.38",
     "@types/react-dom": "^17.0.11",
     "@types/simple-peer": "^9.11.3",
+    "babel-jest": "^27.4.6",
     "fake-indexeddb": "^3.1.7",
     "web-encoding": "^1.1.5"
   }
