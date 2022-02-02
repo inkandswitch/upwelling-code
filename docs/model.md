@@ -1,5 +1,7 @@
 # Data Model
 
+![upwell](upwell-v0.drawio.png)
+
 ## Upwell 
 
 An upwell is a file format that contains multiple versions of unmerged UpwellDocs. Each upwell has an id that can be used to identify it uniquely in a URL or other database. 
@@ -51,4 +53,3 @@ UpwellDocMetadata has the following properties:
 The author is currently a string. In general, an author could be more complicated. For now, punting on making decisions on this until we have more insight into how an "author" will behave in the system.
 
 This architecture prevents us from leaking any Automerge calls to the React frontend, which enables frontend and backend teams to iterate in parallel. It also helps us create a test suite and improve the reliability of the system which is crucial for making sure demos go hopefully slightly better than average :)
-
