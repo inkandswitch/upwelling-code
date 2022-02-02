@@ -1,4 +1,48 @@
 
+## Layer API
+
+```js
+let upwell = new Upwell('Upwell: Collaboration Engine')
+
+// get layer, always a default one created initially
+let layer = upwell.layers()[0]
+layer.insertAt(0, 'hello world!')
+
+// create a new layer based on another layer
+let author = "tito"
+let message = 'experimenting with new introduction'
+let layer2 = upwell.create({ author, layer, message })
+
+// get all layers
+let layers = upwell.layers()
+// layers = [UpwellDoc(message='Titos Layer'), UpwellDoc(message='Initialized document')]
+
+
+// merge two layers (preview), it will return the merged document but won't destructively 
+// delete other layers
+let mergedLayer = upwell.merge(layers[0], layers[1])
+
+// to do a destructive merge of two layers (add merged layer and remove the other two):
+let author = 'dizzy'
+let message = 'New introduction'
+upwell.add(mergedLayer, {author, message})
+upwell.hide(layers[0])
+upwell.hide(layers[1])
+// hidden layers do not show up in upwell.layers()
+
+let layers = upwell.layers()
+// layers = [UpwellDoc(message='New introduction')]
+
+// to get all layers, even hidden ones
+let layers = upwell.layers({hidden: true})
+
+
+// to evict a layer from the file and get space back
+
+
+
+
+```
 
 ### Checking out older commits in a version 
 
