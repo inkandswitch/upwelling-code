@@ -4,29 +4,27 @@
 
 ## Upwell 
 
-An upwell is a file format that contains multiple versions of unmerged Layers. Each upwell has an id that can be used to identify it uniquely in a URL or other database. 
-
-An upwell is a tar file that contains multiple files. One is special, called 'metadata'. Each file will have:
+An `.upwell` is a file format. Each upwell has an id that can be used to identify it uniquely in a URL or other database. An upwell is a tar file that contains multiple files. 
 
 | filename | type | description
 | --- | --- | --- | 
 | {version_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
-| root.txt | string | The string id of the upwell
 | upwell.automerge | nanoid | An automerge document with the upwell metadata in it
 
 ### Files
 #### upwell.automerge
 
-The Upwell is an Automerge document that contains an index of the information you need to know about all of the information in this Upwell. It has the following properties:
+
+The `upwell.automerge` file is an Automerge document that contains the metadata about this upwell. It is an Automerge document because we want to be able to update the id or authors in a way that respects the fact that multiple people could edit these properties concurrently over time. It is also separate from any particular layer or version of the document, as it contains information that is important for downstream applications to be able to properly render UI elements. It has the following properties:
 
 | prop | type | description 
 | --- | --- | --- 
-| id | string | The id of this upwell, which should point to a layer on disk. If that layer doesn't exist, things are bad 
+| root | string | The root id of this upwell, which should point to a layer on disk. If that layer doesn't exist, things are bad!!! 
 | authors | Map<author_id, Map> | A map of author_id to author metadata (e.g., { name: string, email: string }). 
 
 #### {layer_id}.automerge
 
-A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document.
+A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **must** have a common ancestor with the `root` document, defined in `upwell.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
 
 A layer has the following properties:
 
@@ -44,6 +42,7 @@ LayerMetadata is a Map that has the following properties:
 | layer_id | string | A unqiue identifer for this layer.
 | author_id | string | The id of the author who created this layer. 
 | message | string | A human-readable message to describe the layer.
+| archived | boolean | If this layer has been archived
 
 #### Notes
 

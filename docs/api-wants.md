@@ -26,17 +26,18 @@ let mergedLayer = upwell.merge(layers[0], layers[1])
 let author = 'dizzy'
 let message = 'New introduction'
 upwell.add(mergedLayer, {author, message})
-upwell.hide(layers[0])
-upwell.hide(layers[1])
-// hidden layers do not show up in upwell.layers()
+upwell.archive(layers[0])
+upwell.archived(layers[1])
+// archived layers do not show up in upwell.layers()
 
 let layers = upwell.layers()
 // layers = [UpwellDoc(message='New introduction')]
 
 // to get all layers, even hidden ones
-let layers = upwell.layers({hidden: true})
+let layers = upwell.layers({archived: true})
 // layers.length === 3
 ```
+
 
 ### Deleting layers for space (not necessary now)
 ```js
@@ -46,8 +47,17 @@ upwell.evict(layers[2])
 // after eviction, that layer is gone forever
 let layers = upwell.layers({hidden: true})
 // layers.length === 2
+
 ```
 
+## Root layer
+
+`upwell.archive`  and `upwell.evict` should throw an error if the layer to be removed is the root layer. If you want to change the root layer, use
+
+```js
+// change the root layer to a new layer
+upwell.root = layer
+```
 
 
 ### Viewing older versions of a layer
