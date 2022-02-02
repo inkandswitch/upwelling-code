@@ -11,10 +11,8 @@ An upwell is a tar file that contains multiple files. One is special, called 'me
 | filename | type | description
 | --- | --- | --- | 
 | {version_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
-| root.txt | string | deadbeef
+| root.txt | string | The string id of the upwell
 | upwell.automerge | nanoid | A text file with the upwell id in it
-| authors.automerge | Author | A file with the author
-
 
 ### Files
 #### upwell.automerge
