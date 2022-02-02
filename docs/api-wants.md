@@ -35,46 +35,42 @@ let layers = upwell.layers()
 
 // to get all layers, even hidden ones
 let layers = upwell.layers({hidden: true})
-
-
-// to evict a layer from the file and get space back
-
-
-
-
+// layers.length === 3
 ```
 
-### Checking out older commits in a version 
+### Deleting layers for space (not necessary now)
+```js
+let layers = upwell.layers({hidden: true})
+// to remove a layer from the file and get space back (DESTRUCTIVE ACTION!!!)
+upwell.evict(layers[2])
+// after eviction, that layer is gone forever
+let layers = upwell.layers({hidden: true})
+// layers.length === 2
+```
 
 
-Version
- -> Array<Change>
-    -> Change (message, ops)
 
+### Viewing older versions of a layer
+
+Layer contains an Array<Change> and a change has (message, ops)
 
 ```js
-doc.title = 'le papier' // change (message = null)
-let prev = doc.commit('translated to french') // change (message = 'translated to french')
+layer.title = 'le papier' // change (message = null)
+let prev = layer.commit('translated to french') // change (message = 'translated to french')
 
-doc.insertAt(3, 'l') // starts a new transaction
+layer.insertAt(3, 'l') // starts a new transaction
 
-
-doc.insertAt(0, 'H')// change (message = null)
-doc.insertAt(1, 'e')// change (message = null)
-doc.title = 'le papier!' // change (message = null)
-let next = doc.commit('got feedback from a native french speaker')  // change (message = 'got feedback ...')
+layer.insertAt(0, 'H')// change (message = null)
+layer.insertAt(1, 'e')// change (message = null)
+layer.title = 'le papier!' // change (message = null)
+let next = layer.commit('got feedback from a native french speaker')  // change (message = 'got feedback ...')
 //transaction closed
 
 
 
-doc.history.push(heads)
-
-let oldTitle = doc.value('title', prev)
-// oldTitle === le papier
-
-// What we want from automerge that doesn't exist
-doc.getAllChanges().filter(doc => doc.message !== null) 
--> 2 changes
-
+// view an older version of the document, which returns a new document that is that version
+// at that period of time. The layer is unmodified
+let oldVersionOfThatLayer = layer.checkout(prev)
+// oldVersion.title === le papier
 
 ```
