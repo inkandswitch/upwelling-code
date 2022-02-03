@@ -4,11 +4,11 @@
 
 ## Upwell 
 
-An `.upwell` is a file format. Each upwell has an id that can be used to identify it uniquely in a URL or other database. An upwell is a tar file that contains multiple files. 
+An `.upwell` is a file format. An upwell is a tar file that contains multiple files. 
 
 | filename | type | description
 | --- | --- | --- | 
-| {version_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
+| {layer_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
 | metadata.automerge | Metadata | An automerge document with the upwell metadata in it
 
 ### Files
