@@ -19,12 +19,12 @@ The `upwell.automerge` file is an Automerge document that contains the metadata 
 
 | prop | type | description 
 | --- | --- | --- 
-| root | string | The root id of this upwell, which should point to a layer on disk. If that layer doesn't exist, things are bad!!! 
+| main_id | string | The root id of this upwell, which should point to a layer on disk. If that layer doesn't exist, things are bad!!! 
 | authors | Map<author_id, Map> | A map of author_id to author metadata (e.g., { name: string, email: string }). 
 
 #### {layer_id}.automerge
 
-A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **must** have a common ancestor with the `root` document, defined in `upwell.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
+A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **must** have a common ancestor with the `main_id` document, defined in `upwell.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
 
 A layer has the following properties:
 
@@ -38,7 +38,7 @@ LayerMetadata is a Map that has the following properties:
 
 | prop | type | description
 | --- | --- | --- | 
-| upwell_id | string | A unique identifier for the upwell (may be unnecessary).
+| main_id | string | A unique identifier for the upwell (may be unnecessary).
 | layer_id | string | A unqiue identifer for this layer.
 | author_id | string | The id of the author who created this layer. 
 | message | string | A human-readable message to describe the layer.
