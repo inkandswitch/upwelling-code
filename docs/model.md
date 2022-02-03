@@ -8,7 +8,7 @@ An `.upwell` is a file format. An upwell is a tar file that contains multiple fi
 
 | filename | type | description
 | --- | --- | --- | 
-| {layer_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
+| {layer_id}.automerge | UpwellLayer | Multiple documents, with the layer id in the filename
 | metadata.automerge | Metadata | An automerge document with the upwell metadata in it
 
 ### Files
