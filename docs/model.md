@@ -9,13 +9,13 @@ An `.upwell` is a file format. Each upwell has an id that can be used to identif
 | filename | type | description
 | --- | --- | --- | 
 | {version_id}.automerge | UpwellDoc | Multiple documents, with the version id in the filename
-| upwell.automerge | nanoid | An automerge document with the upwell metadata in it
+| metadata.automerge | Metadata | An automerge document with the upwell metadata in it
 
 ### Files
-#### upwell.automerge
+#### metadata.automerge
 
 
-The `upwell.automerge` file is an Automerge document that contains the metadata about this upwell. It is an Automerge document because we want to be able to update the id or authors in a way that respects the fact that multiple people could edit these properties concurrently over time. It is also separate from any particular layer or version of the document, as it contains information that is important for downstream applications to be able to properly render UI elements. It has the following properties:
+The `metadata.automerge` file is an Automerge document that contains the metadata about this upwell. It is an Automerge document because we want to be able to update the id or authors in a way that respects the fact that multiple people could edit these properties concurrently over time. It is also separate from any particular layer or version of the document, as it contains information that is important for downstream applications to be able to properly render UI elements. It has the following properties:
 
 | prop | type | description 
 | --- | --- | --- 
@@ -24,7 +24,7 @@ The `upwell.automerge` file is an Automerge document that contains the metadata 
 
 #### {layer_id}.automerge
 
-A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **must** have a common ancestor with the `main_id` document, defined in `upwell.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
+A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **must** have a common ancestor with the `main_id` document, defined in `metadata.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
 
 A layer has the following properties:
 
