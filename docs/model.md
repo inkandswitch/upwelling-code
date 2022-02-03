@@ -24,7 +24,7 @@ The `metadata.automerge` file is an Automerge document that contains the metadat
 
 #### {layer_id}.automerge
 
-A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **must** have a common ancestor with the `main_id` document, defined in `metadata.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
+A Layer is an encapsulated class around an Automerge document. Each Layer also is assigned a layer id which is unique to the document. Every layer **SHOULD** have a common ancestor with the `main_id` document, defined in `metadata.automerge`. It is hard to enforce this but generally as long as all layers are created using `upwell.create` method, this will be true.
 
 A layer has the following properties:
 
