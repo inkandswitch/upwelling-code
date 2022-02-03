@@ -38,7 +38,7 @@ LayerMetadata is a Map that has the following properties:
 
 | prop | type | description
 | --- | --- | --- | 
-| main_id | string | A unique identifier for the upwell (may be unnecessary).
+| parent_id | string | The layer_id of the document this layer was derived from.
 | layer_id | string | A unqiue identifer for this layer.
 | author_id | string | The id of the author who created this layer. 
 | message | string | A human-readable message to describe the layer.
