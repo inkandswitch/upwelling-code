@@ -148,7 +148,7 @@ export class UpwellingDoc {
     console.log('setting title')
     doc.set(ROOT, 'title', 'Untitled Document')
     console.log('setting text')
-    doc.make(ROOT, 'text', Automerge.TEXT)
+    doc.set(ROOT, 'text', Automerge.TEXT)
     return new UpwellingDoc(doc)
   }
 

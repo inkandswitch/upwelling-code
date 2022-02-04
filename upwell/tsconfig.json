@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "es2016",
         "sourceMap": true,
         "resolveJsonModule": true,
         "esModuleInterop": true,
@@ -12,10 +12,11 @@
             "es2015",
             "esnext"
         ],
-        "module": "esnext",
+        "module": "commonjs",
         "moduleResolution": "node",
+        "rootDir": "",
         "outDir": "./dist",
-        "baseUrl": "src",
+        "baseUrl": ".",
         "allowJs": true,
         "isolatedModules": true,
         "skipLibCheck": true,
