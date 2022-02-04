@@ -5,7 +5,7 @@ import * as http from './storage/http'
 export * from './Upwell'
 export * from './UpwellDoc'
 
-let upwell 
+let upwell: Upwell
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
     init().then(() => {

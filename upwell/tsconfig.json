@@ -9,23 +9,21 @@
             "esnext.asynciterable",
             "es2017",
             "es2016",
-            "es2015"
+            "es2015",
+            "dom.iterable",
+            "esnext"
         ],
-        "baseUrl": ".",
-        "module": "es2020",
+        "module": "CommonJS",
         "moduleResolution": "node",
         "outDir": "./dist",
-        "isolatedModules": true
+        "allowJs": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "noFallthroughCasesInSwitch": true
     },
-    "exclude": [
-        "node_modules",
-        "./test/*.ts",
-        "automerge-rs",
-        "dist"
-    ],
-        "ts-node": {
-            "compilerOptions": {
-                "module": "CommonJS"
-            }
-        }
+    "include": [
+      "src", "test"
+    ]
 }
