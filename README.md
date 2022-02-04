@@ -1,18 +1,9 @@
-# Upwelling
+# Upwell
 
-[Demo](https://upwelling.vercel.app/)
+This repository consists of multiple directories:
 
-## Run the server (optional)
+- `app`: The example application for non-fiction professional text editing
+- `upwell`: The backend api that wraps the underlying logic for the upwell collaboration engine
+- `docs`: Documentation for developer api
 
-See README in `server/`
 
-## Install & run
-
-```
-npm i
-npm start
-```
-
-## License
-
-MIT
