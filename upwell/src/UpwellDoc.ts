@@ -100,6 +100,13 @@ export class UpwellingDoc {
     this.subscriber = subscriber  
   }
 
+
+  getEdits(other: UpwellingDoc): void {
+    let changes = this.doc.getChangesAdded(other.doc)
+    let decodedChanges: Automerge.DecodedChange[] = changes.map(change => Automerge.decodeChange(change))
+  }
+
+
   insertAt(position: number, value: string) {
     if (!this.textObj) throw new Error('Text field not properly initialized')
     this.doc.splice(this.textObj, position, 0, value)

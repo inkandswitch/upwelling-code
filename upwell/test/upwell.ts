@@ -156,5 +156,6 @@ it('creates named versions with authors', async () => {
   let version2 = await d.get(history[1].version.id)
   expect(version2?.text).toEqual('Hello')
   */
+
 })
 
