@@ -1,4 +1,4 @@
-var Buffer = require('buffer/').Buffer  
+import { Buffer }  from 'buffer'
 
 export const getItem = async (id: string): Promise<Uint8Array | undefined | null> => {
   let payload = localStorage.getItem(id)

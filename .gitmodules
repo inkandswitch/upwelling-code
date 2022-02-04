@@ -1,3 +1,6 @@
 [submodule "automerge-rs"]
 	path = automerge-rs
 	url = https://github.com/automerge/automerge-rs.git
+[submodule "upwell/automerge-rs"]
+	path = upwell/automerge-rs
+	url = https://github.com/automerge/automerge-rs.git

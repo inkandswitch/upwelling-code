@@ -1,4 +1,0 @@
-/target
-/.direnv
-perf.*
-/Cargo.lock

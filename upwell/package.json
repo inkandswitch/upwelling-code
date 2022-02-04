@@ -1,28 +1,32 @@
 {
   "name": "upwell",
   "version": "1.0.0",
+  "type": "module",
   "description": "backend for upwell",
   "exports": "./dist/index.js",
   "scripts": {
     "build": "rm -rf dist && tsc --build ./tsconfig.json",
-    "test": "ts-mocha test/*.ts"
+    "test": "mocha"
+  },
+  "directories": {
+    "test": "./test"
   },
   "author": "",
   "license": "ISC",
-  "type": "module",
   "devDependencies": {
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.14",
+    "mocha": "9.1.3",
     "ts-loader": "^9.2.6",
-    "mocha": "^9.2.0",
-    "ts-mocha": "^9.0.2",
     "webpack": "^5.68.0",
     "webpack-cli": "^4.9.2"
   },
   "dependencies": {
-    "automerge-wasm": "file:automerge-rs/automerge-wasm/pkg",
+    "automerge-wasm": "file:automerge-rs/automerge-wasm/dev",
     "nanoid": "^3.2.0",
     "sializer": "^0.2.0",
+    "ts-node": "^10.4.0",
+    "tslint": "^6.1.3",
     "typescript": "^4.5.5"
   }
 }
