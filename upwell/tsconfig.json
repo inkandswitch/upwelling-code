@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "es5",
+      "sourceMap": true,
+      "resolveJsonModule": true,
+      "esModuleInterop": true,
+    },
+    "exclude": [
+      "node_modules",
+      "./test/*.ts",
+      "./automerge-rs",
+      "dist"
+    ]
+}

@@ -1,0 +1,23 @@
+{
+  "name": "upwell",
+  "version": "1.0.0",
+  "description": "backend for upwell",
+  "main": "dist/main.js",
+  "types": "dist/types/index.d.ts",
+  "scripts": {
+    "build": "tsc --build ./tsconfig.build.json && webpack --mode production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "ts-loader": "^9.2.6",
+    "webpack": "^5.68.0",
+    "webpack-cli": "^4.9.2"
+  },
+  "dependencies": {
+    "automerge-wasm": "file:automerge-rs/automerge-wasm/pkg",
+    "nanoid": "^3.2.0",
+    "sializer": "^0.2.0"
+  }
+}
