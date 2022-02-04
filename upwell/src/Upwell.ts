@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { UpwellingDoc, UpwellingDocMetadata  } from './UpwellDoc';
+import { Layer, LayerMetadata  } from './Layer';
 import AsyncStorage from './storage'
 
 // An Upwell that is persisted on disk
@@ -12,13 +12,13 @@ export class Upwell {
     this.remote = remote
   }
 
-  async getRelatedDocuments(doc: UpwellingDoc): Promise<UpwellingDocMetadata[]> {
+  async getRelatedDocuments(doc: Layer): Promise<LayerMetadata[]> {
     // Get all documents with the same root id
     return (await this.list()).filter(meta => meta.id === doc.id)
   }
 
-  async add(binary: Uint8Array): Promise<UpwellingDoc> {
-    let opened = UpwellingDoc.load(binary)
+  async add(binary: Uint8Array): Promise<Layer> {
+    let opened = Layer.load(binary)
     let existing = await this.get(opened.id)
     if (existing) {
       // we know about this document already.
@@ -33,17 +33,17 @@ export class Upwell {
     }
   }
 
-  persist(doc: UpwellingDoc): void {
+  persist(doc: Layer): void {
     this.setMeta(doc.meta)
     this.db.setItem(doc.id, doc.save())
   }
 
-  async syncWithServer(doc: UpwellingDoc) {
+  async syncWithServer(doc: Layer) {
     if (!this.remote) throw new Error('Server not configured. Must supply remote to constructor.')
     try {
       let binary = await this.remote.getItem(doc.id)
       if (binary) {
-        let theirs = UpwellingDoc.load(binary)
+        let theirs = Layer.load(binary)
         doc.sync(theirs)
         this.persist(doc)
       }
@@ -55,14 +55,14 @@ export class Upwell {
     return this.remote.setItem(doc.id, doc.save())
   }
 
-  async get(id: string): Promise<UpwellingDoc | null> { 
+  async get(id: string): Promise<Layer | null> { 
     // local-first
     let saved = await this.db.getItem(id)
-    if (saved) return UpwellingDoc.load(saved)
+    if (saved) return Layer.load(saved)
     else if (this.remote) {
       try {
         let remote = await this.remote.getItem(id)
-        if (remote) return UpwellingDoc.load(remote)
+        if (remote) return Layer.load(remote)
         else return null
       } catch (err) {
         return null
@@ -74,32 +74,32 @@ export class Upwell {
     return this.db.getItem(id) !== null
   }
 
-  create(): UpwellingDoc {
+  create(): Layer {
     let id = nanoid()
-    let document: UpwellingDoc = UpwellingDoc.create(id)
+    let document: Layer = Layer.create(id)
     this.persist(document)
     return document
   }
 
-  setMeta(meta: UpwellingDocMetadata): Promise<void> {
-    return this.db.setItem(`meta-${meta.id}`, UpwellingDocMetadata.serialize(meta))
+  setMeta(meta: LayerMetadata): Promise<void> {
+    return this.db.setItem(`meta-${meta.id}`, LayerMetadata.serialize(meta))
   }
 
-  async getMeta(id: string) : Promise<UpwellingDocMetadata | null> {
+  async getMeta(id: string) : Promise<LayerMetadata | null> {
     let item = await this.db.getItem(`meta-${id}`) 
     if (item) {
-      return UpwellingDocMetadata.deserialize(item)
+      return LayerMetadata.deserialize(item)
     }
     return null
   }
 
-  async list(): Promise<UpwellingDocMetadata[]> {
+  async list(): Promise<LayerMetadata[]> {
     let ids = await this.db.ids()
-    let res: UpwellingDocMetadata[] = []
+    let res: LayerMetadata[] = []
     ids.forEach(id => {
       if (id.startsWith('meta')) {
         this.db.getItem(id).then(value => {
-          if (value) res.push(UpwellingDocMetadata.deserialize(value))
+          if (value) res.push(LayerMetadata.deserialize(value))
         })
       }
     })

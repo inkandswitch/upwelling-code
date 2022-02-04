@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
-import Upwell , { UpwellingDoc, UpwellingDocMetadata } from 'upwell';
+import Upwell , { Layer, LayerMetadata } from 'upwell';
 import catnames from 'cat-names'
 
 let documents = Upwell()
@@ -10,11 +10,11 @@ export type DocumentProps = {
   id: string
 }
 
-function DocumentView(props: {doc: UpwellingDoc}) {
+function DocumentView(props: {doc: Layer}) {
   const { doc } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
-  let [state, setState] = React.useState<UpwellingDocMetadata>(doc.toJSON())
-  let [relatedDocuments, setRelatedDocuments] = React.useState<UpwellingDocMetadata[]>([])
+  let [state, setState] = React.useState<LayerMetadata>(doc.toJSON())
+  let [relatedDocuments, setRelatedDocuments] = React.useState<LayerMetadata[]>([])
 
   useEffect(() => {
     documents.getRelatedDocuments(doc).then(docs => {
@@ -107,7 +107,7 @@ function DocumentView(props: {doc: UpwellingDoc}) {
 export default function MaybeDocumentView({
   id
 }: DocumentProps) {
-  let [doc, setState] = React.useState<UpwellingDoc | null>(null)
+  let [doc, setState] = React.useState<Layer | null>(null)
 
   useEffect(() => {
     // FIXME: what if the id isn't a real one (and just junk?) 
@@ -125,7 +125,7 @@ export default function MaybeDocumentView({
 }
 
 
-function RelatedDocument(props: { meta: UpwellingDocMetadata }) {
+function RelatedDocument(props: { meta: LayerMetadata }) {
   let meta = props.meta
   let href = "/doc/" + meta.id
   console.log('related', meta)

@@ -3,7 +3,7 @@ import init from 'automerge-wasm'
 import * as local from './storage/localStorage'
 import * as http from './storage/http'
 export * from './Upwell'
-export * from './UpwellDoc'
+export * from './Layer'
 
 let upwell: Upwell
 export async function loadForTheFirstTimeLoL() {

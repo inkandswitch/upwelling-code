@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import Upwell, { UpwellingDocMetadata }  from 'upwell'
+import Upwell, { LayerMetadata }  from 'upwell'
 
 let documents = Upwell()
 
 type Props = {
-  list: UpwellingDocMetadata[]
+  list: LayerMetadata[]
 }
 
 export default function MaybeListDocuments() {
-  let [list, setList] = useState<UpwellingDocMetadata[]>([])
+  let [list, setList] = useState<LayerMetadata[]>([])
   useEffect(() => {
     documents.list().then(value => {
       setList(value)
@@ -20,7 +20,7 @@ export default function MaybeListDocuments() {
 export function ListDocuments({ list }: Props) {
   return <div>
     <ul>
-      {list.map((meta: UpwellingDocMetadata) => {
+      {list.map((meta: LayerMetadata) => {
         return <li><a href={`/doc/${meta.id}`}>{meta.title}</a></li>
       })}
     </ul>

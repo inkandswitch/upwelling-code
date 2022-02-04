@@ -1,4 +1,4 @@
-import { Upwell, UpwellingDoc } from '../src/index'
+import { Upwell, Layer } from '../src/index'
 import { it } from 'mocha';
 import assert from 'assert';
 
@@ -24,11 +24,11 @@ describe('upwell', () => {
     let d = new Upwell(storage)
     console.log('boop')
 
-    let doc: UpwellingDoc = d.create()
+    let doc: Layer = d.create()
     console.log('created')
 
     let times = 0
-    doc.subscribe((doc: UpwellingDoc) => {
+    doc.subscribe((doc: Layer) => {
       times++
       if (times === 1) assert(doc.text === 'Hello')
       if (times === 2) assert(doc.text === 'Hola')
@@ -58,7 +58,7 @@ describe('upwell', () => {
     let d = new Upwell(storage)
     let e = new Upwell(storage)
 
-    let ddoc: UpwellingDoc = d.create()
+    let ddoc: Layer = d.create()
     let file = ddoc.save()
     let edoc = await e.add(file)
 

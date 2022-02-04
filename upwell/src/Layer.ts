@@ -9,9 +9,9 @@ export type ChangeOptions = {
 }
 export type Heads = string[];
 
-export type Subscriber = (doc: UpwellingDoc) => void 
+export type Subscriber = (doc: Layer) => void 
 
-export class UpwellingDoc {
+export class Layer {
   doc: Automerge.Automerge
   heads?: Heads;
   textObj?: Automerge.ObjID 
@@ -85,7 +85,7 @@ export class UpwellingDoc {
     this.heads = heads
   }
 
-  toJSON() : UpwellingDocMetadata {
+  toJSON() : LayerMetadata {
     return {
       id: this.id,
       message: this.message,
@@ -101,7 +101,7 @@ export class UpwellingDoc {
   }
 
 
-  getEdits(other: UpwellingDoc): void {
+  getEdits(other: Layer): void {
     let changes = this.doc.getChangesAdded(other.doc)
     let decodedChanges: Automerge.DecodedChange[] = changes.map(change => Automerge.decodeChange(change))
   }
@@ -126,12 +126,12 @@ export class UpwellingDoc {
     return this.doc.save()
   }
 
-  static load(binary: Uint8Array): UpwellingDoc {
+  static load(binary: Uint8Array): Layer {
     let doc = Automerge.loadDoc(binary)
-    return new UpwellingDoc(doc)
+    return new Layer(doc)
   }
 
-  static create(id: string): UpwellingDoc {
+  static create(id: string): Layer {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id)
     doc.set(ROOT, 'version', nanoid())
@@ -139,7 +139,7 @@ export class UpwellingDoc {
     doc.set(ROOT, 'author', 'Unknown')
     doc.set(ROOT, 'title', 'Untitled Document')
     doc.set(ROOT, 'text', Automerge.TEXT)
-    return new UpwellingDoc(doc)
+    return new Layer(doc)
   }
 
   /*
@@ -166,13 +166,13 @@ export class UpwellingDoc {
     return this.doc.commit(metadata)
   }
 
-  sync(theirs: UpwellingDoc) {
+  sync(theirs: Layer) {
     let changes = theirs.doc.getChanges(this.doc.getHeads())
     this.doc.applyChanges(changes)
   }
 }
 
-export class UpwellingDocMetadata {
+export class LayerMetadata{
   title: string
   id: string
   author: string
@@ -184,11 +184,11 @@ export class UpwellingDocMetadata {
     throw new Error('New instances of this class should not be created. Use static methods.')
   }
 
-  static deserialize(payload: Uint8Array): UpwellingDocMetadata {
+  static deserialize(payload: Uint8Array): LayerMetadata{
     return desia(payload)
   }
 
-  static serialize(meta: UpwellingDocMetadata): Uint8Array {
+  static serialize(meta: LayerMetadata): Uint8Array {
     return sia({
       version: meta.version,
       title: meta.title,
