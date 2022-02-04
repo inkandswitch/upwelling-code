@@ -19,7 +19,7 @@ class memoryStore {
 }
 
 describe('upwell', () => {
-  it.only('subscribes to document changes', () => {
+  it('subscribes to document changes', () => {
     let storage = new memoryStore()
     let d = new Upwell(storage)
     console.log('boop')
