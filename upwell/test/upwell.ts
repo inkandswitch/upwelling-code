@@ -1,5 +1,6 @@
-import Upwell  from '..'
-import { describe, it } from 'mocha';
+import { Upwell, UpwellingDoc } from '..'
+import { it } from 'mocha';
+import assert from 'assert';
 
 class memoryStore {
   store = new Map<string, Uint8Array>()
@@ -19,15 +20,15 @@ class memoryStore {
 
 it('subscribes to document changes', () => {
   let storage = new memoryStore()
-  let d = new Documents(storage)
+  let d = new Upwell(storage)
 
   let doc: UpwellingDoc = d.create()
 
   let times = 0
   doc.subscribe((doc: UpwellingDoc) => {
     times++
-    if (times === 1) expect(doc.text).toEqual('Hello')
-    if (times === 2) expect(doc.text).toEqual('Hola')
+    if (times === 1) assert(doc.text === 'Hello')
+    if (times === 2) assert(doc.text === 'Hola')
   })
 
   doc.insertAt(0, 'H')
@@ -46,14 +47,13 @@ it('subscribes to document changes', () => {
   doc.deleteAt(4)
   doc.createVersion('Translated to Spanish', 'jose')
 
-  expect(1).toEqual(1)
 })
 
 
 it('saves and loads from a file', async () => {
   let storage = new memoryStore()
-  let d = new Documents(storage)
-  let e = new Documents(storage)
+  let d = new Upwell(storage)
+  let e = new Upwell(storage)
 
   let ddoc: UpwellingDoc = d.create()
   let file = ddoc.save()
@@ -63,12 +63,12 @@ it('saves and loads from a file', async () => {
 
   let binary = ddoc.save()
   let edocAfterSync = await e.add(binary)
-  expect(edocAfterSync.title).toEqual(ddoc.title)
+  assert(edocAfterSync.title === ddoc.title)
 })
 
 it('creates named versions', async () => {
   let storage = new memoryStore()
-  let d = new Documents(storage)
+  let d = new Upwell(storage)
   let doc = d.create()
 
   doc.insertAt(0, 'H')
@@ -76,7 +76,7 @@ it('creates named versions', async () => {
   doc.insertAt(2, 'l')
   doc.insertAt(3, 'l')
   doc.insertAt(4, 'o')
-  expect(doc.text).toEqual('Hello')
+  assert(doc.text === 'Hello')
 
   let versionName = 'Started typing on the train' 
   let author = 'John'
@@ -90,14 +90,14 @@ it('creates named versions', async () => {
   doc.deleteAt(3)
   doc.insertAt(3, 'a')
   doc.deleteAt(4)
-  expect(doc.text).toEqual('Hola')
+  assert(doc.text === 'Hola')
 
   let versionName2 = 'Translated to spanish'
   let author2 = 'Bono'
   doc.createVersion(versionName2, author2)
   d.persist(doc)
 
-  expect(doc.message).toEqual(versionName2)
+  assert(doc.message === versionName2)
 
   /*
   let history = doc.getVersionHistory()
@@ -114,7 +114,7 @@ it('creates named versions', async () => {
 
 it('creates named versions with authors', async () => {
   let storage = new memoryStore()
-  let d = new Documents(storage)
+  let d = new Upwell(storage)
   let doc = d.create()
   doc.title = 'Upwelling: Local-first Collaborative Writing'
 
@@ -123,7 +123,7 @@ it('creates named versions with authors', async () => {
   doc.insertAt(2, 'l')
   doc.insertAt(3, 'l')
   doc.insertAt(4, 'o')
-  expect(doc.text).toEqual('Hello')
+  assert(doc.text === 'Hello')
 
   let versionName = 'Started typing on the train' 
   let author = 'Theroux'
@@ -137,14 +137,14 @@ it('creates named versions with authors', async () => {
   doc.deleteAt(3)
   doc.insertAt(3, 'a')
   doc.deleteAt(4)
-  expect(doc.text).toEqual('Hola')
+  assert(doc.text === 'Hola')
 
   let versionMessage2 = 'Translated to spanish'
   let author2 = 'Daba'
   doc.createVersion(versionMessage2, author)
   d.persist(doc)
 
-  expect(doc.message).toEqual(versionMessage2)
+  assert(doc.message === versionMessage2)
 
   /*
   let history = doc.getVersionHistory()

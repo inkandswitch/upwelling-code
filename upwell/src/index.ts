@@ -1,4 +1,4 @@
-import Upwell from './Upwell'
+import { Upwell }  from './Upwell'
 import init from 'automerge-wasm'
 import * as local from './storage/localStorage'
 import * as http from './storage/http'

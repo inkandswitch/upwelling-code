@@ -3,7 +3,7 @@ import { UpwellingDoc, UpwellingDocMetadata  } from './UpwellDoc';
 import AsyncStorage from './storage'
 
 // An Upwell that is persisted on disk
-export default class Upwell {
+export class Upwell {
   db: AsyncStorage 
   remote: AsyncStorage | undefined
 
