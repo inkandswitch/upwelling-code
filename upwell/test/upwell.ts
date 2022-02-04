@@ -1,9 +1,5 @@
-/**
- * @jest-environment node
- */
-
-import Documents from './Upwell'
-import { UpwellingDoc } from './UpwellDoc';
+import Upwell  from '..'
+import { describe, it } from 'mocha';
 
 class memoryStore {
   store = new Map<string, Uint8Array>()
