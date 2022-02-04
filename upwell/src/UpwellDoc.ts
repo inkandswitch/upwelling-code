@@ -19,9 +19,7 @@ export class UpwellingDoc {
 
   constructor(doc: Automerge.Automerge) {
     this.doc = doc
-    console.log('getting text')
     let value = this.doc.value(ROOT, 'text')
-    console.log('got vvalue', value)
     if (value && value[0] === 'text') {
       this.textObj = value[1]
     } 
@@ -80,7 +78,7 @@ export class UpwellingDoc {
   }
 
   set title(value: string) {
-    this.doc.set(ROOT, 'title', value, 'str')
+    this.doc.set(ROOT, 'title', value)
   }
 
   checkout(heads?: Heads) {
@@ -111,13 +109,11 @@ export class UpwellingDoc {
 
   insertAt(position: number, value: string) {
     if (!this.textObj) throw new Error('Text field not properly initialized')
-    console.log('inserting', position, value)
     this.doc.splice(this.textObj, position, 0, value)
   }
 
   deleteAt(position: number) {
     if (!this.textObj) throw new Error('Text field not properly initialized')
-    console.log('delition', position)
     this.doc.splice(this.textObj, position, 1, '')
   }
 
@@ -137,17 +133,11 @@ export class UpwellingDoc {
 
   static create(id: string): UpwellingDoc {
     let doc = Automerge.create()
-    console.log('setting id')
     doc.set(ROOT, 'id', id)
-    console.log('setting version')
     doc.set(ROOT, 'version', nanoid())
-    console.log('setting message')
     doc.set(ROOT, 'message', 'Document initialized')
-    console.log('setting author')
     doc.set(ROOT, 'author', 'Unknown')
-    console.log('setting title')
     doc.set(ROOT, 'title', 'Untitled Document')
-    console.log('setting text')
     doc.set(ROOT, 'text', Automerge.TEXT)
     return new UpwellingDoc(doc)
   }
