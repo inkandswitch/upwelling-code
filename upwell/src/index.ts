@@ -9,7 +9,7 @@ let upwell: Upwell
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
     init().then(() => {
-      upwell = new Upwell(local, http)
+      upwell = new Upwell('Untitled document', { fs: local, remote: http })
       resolve()
     })
   })

@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import { sia, desia } from 'sializer';
 import * as Automerge from 'automerge-wasm';
+import { Author } from './Upwell';
 
 const ROOT = '_root'
 
@@ -8,14 +9,20 @@ export type ChangeOptions = {
   author: string
 }
 export type Heads = string[];
-
+export type LayerMetadata = {
+  id: string,
+  parent_id: string,
+  author_id: string,
+  message: string,
+  archived: boolean
+}
 export type Subscriber = (doc: Layer) => void 
 
 export class Layer {
   doc: Automerge.Automerge
-  heads?: Heads;
-  textObj?: Automerge.ObjID 
-  subscriber?: Subscriber 
+  private heads?: Heads;
+  private textObj?: Automerge.ObjID 
+  private subscriber?: Subscriber 
 
   constructor(doc: Automerge.Automerge) {
     this.doc = doc
@@ -31,16 +38,6 @@ export class Layer {
 
   get version () {
     return this._getValue('version') as string;
-  }
-
-  get meta() {
-    return {
-      version: this.version,
-      id: this.id,
-      author: this.author,
-      message: this.message,
-      title: this.title,
-    }
   }
 
   set version (value: string) {
@@ -68,13 +65,20 @@ export class Layer {
     else return ''
   }
 
-  get author(): string {
-    return this._getValue('author') as string
-
+  get author_id(): string {
+    return this._getValue('author_id') as string
   }
 
   get title (): string {
     return this._getValue('title') as string;
+  }
+
+  get parent_id(): string {
+    return this._getValue('parent_id') as string
+  }
+
+  get archived(): boolean {
+    return this._getValue('archived') as boolean
   }
 
   set title(value: string) {
@@ -85,14 +89,13 @@ export class Layer {
     this.heads = heads
   }
 
-  toJSON() : LayerMetadata {
+  get metadata() : LayerMetadata {
     return {
       id: this.id,
       message: this.message,
-      author: this.author,
-      version: this.version,
-      text: this.text,
-      title: this.title
+      author_id: this.author_id,
+      parent_id: this.parent_id,
+      archived: this.archived
     }
   }
 
@@ -100,12 +103,12 @@ export class Layer {
     this.subscriber = subscriber  
   }
 
-
   getEdits(other: Layer): void {
     let changes = this.doc.getChangesAdded(other.doc)
     let decodedChanges: Automerge.DecodedChange[] = changes.map(change => Automerge.decodeChange(change))
+    decodedChanges.map((value: Automerge.DecodedChange) => {
+    })
   }
-
 
   insertAt(position: number, value: string) {
     if (!this.textObj) throw new Error('Text field not properly initialized')
@@ -131,70 +134,28 @@ export class Layer {
     return new Layer(doc)
   }
 
-  static create(id: string): Layer {
+  static create(message: string, layer?: Layer, author?: Author): Layer {
     let doc = Automerge.create()
-    doc.set(ROOT, 'id', id)
-    doc.set(ROOT, 'version', nanoid())
-    doc.set(ROOT, 'message', 'Document initialized')
-    doc.set(ROOT, 'author', 'Unknown')
-    doc.set(ROOT, 'title', 'Untitled Document')
-    doc.set(ROOT, 'text', Automerge.TEXT)
+    doc.set(ROOT, 'id', nanoid())
+    doc.set(ROOT, 'message', message)
+    doc.set(ROOT, 'parent_id', layer?.id || '')
+    doc.set(ROOT, 'author_id', author?.id || '')
+    let title = doc.make(ROOT, 'title', Automerge.TEXT)
+    let text = doc.make(ROOT, 'text', Automerge.TEXT)
+    if (layer) {
+      if (layer.text) doc.set(text, layer.text, Automerge.TEXT)
+      if (layer.title) doc.set(title, layer.title, Automerge.TEXT)
+    }
     return new Layer(doc)
   }
 
-  /*
-  getVersionHistory(): DocFields[] {
-    let history = this.doc.getChanges()
-    let last = history[0].snapshot
-    let res = [last]
-    for (let i = 1; i < history.length; i++) {
-      let snapshot = history[i].snapshot
-      if (snapshot.version.id !== last.version.id) {
-        res.push(snapshot)
-      }
-      last = snapshot
-    }
-    return res
-  }
-  */
-
-  createVersion(message: string, author: string): Heads {
-    this.doc.set(ROOT, 'version', nanoid())
-    this.doc.set(ROOT, 'message', message)
-    this.doc.set(ROOT, 'author', author)
-    let metadata = JSON.stringify({ message, author } )
+  commit(message: string): Heads {
+    let metadata = JSON.stringify({ message })
     return this.doc.commit(metadata)
   }
 
   sync(theirs: Layer) {
     let changes = theirs.doc.getChanges(this.doc.getHeads())
     this.doc.applyChanges(changes)
-  }
-}
-
-export class LayerMetadata{
-  title: string
-  id: string
-  author: string
-  text?: string
-  message: string
-  version: string
-
-  constructor() {
-    throw new Error('New instances of this class should not be created. Use static methods.')
-  }
-
-  static deserialize(payload: Uint8Array): LayerMetadata{
-    return desia(payload)
-  }
-
-  static serialize(meta: LayerMetadata): Uint8Array {
-    return sia({
-      version: meta.version,
-      title: meta.title,
-      id: meta.id,
-      message: meta.message,
-      author: meta.author
-    })
   }
 }

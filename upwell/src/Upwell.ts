@@ -1,108 +1,115 @@
 import { nanoid } from 'nanoid';
 import { Layer, LayerMetadata  } from './Layer';
+import { UpwellMetadata } from './UpwellMetadata';
 import AsyncStorage from './storage'
+import { memoryStore } from './storage/memory';
+
+export type Author = {
+  id: string,
+  handle: string
+}
+
+export type UpwellOptions = {
+  fs: AsyncStorage,
+  author?: Author,
+  remote?: AsyncStorage
+}
+
+const METADATA_FILENAME = 'metadata.automerge'
+const LAYER_EXT = 'layer'
 
 // An Upwell that is persisted on disk
 export class Upwell {
   db: AsyncStorage 
   remote: AsyncStorage | undefined
 
-  constructor(db: AsyncStorage, remote?: AsyncStorage) {
-    this.db = db
-    this.remote = remote
+  constructor(title: string, options?: UpwellOptions) {
+    this.db = options?.fs || new memoryStore()
+    this.remote = options?.remote
+    let layer = Layer.create('Document initialized', null, options?.author)
+    let metadata = UpwellMetadata.create(layer.id, options?.author)
+    this.persist(layer)
+    this.saveMetadata(metadata)
   }
 
-  async getRelatedDocuments(doc: Layer): Promise<LayerMetadata[]> {
-    // Get all documents with the same root id
-    return (await this.list()).filter(meta => meta.id === doc.id)
+  async layers(): Promise<Layer[]> {
+    let ids = await this.db.ids()
+    let res: Layer[] = []
+    ids.forEach(id => {
+      if (id.endsWith(LAYER_EXT)) { 
+        this.db.getItem(id).then(value => {
+          let layer = Layer.load(value)
+          if (layer) res.push(layer)
+        })
+      }
+    })
+    return res
   }
 
-  async add(binary: Uint8Array): Promise<Layer> {
-    let opened = Layer.load(binary)
-    let existing = await this.get(opened.id)
+  async add(layer: Layer): Promise<void> {
+    let existing = await this.getLocal(layer.id)
     if (existing) {
-      // we know about this document already.
-      // merge this document with our existing document
-      opened.sync(existing)
-      this.persist(opened)
-      return opened
-    }  else {
-      opened.createVersion('Copied', 'Anonymous Elephant')
-      this.persist(opened)
-      return opened
-    }
+      // we know about this layer already.
+      // merge this layer with our existing layer 
+      console.log('merging layers')
+      layer.sync(existing)
+    } 
+    return this.persist(layer)
   }
 
-  persist(doc: Layer): void {
-    this.setMeta(doc.meta)
-    this.db.setItem(doc.id, doc.save())
+  async persist(layer: Layer): Promise<void> {
+    return this.db.setItem(`${layer.id}.${LAYER_EXT}`, layer.save())
   }
 
-  async syncWithServer(doc: Layer) {
+  async syncWithServer(layer: Layer) {
     if (!this.remote) throw new Error('Server not configured. Must supply remote to constructor.')
     try {
-      let binary = await this.remote.getItem(doc.id)
+      let binary = await this.remote.getItem(layer.id)
       if (binary) {
         let theirs = Layer.load(binary)
-        doc.sync(theirs)
-        this.persist(doc)
+        layer.sync(theirs)
+        this.persist(layer)
       }
     } catch (err) {
-      console.log('No remote item exists for document with id=', doc.id)
-      // this is no big deal. this just means there was no server item 
-      // so we fail gracefully
+      console.log('No remote item exists for layer with id=', layer.id)
+      // this is no big deal. this just means this might be a new layer that hasn't been synced
+      // with anyone yet
     }
-    return this.remote.setItem(doc.id, doc.save())
+    return this.remote.setItem(layer.id, layer.save())
   }
 
-  async get(id: string): Promise<Layer | null> { 
+  async getLocal(id: string): Promise<Layer | null> { 
     // local-first
     let saved = await this.db.getItem(id)
-    if (saved) return Layer.load(saved)
-    else if (this.remote) {
-      try {
-        let remote = await this.remote.getItem(id)
-        if (remote) return Layer.load(remote)
-        else return null
-      } catch (err) {
-        return null
-      }
-    } else return null
+    if (!saved) return null
+    return Layer.load(saved)
+  }
+
+  async getRemote(id: string) {
+    try {
+      let remote = await this.remote.getItem(id)
+      if (remote) return Layer.load(remote)
+      else return null
+    } catch (err) {
+      console.error(err)
+      return null
+    }
   }
 
   exists(id: string): boolean {
     return this.db.getItem(id) !== null
   }
 
-  create(): Layer {
-    let id = nanoid()
-    let document: Layer = Layer.create(id)
-    this.persist(document)
-    return document
-  }
-
-  setMeta(meta: LayerMetadata): Promise<void> {
-    return this.db.setItem(`meta-${meta.id}`, LayerMetadata.serialize(meta))
-  }
-
-  async getMeta(id: string) : Promise<LayerMetadata | null> {
-    let item = await this.db.getItem(`meta-${id}`) 
+  async metadata() : Promise<UpwellMetadata> {
+    let item = await this.db.getItem(METADATA_FILENAME)
     if (item) {
-      return LayerMetadata.deserialize(item)
+      return UpwellMetadata.load(item)
     }
-    return null
+    throw new Error('No metadata file, that mean this upwell is corrupted?? :(')
   }
 
-  async list(): Promise<LayerMetadata[]> {
-    let ids = await this.db.ids()
-    let res: LayerMetadata[] = []
-    ids.forEach(id => {
-      if (id.startsWith('meta')) {
-        this.db.getItem(id).then(value => {
-          if (value) res.push(LayerMetadata.deserialize(value))
-        })
-      }
-    })
-    return res
+  async saveMetadata(metadata: UpwellMetadata) {
+    await this.db.setItem(METADATA_FILENAME, metadata.doc.save())
   }
 }
+
