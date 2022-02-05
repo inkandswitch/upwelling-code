@@ -7,7 +7,6 @@ describe('upwell', () => {
   it('subscribes to document changes', async () => {
     let d = await Upwell.create()
     let layers = await d.layers()
-    console.log(layers)
     assert.lengthOf(layers, 1)
 
     let doc: Layer = Layer.create('New layer', layers[0])

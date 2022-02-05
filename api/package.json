@@ -1,16 +1,13 @@
 {
-  "name": "upwell",
+  "name": "@upwell/api",
   "version": "1.0.0",
   "type": "module",
   "description": "backend for upwell",
-  "main": "./dev/index.js",
-  "exports": "./dist/index.js",
+  "main": "./dist/src/index.js",
+  "exports": "./dist/src/index.js",
   "scripts": {
     "build": "rm -rf dist && tsc --build ./tsconfig.json",
     "test": "ts-mocha -p tsconfig.json --bail --type-check test/*.ts"
-  },
-  "directories": {
-    "test": "./test"
   },
   "author": "",
   "license": "ISC",

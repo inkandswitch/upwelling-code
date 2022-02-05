@@ -1,7 +1,7 @@
 import React from 'react'
 import DocumentView from './components/DocumentView'
 import ListDocuments from './components/ListDocuments'
-import Upwell from './backend'
+import Upwell from '@upwell/api'
 import { Route, useLocation } from "wouter";
 import { showOpenFilePicker } from 'file-system-access';
 

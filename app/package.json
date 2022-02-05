@@ -9,6 +9,7 @@
     "@tldraw/core": "^0.1.18",
     "@types/jest": "^26.0.15",
     "@types/node": "^12.0.0",
+    "@upwell/api": "file:../api",
     "buffer": "^6.0.3",
     "cat-names": "^3.0.0",
     "file-system-access": "^1.0.2",

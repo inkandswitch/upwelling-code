@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
-import Upwell , { Layer, LayerMetadata } from 'upwell';
+import { Upwell, Layer, LayerMetadata } from '@upwell/api';
 import catnames from 'cat-names'
 
 let documents = Upwell()
@@ -112,7 +112,7 @@ export default function MaybeDocumentView({
   useEffect(() => {
     // FIXME: what if the id isn't a real one (and just junk?) 
     // Make sure to handle errors gracefully (either redirect to list or just make a new document)
-    documents.get(id).then(doc => {
+    documents.getLocal(id).then((doc: Layer) => {
       setState(doc)
     }).catch(err => {
       console.error('got error', err)
