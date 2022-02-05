@@ -12,7 +12,7 @@ export type Heads = string[];
 export type LayerMetadata = {
   id: string,
   parent_id: string,
-  author_id: string,
+  author: string,
   message: string,
   archived: boolean
 }
@@ -33,7 +33,8 @@ export class Layer {
   }
 
   private _getValue(prop: string) {
-    return this.doc.value(ROOT, prop, this.heads)![1]
+    let value = this.doc.value(ROOT, prop, this.heads)
+    if (value && value[0]) return value[1]
   }
 
   get version () {
@@ -65,8 +66,8 @@ export class Layer {
     else return ''
   }
 
-  get author_id(): string {
-    return this._getValue('author_id') as string
+  get author(): string {
+    return this._getValue('author') as string
   }
 
   get title (): string {
@@ -93,7 +94,7 @@ export class Layer {
     return {
       id: this.id,
       message: this.message,
-      author_id: this.author_id,
+      author: this.author,
       parent_id: this.parent_id,
       archived: this.archived
     }
@@ -135,18 +136,22 @@ export class Layer {
   }
 
   static create(message: string, layer?: Layer, author?: Author): Layer {
-    let doc = Automerge.create()
-    doc.set(ROOT, 'id', nanoid())
-    doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'parent_id', layer?.id || '')
-    doc.set(ROOT, 'author_id', author?.id || '')
-    let title = doc.make(ROOT, 'title', Automerge.TEXT)
-    let text = doc.make(ROOT, 'text', Automerge.TEXT)
     if (layer) {
-      if (layer.text) doc.set(text, layer.text, Automerge.TEXT)
-      if (layer.title) doc.set(title, layer.title, Automerge.TEXT)
+      let doc = layer.doc.clone()
+      doc.set(ROOT, 'id', nanoid())
+      doc.set(ROOT, 'message', message)
+      doc.set(ROOT, 'parent_id', layer.id)
+      if (author) doc.set(ROOT, 'author', author)
+      return new Layer(doc)
+    } else {
+      let doc = Automerge.create()
+      doc.set(ROOT, 'id', nanoid())
+      doc.set(ROOT, 'message', message)
+      if (author) doc.set(ROOT, 'author', author)
+      doc.make(ROOT, 'title', Automerge.TEXT)
+      doc.make(ROOT, 'text', Automerge.TEXT)
+      return new Layer(doc)
     }
-    return new Layer(doc)
   }
 
   commit(message: string): Heads {

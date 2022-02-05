@@ -20,7 +20,6 @@ The `metadata.automerge` file is an Automerge document that contains the metadat
 | prop | type | description 
 | --- | --- | --- 
 | main_id | string | The root id of this upwell, which should point to a layer on disk. If that layer doesn't exist, things are bad!!! 
-| authors | Map<author_id, Map> | A map of author_id to author metadata (e.g., { name: string, email: string }). 
 
 #### {layer_id}.automerge
 
@@ -40,7 +39,7 @@ LayerMetadata is a Map that has the following properties:
 | --- | --- | --- | 
 | id | string | A unqiue identifer for this layer.
 | parent_id | string | The id of the layer this layer was derived from.
-| author_id | string | The id of the author who created this layer. 
+| author | string | The handle of the author who created this layer. 
 | message | string | A human-readable message to describe the layer.
 | archived | boolean | If this layer has been archived
 

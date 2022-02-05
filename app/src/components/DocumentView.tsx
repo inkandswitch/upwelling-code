@@ -14,11 +14,11 @@ function DocumentView(props: {doc: Layer}) {
   const { doc } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
   let [state, setState] = React.useState<LayerMetadata>(doc.toJSON())
-  let [relatedDocuments, setRelatedDocuments] = React.useState<LayerMetadata[]>([])
+  let [layers, setLayers] = React.useState<Layer[]>([])
 
   useEffect(() => {
-    documents.getRelatedDocuments(doc).then(docs => {
-      setRelatedDocuments(docs)
+    documents.layers().then((layers: Layer[])=> {
+      setLayers(layers)
     })
   }, [])
 
@@ -33,7 +33,7 @@ function DocumentView(props: {doc: Layer}) {
 
   let onCreateVersion = async () => {
     let versionName = 'Very cool version '
-    doc.createVersion(versionName, catnames.random())
+    doc.commit(versionName, catnames.random())
     console.log('created version', doc.id, doc.message, doc.author)
     await documents.persist(doc)
   }

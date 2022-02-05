@@ -1,11 +1,13 @@
-import { Upwell, Layer } from '../src/index'
+import { Author, Upwell, Layer } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
+import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
   it('subscribes to document changes', async () => {
-    let d = new Upwell('Upwell: collaboration engine')
+    let d = await Upwell.create()
     let layers = await d.layers()
+    console.log(layers)
     assert.lengthOf(layers, 1)
 
     let doc: Layer = Layer.create('New layer', layers[0])
@@ -37,8 +39,8 @@ describe('upwell', () => {
   })
 
   it('saves and loads from a file', async () => {
-    let d = new Upwell('Upwelling')
-    let e = new Upwell('Upwell')
+    let d = await Upwell.create()
+    let e = await Upwell.create()
 
     let layers = await d.layers()
     let ddoc = layers[0]
@@ -56,10 +58,12 @@ describe('upwell', () => {
 
 
   it('creates layers with authors', async () => {
-    let d = new Upwell('Upwelling: Local-first Collaborative Writing')
+    let first_author: Author =  'Susan'
+    let d = await Upwell.create({ author: first_author})
     let layers = await d.layers()
-    
     let doc = layers[0]
+    assert.equal(d.authors.size, 1)
+    assert.isTrue(d.authors.has(first_author))
 
     doc.insertAt(0, 'H')
     doc.insertAt(1, 'e')
@@ -67,22 +71,23 @@ describe('upwell', () => {
     doc.insertAt(3, 'l')
     doc.insertAt(4, 'o')
     assert.equal(doc.text, 'Hello')
-
-    let versionName = 'Started typing on the train'
-    let author = 'Theroux'
-    doc.commit(versionName)
     d.persist(doc)
 
-    doc.insertAt(0, 'H')
-    doc.deleteAt(1)
-    doc.insertAt(1, 'o')
-    doc.deleteAt(2)
-    doc.deleteAt(3)
-    doc.insertAt(3, 'a')
-    doc.deleteAt(4)
-    //assert(doc.text === 'Hola')
+    let name = 'Started typing on the train'
+    let author: Author = 'Theroux'
+    let newLayer = Layer.create(name, doc, author)
+    await d.add(newLayer)
+    assert.equal(d.authors.size, 2)
+    assert.sameMembers(Array.from(d.authors), [first_author, author])
 
-
+    newLayer.insertAt(0, 'H')
+    newLayer.deleteAt(1)
+    newLayer.insertAt(1, 'o')
+    newLayer.deleteAt(2)
+    newLayer.deleteAt(3)
+    newLayer.insertAt(3, 'a')
+    newLayer.deleteAt(4)
+    assert.equal(newLayer.text, 'Hola')
+    assert.equal(newLayer.author, author)
   })
-
 })

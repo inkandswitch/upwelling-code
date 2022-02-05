@@ -23,6 +23,7 @@
     "webpack-cli": "^4.9.2"
   },
   "dependencies": {
+    "@types/chai": "^4.3.0",
     "automerge-wasm": "file:automerge-rs/automerge-wasm/dev",
     "chai": "^4.3.6",
     "nanoid": "^3.2.0",

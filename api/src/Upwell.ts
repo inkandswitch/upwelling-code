@@ -4,13 +4,10 @@ import { UpwellMetadata } from './UpwellMetadata';
 import AsyncStorage from './storage'
 import { memoryStore } from './storage/memory';
 
-export type Author = {
-  id: string,
-  handle: string
-}
+export type Author = string 
 
 export type UpwellOptions = {
-  fs: AsyncStorage,
+  fs?: AsyncStorage,
   author?: Author,
   remote?: AsyncStorage
 }
@@ -22,28 +19,20 @@ const LAYER_EXT = 'layer'
 export class Upwell {
   db: AsyncStorage 
   remote: AsyncStorage | undefined
+  authors: Set<Author> = new Set()
 
-  constructor(title: string, options?: UpwellOptions) {
+  constructor(options?: UpwellOptions) {
     this.db = options?.fs || new memoryStore()
     this.remote = options?.remote
-    let layer = Layer.create('Document initialized', null, options?.author)
-    let metadata = UpwellMetadata.create(layer.id, options?.author)
-    this.persist(layer)
-    this.saveMetadata(metadata)
   }
-
   async layers(): Promise<Layer[]> {
     let ids = await this.db.ids()
-    let res: Layer[] = []
-    ids.forEach(id => {
-      if (id.endsWith(LAYER_EXT)) { 
-        this.db.getItem(id).then(value => {
-          let layer = Layer.load(value)
-          if (layer) res.push(layer)
-        })
-      }
-    })
-    return res
+    return Promise.all(ids.filter(id => id.endsWith(LAYER_EXT)).map(async id => {
+      let value = await this.db.getItem(id)
+      let layer = Layer.load(value)
+      this.authors.add(layer.author)
+      return layer
+    }))
   }
 
   async add(layer: Layer): Promise<void> {
@@ -54,6 +43,7 @@ export class Upwell {
       console.log('merging layers')
       layer.sync(existing)
     } 
+    this.authors.add(layer.author)
     return this.persist(layer)
   }
 
@@ -95,6 +85,16 @@ export class Upwell {
       return null
     }
   }
+
+  static async create(options?: UpwellOptions): Promise<Upwell> {
+    let upwell = new Upwell(options)
+    let layer = Layer.create('Document initialized', null, options?.author)
+    let metadata = UpwellMetadata.create(layer.id)
+    await upwell.saveMetadata(metadata)
+    await upwell.persist(layer)
+    return upwell
+  }
+
 
   exists(id: string): boolean {
     return this.db.getItem(id) !== null
