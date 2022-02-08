@@ -70,7 +70,7 @@ export class Upwell {
 
   async getLocal(id: string): Promise<Layer | null> { 
     // local-first
-    let saved = await this.db.getItem(id)
+    let saved = await this.db.getItem(`${id}.${LAYER_EXT}`)
     if (!saved) return null
     return Layer.load(saved)
   }
@@ -88,13 +88,16 @@ export class Upwell {
 
   static async create(options?: UpwellOptions): Promise<Upwell> {
     let upwell = new Upwell(options)
-    let layer = Layer.create('Document initialized', null, options?.author)
-    let metadata = UpwellMetadata.create(layer.id)
-    await upwell.saveMetadata(metadata)
-    await upwell.persist(layer)
+    await upwell.initialize(options?.author)
     return upwell
   }
 
+  async initialize(author?: Author) {
+    let layer = Layer.create('Document initialized', null, author)
+    let metadata = UpwellMetadata.create(layer.id)
+    await this.saveMetadata(metadata)
+    await this.persist(layer)
+  }
 
   exists(id: string): boolean {
     return this.db.getItem(id) !== null

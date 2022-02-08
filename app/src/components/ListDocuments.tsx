@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Upwell, Layer }  from 'api'
 import Documents from '../Documents'
 
-let documents: Upwell = Documents()
+let upwell: Upwell = Documents()
 
 type Props = {
   list: Layer[]
@@ -11,7 +11,8 @@ type Props = {
 export default function MaybeListDocuments() {
   let [list, setList] = useState<Layer[]>([])
   useEffect(() => {
-    documents.layers().then((layers: Layer[]) => {
+    upwell.layers().then((layers: Layer[]) => {
+      console.log('layers', layers)
       setList(layers)
     })
   }, [])
@@ -22,7 +23,7 @@ export function ListDocuments({ list }: Props) {
   return <div>
     <ul>
       {list.map((meta: Layer) => {
-        return <li><a href={`/doc/${meta.id}`}>{meta.title}</a></li>
+        return <li><a href={`/layer/${meta.id}`}>{meta.title || 'Untitled'}</a></li>
       })}
     </ul>
   </div>

@@ -4,8 +4,9 @@ import { SYNC_STATE } from '../types';
 import {Layer, Upwell} from 'api';
 import catnames from 'cat-names'
 import Documents from '../Documents'
+import ListDocuments from './ListDocuments';
 
-let documents: Upwell = Documents()
+let upwell: Upwell = Documents()
 
 export type DocumentProps = {
   id: string
@@ -20,13 +21,6 @@ function DocumentView(props: {layer: Layer}) {
   const { layer } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
   let [state, setState] = React.useState<LayerState>({ text: layer.text, title: layer.title })
-  let [layers, setLayers] = React.useState<Layer[]>([])
-
-  useEffect(() => {
-    documents.layers().then((layers: Layer[])=> {
-      setLayers(layers)
-    })
-  }, [])
 
   let onDownloadClick = async () => {
     let filename = layer.title + '.up'
@@ -41,14 +35,13 @@ function DocumentView(props: {layer: Layer}) {
     let message = 'Very cool layer'
     let author = catnames.random()
     let newLayer = Layer.create(message, layer, author)
-    console.log('created layer', newLayer)
-    await documents.persist(newLayer)
+    await upwell.persist(newLayer)
   }
 
   let onSyncClick = async () => {
     try {
       setStatus(SYNC_STATE.LOADING)
-      await documents.syncWithServer(layer)
+      await upwell.syncWithServer(layer)
       setState({ title: layer.title, text: layer.text })
       setStatus(SYNC_STATE.SYNCED)
     } catch (err) {
@@ -63,19 +56,17 @@ function DocumentView(props: {layer: Layer}) {
     switch (e.nativeEvent.inputType) {
       case 'insertText':
         //@ts-ignore
-        doc.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data)
+        layer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key)
         break;
       case 'deleteContentBackward':
-        //@ts-ignore
-        doc.deleteAt(e.target.selectionEnd)
+        layer.deleteAt(e.target.selectionEnd, key)
         break;
       case 'insertLineBreak':
-        //@ts-ignore
-        doc.insertAt(e.target.selectionEnd - 1, '\n')
+        layer.insertAt(e.target.selectionEnd - 1, '\n', key)
         break;
     }
     setState({ title: layer.title, text: layer.text })
-    documents.persist(layer)
+    upwell.persist(layer)
     setStatus(SYNC_STATE.SYNCED)
   }
 
@@ -96,9 +87,7 @@ function DocumentView(props: {layer: Layer}) {
         <textarea className="text" value={state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
       </div>
       <ul id="panel">
-        {layers.map((layer: Layer)=> {
-          return <RelatedDocument layer={layer} />
-        })}
+        <ListDocuments />
       </ul>
       <div id="debug">
         id: {layer.id}
@@ -119,7 +108,8 @@ export default function MaybeDocumentView({
   useEffect(() => {
     // FIXME: what if the id isn't a real one (and just junk?) 
     // Make sure to handle errors gracefully (either redirect to list or just make a new document)
-    documents.getLocal(id).then((layer: Layer | null) => {
+    upwell.getLocal(id).then((layer: Layer | null) => {
+      console.log(layer)
       if (layer) setState(layer)
     }).catch((err: Error) => {
       console.error('got error', err)
@@ -131,14 +121,3 @@ export default function MaybeDocumentView({
 
 }
 
-
-function RelatedDocument(props: { layer: Layer}) {
-  let meta = props.layer
-  let href = "/doc/" + meta.id
-  console.log('related', meta)
-
-  return <li key={meta.id}>
-    <a href={href}> {meta.message} by {meta.author}</a>
-  </li>
-
-}

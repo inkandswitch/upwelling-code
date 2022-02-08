@@ -29,15 +29,16 @@ export type Subscriber = (doc: Layer) => void
 export class Layer {
   doc: Automerge.Automerge
   private heads?: Heads;
-  private textObj?: Automerge.ObjID 
   private subscriber?: Subscriber 
 
   constructor(doc: Automerge.Automerge) {
     this.doc = doc
-    let value = this.doc.value(ROOT, 'text')
-    if (value && value[0] === 'text') {
-      this.textObj = value[1]
-    } 
+  }
+
+  private _getAutomergeText(prop: string): string {
+    let value = this.doc.value(ROOT, prop)
+    if (value && value[0] === 'text') return this.doc.text(value[1])
+    else return ''
   }
 
   private _getValue(prop: string) {
@@ -69,9 +70,8 @@ export class Layer {
     this.doc.set(ROOT, 'message', value)
   }
 
-  get text () {
-    if (this.textObj) return this.doc.text(this.textObj, this.heads)
-    else return ''
+  get text (): string {
+    return this._getAutomergeText('text')
   }
 
   get author(): string {
@@ -79,7 +79,7 @@ export class Layer {
   }
 
   get title (): string {
-    return this._getValue('title') as string;
+    return this._getAutomergeText('title')
   }
 
   get parent_id(): string {
@@ -119,19 +119,22 @@ export class Layer {
     })
   }
 
-  insertAt(position: number, value: string) {
-    if (!this.textObj) throw new Error('Text field not properly initialized')
-    this.doc.splice(this.textObj, position, 0, value)
+  insertAt(position: number, value: string, prop = 'text') {
+    let obj = this.doc.value(ROOT, prop)
+    if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 0, value)
+    else throw new Error('Text field not properly initialized')
   }
 
-  deleteAt(position: number) {
-    if (!this.textObj) throw new Error('Text field not properly initialized')
-    this.doc.splice(this.textObj, position, 1, '')
+  deleteAt(position: number, prop = 'text') {
+    let obj = this.doc.value(ROOT, prop)
+    if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 1, '')
+    else throw new Error('Text field not properly initialized')
   }
 
-  mark(range: string, value: Automerge.Value) {
-    if (!this.textObj) throw new Error('Text field not properly initialized')
-    this.doc.mark(ROOT, this.textObj, range, value)
+  mark(name: string, range: string, value: Automerge.Value, prop = 'text') {
+    let obj = this.doc.value(ROOT, prop)
+    if (obj && obj[0] === 'text') return this.doc.mark(obj[1], name, range, value)
+    else throw new Error('Text field not properly initialized')
   }
 
   save (): Uint8Array {
