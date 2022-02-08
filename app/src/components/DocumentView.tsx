@@ -1,15 +1,20 @@
 import React, { useEffect } from 'react'
 import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
-import {Layer, Upwell} from 'api';
-import catnames from 'cat-names'
+import {Author, Layer, Upwell} from 'api';
 import Documents from '../Documents'
 import ListDocuments from './ListDocuments';
 
 let upwell: Upwell = Documents()
 
-export type DocumentProps = {
-  id: string
+type DocumentProps = {
+  id: string,
+  author: Author
+}
+
+type DocumentViewProps = {
+  layer: Layer,
+  author: Author
 }
 
 type LayerState = {
@@ -23,8 +28,8 @@ async function open (): Promise<Uint8Array> {
   return new Uint8Array(await file.arrayBuffer())
 }
 
-function DocumentView(props: {layer: Layer}) {
-  const { layer } = props
+function DocumentView(props: DocumentViewProps) {
+  const { author, layer } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
   let [state, setState] = React.useState<LayerState>({ text: layer.text, title: layer.title })
 
@@ -47,7 +52,6 @@ function DocumentView(props: {layer: Layer}) {
 
   let onCreateLayer = async () => {
     let message = 'Very cool layer'
-    let author = catnames.random()
     let newLayer = Layer.create(message, layer, author)
     await upwell.persist(newLayer)
   }
@@ -117,7 +121,7 @@ function DocumentView(props: {layer: Layer}) {
 }
 
 export default function MaybeDocumentView({
-  id
+  author, id
 }: DocumentProps) {
   let [layer, setState] = React.useState<Layer | null>(null)
 
@@ -132,7 +136,7 @@ export default function MaybeDocumentView({
     })
   }, [id])
 
-  if (layer) return <DocumentView layer={layer} />
+  if (layer) return <DocumentView author={author} layer={layer} />
   else return <div>Loading...</div>
 
 }
