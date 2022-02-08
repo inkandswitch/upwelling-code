@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es5",
+        "target": "es2016",
         "sourceMap": true,
         "resolveJsonModule": true,
         "esModuleInterop": true,
@@ -10,7 +10,6 @@
 			"esnext"
 		],
         "module": "commonjs",
-        "declaration": true,
         "moduleResolution": "node",
         "allowJs": true,
         "allowSyntheticDefaultImports": true,
