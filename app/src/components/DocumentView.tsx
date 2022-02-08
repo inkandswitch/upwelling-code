@@ -32,6 +32,13 @@ function DocumentView(props: DocumentViewProps) {
   const { author, layer } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
   let [state, setState] = React.useState<LayerState>({ text: layer.text, title: layer.title })
+  let [layers, setLayers] = React.useState<Layer[]>([])
+  useEffect(() => {
+    upwell.layers().then((layers: Layer[]) => {
+      setLayers(layers)
+    })
+  }, [])
+
 
   let onOpenClick = async () => {
     let binary: Uint8Array = await open()
@@ -41,6 +48,7 @@ function DocumentView(props: DocumentViewProps) {
     await upwell.add(layer)
     window.location.href = '/layer/' + layer.id
   }
+
   let onDownloadClick = async () => {
     let filename = layer.title + '.up'
     let el = window.document.createElement('a')
@@ -54,6 +62,7 @@ function DocumentView(props: DocumentViewProps) {
     let message = 'Very cool layer'
     let newLayer = Layer.create(message, layer, author)
     await upwell.persist(newLayer)
+    setLayers(await upwell.layers())
   }
 
   let onSyncClick = async () => {
@@ -114,7 +123,7 @@ function DocumentView(props: DocumentViewProps) {
       </div>
       <ul id="panel">
         <button onClick={onCreateLayer}>+ Layer</button>
-        <ListDocuments />
+        <ListDocuments layers={layers}/>
       </ul>
     </div>
   )

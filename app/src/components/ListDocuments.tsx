@@ -1,28 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { Upwell, Layer }  from 'api'
-import Documents from '../Documents'
-
-let upwell: Upwell = Documents()
+import React from 'react'
+import { Layer }  from 'api'
 
 type Props = {
-  list: Layer[]
+  layers: Layer[]
 }
 
-export default function MaybeListDocuments() {
-  let [list, setList] = useState<Layer[]>([])
-  useEffect(() => {
-    upwell.layers().then((layers: Layer[]) => {
-      console.log('layers', layers)
-      setList(layers)
-    })
-  }, [])
-  return <ListDocuments list={list} />
-}
-
-export function ListDocuments({ list }: Props) {
+export default function ListDocuments({ layers}: Props) {
   return <div>
     <ul>
-      {list.map((meta: Layer) => {
+      {layers.map((meta: Layer) => {
         return <li><a href={`/layer/${meta.id}`}>{meta.message}</a></li>
       })}
     </ul>
