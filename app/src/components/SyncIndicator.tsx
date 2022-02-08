@@ -21,7 +21,6 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
       break;
   }
   return <span id="sync-indicator">
-    {indicator}
 
   </span>
 }
