@@ -17,11 +17,25 @@ type LayerState = {
   title: string
 }
 
+async function open (): Promise<Uint8Array> {
+  let [fileHandle] = await showOpenFilePicker()
+  const file = await fileHandle.getFile()
+  return new Uint8Array(await file.arrayBuffer())
+}
+
 function DocumentView(props: {layer: Layer}) {
   const { layer } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
   let [state, setState] = React.useState<LayerState>({ text: layer.text, title: layer.title })
 
+  let onOpenClick = async () => {
+    let binary: Uint8Array = await open()
+    // this is a hack for demos as of December 21, we probably want to do something
+    // totally different
+    let layer =  Layer.load(binary)
+    await upwell.add(layer)
+    window.location.href = '/layer/' + layer.id
+  }
   let onDownloadClick = async () => {
     let filename = layer.title + '.up'
     let el = window.document.createElement('a')
@@ -75,9 +89,9 @@ function DocumentView(props: {layer: Layer}) {
       <div id="app">
         <div id="toolbar">
             <div id="toolbar.buttons">
+              <button onClick={onOpenClick}>Open</button>
               <button onClick={onDownloadClick}>Download</button>
               <button onClick={onSyncClick}>Sync</button>
-              <button onClick={onCreateLayer}>+ Layer</button>
             </div>
           <div>
             <SyncIndicator state={status} />
@@ -85,17 +99,19 @@ function DocumentView(props: {layer: Layer}) {
         </div>
         <textarea className="title" value={state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
         <textarea className="text" value={state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
-      </div>
-      <ul id="panel">
-        <ListDocuments />
-      </ul>
-      <div id="debug">
+      
+        <div id="debug">
         id: {layer.id}
         <br></br>
         author: {layer.author}
         <br></br>
         message: {layer.message}
       </div>
+      </div>
+      <ul id="panel">
+        <button onClick={onCreateLayer}>+ Layer</button>
+        <ListDocuments />
+      </ul>
     </div>
   )
 }
