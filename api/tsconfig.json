@@ -14,12 +14,17 @@
         "allowJs": true,
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "skipLibCheck": true
     },
     "include": [
       "src/**/*",
     ],
     "exclude": [
         "node_modules"
+    ],
+    "types": [
+        "mocha",
+        "node"
     ]
 }
