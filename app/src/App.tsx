@@ -1,11 +1,12 @@
 import React from 'react'
 import DocumentView from './components/DocumentView'
 import ListDocuments from './components/ListDocuments'
-import Upwell from '@upwell/api'
+import { Upwell, Layer } from 'api'
 import { Route, useLocation } from "wouter";
 import { showOpenFilePicker } from 'file-system-access';
+import Documents from './Documents'
 
-let documents = Upwell()
+let documents: Upwell = Documents()
 
 async function open (): Promise<Uint8Array> {
   let [fileHandle] = await showOpenFilePicker()
@@ -20,13 +21,9 @@ export default function App() {
     let binary: Uint8Array = await open()
     // this is a hack for demos as of December 21, we probably want to do something
     // totally different
-    let doc = await documents.add(binary)
-    window.location.href = '/doc/' + doc.id
-  }
-
-  let onNewClick = () => {
-    let document = documents.create()
-    setLocation(`/doc/${document.id}`)
+    let layer =  Layer.load(binary)
+    await documents.add(layer)
+    window.location.href = '/doc/' + layer.id
   }
 
   let onListClick = () => {
@@ -35,7 +32,6 @@ export default function App() {
 
   return <div>
     <button onClick={onListClick}>List</button>
-    <button onClick={onNewClick}>New</button>
     <button onClick={onOpenClick}>Open</button>
     <Route path="/doc/:id">
       {(params) => <DocumentView id={params.id} />}

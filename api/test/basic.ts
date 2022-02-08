@@ -1,7 +1,6 @@
 import { Author, Upwell, Layer } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
-import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
   it('subscribes to document changes', async () => {

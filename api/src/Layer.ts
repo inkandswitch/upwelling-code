@@ -1,7 +1,15 @@
 import { nanoid } from 'nanoid';
-import { sia, desia } from 'sializer';
+import init from 'automerge-wasm'
 import * as Automerge from 'automerge-wasm';
 import { Author } from './Upwell';
+
+export async function loadForTheFirstTimeLoL() {
+  return new Promise<void>((resolve, reject) => {
+    init().then(() => {
+      resolve()
+    })
+  })
+}
 
 const ROOT = '_root'
 
@@ -148,8 +156,8 @@ export class Layer {
       doc.set(ROOT, 'id', nanoid())
       doc.set(ROOT, 'message', message)
       if (author) doc.set(ROOT, 'author', author)
-      doc.make(ROOT, 'title', Automerge.TEXT)
-      doc.make(ROOT, 'text', Automerge.TEXT)
+      doc.set(ROOT, 'title', Automerge.TEXT)
+      doc.set(ROOT, 'text', Automerge.TEXT)
       return new Layer(doc)
     }
   }

@@ -1,19 +1,25 @@
 import React, { useEffect } from 'react'
 import { SyncIndicator } from './SyncIndicator';
 import { SYNC_STATE } from '../types';
-import { Upwell, Layer, LayerMetadata } from '@upwell/api';
+import {Layer, Upwell} from 'api';
 import catnames from 'cat-names'
+import Documents from '../Documents'
 
-let documents = Upwell()
+let documents: Upwell = Documents()
 
 export type DocumentProps = {
   id: string
 }
 
-function DocumentView(props: {doc: Layer}) {
-  const { doc } = props
+type LayerState = {
+  text: string,
+  title: string
+}
+
+function DocumentView(props: {layer: Layer}) {
+  const { layer } = props
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING)
-  let [state, setState] = React.useState<LayerMetadata>(doc.toJSON())
+  let [state, setState] = React.useState<LayerState>({ text: layer.text, title: layer.title })
   let [layers, setLayers] = React.useState<Layer[]>([])
 
   useEffect(() => {
@@ -23,26 +29,27 @@ function DocumentView(props: {doc: Layer}) {
   }, [])
 
   let onDownloadClick = async () => {
-    let filename = doc.title + '.up'
+    let filename = layer.title + '.up'
     let el = window.document.createElement('a')
-    let buf = doc.toString()
-    el.setAttribute('href', 'data:application/octet-stream;base64,' + buf);
+    let buf: Uint8Array = layer.save()
+    el.setAttribute('href', 'data:application/octet-stream;base64,' + buf.toString());
     el.setAttribute('download', filename)
     el.click()
   }
 
-  let onCreateVersion = async () => {
-    let versionName = 'Very cool version '
-    doc.commit(versionName, catnames.random())
-    console.log('created version', doc.id, doc.message, doc.author)
-    await documents.persist(doc)
+  let onCreateLayer = async () => {
+    let message = 'Very cool layer'
+    let author = catnames.random()
+    let newLayer = Layer.create(message, layer, author)
+    console.log('created layer', newLayer)
+    await documents.persist(newLayer)
   }
 
   let onSyncClick = async () => {
     try {
       setStatus(SYNC_STATE.LOADING)
-      await documents.syncWithServer(doc)
-      setState(doc.toJSON())
+      await documents.syncWithServer(layer)
+      setState({ title: layer.title, text: layer.text })
       setStatus(SYNC_STATE.SYNCED)
     } catch (err) {
       setStatus(SYNC_STATE.OFFLINE)
@@ -67,8 +74,8 @@ function DocumentView(props: {doc: Layer}) {
         doc.insertAt(e.target.selectionEnd - 1, '\n')
         break;
     }
-    setState(doc.toJSON())
-    documents.persist(doc)
+    setState({ title: layer.title, text: layer.text })
+    documents.persist(layer)
     setStatus(SYNC_STATE.SYNCED)
   }
 
@@ -79,7 +86,7 @@ function DocumentView(props: {doc: Layer}) {
             <div id="toolbar.buttons">
               <button onClick={onDownloadClick}>Download</button>
               <button onClick={onSyncClick}>Sync</button>
-              <button onClick={onCreateVersion}>Create Version</button>
+              <button onClick={onCreateLayer}>+ Layer</button>
             </div>
           <div>
             <SyncIndicator state={status} />
@@ -89,16 +96,16 @@ function DocumentView(props: {doc: Layer}) {
         <textarea className="text" value={state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
       </div>
       <ul id="panel">
-        {relatedDocuments.map(meta => {
-          return <RelatedDocument meta={meta} />
+        {layers.map((layer: Layer)=> {
+          return <RelatedDocument layer={layer} />
         })}
       </ul>
       <div id="debug">
-        id: {doc.id}
+        id: {layer.id}
         <br></br>
-        version: {doc.version}
+        author: {layer.author}
         <br></br>
-        message: {doc.message}
+        message: {layer.message}
       </div>
     </div>
   )
@@ -107,30 +114,30 @@ function DocumentView(props: {doc: Layer}) {
 export default function MaybeDocumentView({
   id
 }: DocumentProps) {
-  let [doc, setState] = React.useState<Layer | null>(null)
+  let [layer, setState] = React.useState<Layer | null>(null)
 
   useEffect(() => {
     // FIXME: what if the id isn't a real one (and just junk?) 
     // Make sure to handle errors gracefully (either redirect to list or just make a new document)
-    documents.getLocal(id).then((doc: Layer) => {
-      setState(doc)
-    }).catch(err => {
+    documents.getLocal(id).then((layer: Layer | null) => {
+      if (layer) setState(layer)
+    }).catch((err: Error) => {
       console.error('got error', err)
     })
   }, [id])
 
-  if (doc) return <DocumentView doc={doc} />
+  if (layer) return <DocumentView layer={layer} />
   else return <div>Loading...</div>
 
 }
 
 
-function RelatedDocument(props: { meta: LayerMetadata }) {
-  let meta = props.meta
+function RelatedDocument(props: { layer: Layer}) {
+  let meta = props.layer
   let href = "/doc/" + meta.id
   console.log('related', meta)
 
-  return <li key={meta.version}>
+  return <li key={meta.id}>
     <a href={href}> {meta.message} by {meta.author}</a>
   </li>
 

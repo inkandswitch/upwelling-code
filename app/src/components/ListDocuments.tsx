@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import Upwell, { Layer }  from '@upwell/api'
+import { Upwell, Layer }  from 'api'
+import Documents from '../Documents'
 
-let documents = Upwell()
+let documents: Upwell = Documents()
 
 type Props = {
   list: Layer[]

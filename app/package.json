@@ -9,7 +9,7 @@
     "@tldraw/core": "^0.1.18",
     "@types/jest": "^26.0.15",
     "@types/node": "^12.0.0",
-    "@upwell/api": "file:../api",
+    "api": "file:../api",
     "buffer": "^6.0.3",
     "cat-names": "^3.0.0",
     "file-system-access": "^1.0.2",
@@ -20,7 +20,6 @@
     "react-scripts": "5.0.0",
     "simple-peer": "^9.11.0",
     "typescript": "^4.1.2",
-    "upwell": "file:../upwell",
     "web-vitals": "^1.0.1",
     "wouter": "^2.8.0-alpha.2"
   },

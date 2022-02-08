@@ -1,5 +1,4 @@
-import { nanoid } from 'nanoid';
-import { Layer, LayerMetadata  } from './Layer';
+import { Layer } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 import AsyncStorage from './storage'
 import { memoryStore } from './storage/memory';
@@ -14,6 +13,7 @@ export type UpwellOptions = {
 
 const METADATA_FILENAME = 'metadata.automerge'
 const LAYER_EXT = 'layer'
+
 
 // An Upwell that is persisted on disk
 export class Upwell {
