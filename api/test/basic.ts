@@ -36,7 +36,7 @@ describe('upwell', () => {
     doc.commit('Translated to Spanish')
     await new Promise(resolve => setTimeout(resolve, 1000));
     assert.equal(times, 2)
-  }
+  })
 
   it('saves and loads from a file', async () => {
     let d = await Upwell.create()
