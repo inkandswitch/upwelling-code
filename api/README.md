@@ -52,7 +52,7 @@ curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 ## Step 1: Build Experimental `automerge-wasm`
 
 ```
-git submodule update --init
+git clone https://github.com/automerge/automerge-rs.git
 cd automerge-rs/automerge-wasm
 yarn && yarn pkg && npm run build
 cd ../..

@@ -1,3 +1,0 @@
-[submodule "api/automerge-rs"]
-	path = api/automerge-rs
-	url = https://github.com/automerge/automerge-rs.git
