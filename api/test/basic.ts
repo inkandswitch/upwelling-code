@@ -8,7 +8,7 @@ describe('upwell', () => {
     let layers = await d.layers()
     assert.lengthOf(layers, 1)
 
-    let doc: Layer = Layer.create('New layer', layers[0])
+    let doc: Layer = Layer.create('New layer', 'Susan', layers[0])
     await d.add(doc)
     assert.lengthOf(await d.layers(), 2)
 
@@ -69,11 +69,11 @@ describe('upwell', () => {
     doc.insertAt(3, 'l')
     doc.insertAt(4, 'o')
     assert.equal(doc.text, 'Hello')
-    d.persist(doc)
+    await d.persist(doc)
 
     let name = 'Started typing on the train'
     let author: Author = 'Theroux'
-    let newLayer = Layer.create(name, doc, author)
+    let newLayer = Layer.create(name, author, doc)
     await d.add(newLayer)
     assert.equal(d.authors.size, 2)
     assert.sameMembers(Array.from(d.authors), [first_author, author])

@@ -88,12 +88,12 @@ export class Upwell {
 
   static async create(options?: UpwellOptions): Promise<Upwell> {
     let upwell = new Upwell(options)
-    await upwell.initialize(options?.author)
+    await upwell.initialize(options?.author || 'Unknown')
     return upwell
   }
 
-  async initialize(author?: Author) {
-    let layer = Layer.create('Document initialized', null, author)
+  async initialize(author: Author) {
+    let layer = Layer.create('Document initialized', author)
     let metadata = UpwellMetadata.create(layer.id)
     await this.saveMetadata(metadata)
     await this.persist(layer)

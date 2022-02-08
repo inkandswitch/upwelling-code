@@ -146,19 +146,19 @@ export class Layer {
     return new Layer(doc)
   }
 
-  static create(message: string, layer?: Layer, author?: Author): Layer {
+  static create(message: string, author: Author, layer?: Layer): Layer {
     if (layer) {
       let doc = layer.doc.clone()
       doc.set(ROOT, 'id', nanoid())
       doc.set(ROOT, 'message', message)
       doc.set(ROOT, 'parent_id', layer.id)
-      if (author) doc.set(ROOT, 'author', author)
+      doc.set(ROOT, 'author', author)
       return new Layer(doc)
     } else {
       let doc = Automerge.create()
       doc.set(ROOT, 'id', nanoid())
       doc.set(ROOT, 'message', message)
-      if (author) doc.set(ROOT, 'author', author)
+      doc.set(ROOT, 'author', author)
       doc.set(ROOT, 'title', Automerge.TEXT)
       doc.set(ROOT, 'text', Automerge.TEXT)
       return new Layer(doc)
