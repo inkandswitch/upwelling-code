@@ -23,7 +23,7 @@ export function ListDocuments({ list }: Props) {
   return <div>
     <ul>
       {list.map((meta: Layer) => {
-        return <li><a href={`/layer/${meta.id}`}>{meta.title || 'Untitled'}</a></li>
+        return <li><a href={`/layer/${meta.id}`}>{meta.message}</a></li>
       })}
     </ul>
   </div>
