@@ -1,4 +1,4 @@
-import { Author, Upwell, Layer } from '../src/index'
+import { Author, Upwell, Layer, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
 
@@ -13,7 +13,7 @@ describe('upwell', () => {
     assert.lengthOf(await d.layers(), 2)
 
     let times = 0
-    doc.subscribe((doc: Layer) => {
+    doc.subscribe((doc: Layer, heads: Heads) => {
       times++
       if (times === 1) assert.equal(doc.text, 'Hello')
       if (times === 2) assert.equal(doc.text, 'Hola')
@@ -34,7 +34,9 @@ describe('upwell', () => {
     doc.insertAt(3, 'a')
     doc.deleteAt(4)
     doc.commit('Translated to Spanish')
-  })
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    assert.equal(times, 2)
+  }
 
   it('saves and loads from a file', async () => {
     let d = await Upwell.create()
@@ -87,5 +89,21 @@ describe('upwell', () => {
     newLayer.deleteAt(4)
     assert.equal(newLayer.text, 'Hola')
     assert.equal(newLayer.author, author)
+  })
+
+  it('merge two layers', async () => {
+    let first_author: Author =  'Susan'
+    let d = await Upwell.create({ author: first_author})
+    let layers = await d.layers()
+    let doc = layers[0]
+
+    doc.insertAt(0, 'H')
+    doc.insertAt(1, 'e')
+    doc.insertAt(2, 'l')
+    doc.insertAt(3, 'l')
+    doc.insertAt(4, 'o')
+    assert.equal(doc.text, 'Hello')
+    await d.persist(doc)
+
   })
 })

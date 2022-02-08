@@ -25,7 +25,7 @@ export type LayerMetadata = {
   message: string,
   archived: boolean
 }
-export type Subscriber = (doc: Layer) => void 
+export type Subscriber = (doc: Layer, heads: Heads) => void 
 
 export class Layer {
   doc: Automerge.Automerge
@@ -168,7 +168,9 @@ export class Layer {
 
   commit(message: string): Heads {
     let meta: ChangeMetadata = { author: this.author, message }
-    return this.doc.commit(JSON.stringify(meta))
+    let heads = this.doc.commit(JSON.stringify(meta))
+    if (this.subscriber) this.subscriber(this, heads)
+    return heads
   }
 
   sync(theirs: Layer) {
