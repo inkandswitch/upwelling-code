@@ -53,7 +53,9 @@ curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
 ```
 git clone https://github.com/automerge/automerge-rs.git
-cd automerge-rs/automerge-wasm
+cd automerge-rs
+git checkout marks
+cd automerge-wasm
 yarn && yarn pkg && npm run build
 cd ../..
 ```
