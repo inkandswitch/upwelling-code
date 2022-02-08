@@ -13,14 +13,15 @@ export async function loadForTheFirstTimeLoL() {
 
 const ROOT = '_root'
 
-export type ChangeOptions = {
-  author: string
+export type ChangeMetadata = {
+  message: string,
+  author: Author
 }
 export type Heads = string[];
 export type LayerMetadata = {
   id: string,
   parent_id: string,
-  author: string,
+  author: Author,
   message: string,
   archived: boolean
 }
@@ -74,8 +75,8 @@ export class Layer {
     return this._getAutomergeText('text')
   }
 
-  get author(): string {
-    return this._getValue('author') as string
+  get author(): Author {
+    return this._getValue('author') as Author
   }
 
   get title (): string {
@@ -166,8 +167,8 @@ export class Layer {
   }
 
   commit(message: string): Heads {
-    let metadata = JSON.stringify({ message })
-    return this.doc.commit(metadata)
+    let meta: ChangeMetadata = { author: this.author, message }
+    return this.doc.commit(JSON.stringify(meta))
   }
 
   sync(theirs: Layer) {
