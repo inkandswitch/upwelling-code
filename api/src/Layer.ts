@@ -165,7 +165,6 @@ export class Layer {
       doc.set(ROOT, 'message', message)
       doc.set(ROOT, 'author', author)
       doc.set(ROOT, 'parent_id', layer.id)
-      doc.set(ROOT, 'author', author)
       return new Layer(doc)
     } else {
       let doc = Automerge.create()
