@@ -25,7 +25,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "cd ../api && npm run build && cd ../app && react-scripts build",
+    "build:api": "cd ../api && npm i && npm run build && cd ../app",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
