@@ -25,14 +25,17 @@ export class Upwell {
     this.db = options?.fs || new memoryStore()
     this.remote = options?.remote
   }
-  async layers(): Promise<Layer[]> {
+
+  async layers(archived?: boolean): Promise<Layer[]> {
     let ids = await this.db.ids()
-    return Promise.all(ids.filter(id => id.endsWith(LAYER_EXT)).map(async id => {
+      
+    let tasks = ids.filter(id => id.endsWith(LAYER_EXT)).map(async (id: string) => {
       let value = await this.db.getItem(id)
       let layer = Layer.load(value)
       this.authors.add(layer.author)
       return layer
-    }))
+    }, [])
+    return Promise.all(tasks)
   }
 
   async add(layer: Layer): Promise<void> {
@@ -41,10 +44,12 @@ export class Upwell {
       // we know about this layer already.
       // merge this layer with our existing layer 
       console.log('merging layers')
-      layer.sync(existing)
-    } 
-    this.authors.add(layer.author)
-    return this.persist(layer)
+      let merged = Layer.merge(existing, layer)
+      return this.persist(merged)
+    } else { 
+      this.authors.add(layer.author)
+      return this.persist(layer)
+    }
   }
 
   async persist(layer: Layer): Promise<void> {
@@ -57,8 +62,8 @@ export class Upwell {
       let binary = await this.remote.getItem(layer.id)
       if (binary) {
         let theirs = Layer.load(binary)
-        layer.sync(theirs)
-        this.persist(layer)
+        let merged = Layer.merge(layer, theirs)
+        this.persist(merged)
       }
     } catch (err) {
       console.log('No remote item exists for layer with id=', layer.id)
@@ -66,6 +71,12 @@ export class Upwell {
       // with anyone yet
     }
     return this.remote.setItem(layer.id, layer.save())
+  }
+
+  async archive(layer_id: string): Promise<void> {
+    let layer = await this.getLocal(layer_id)
+    layer.archived = true
+    return this.persist(layer)
   }
 
   async getLocal(id: string): Promise<Layer | null> { 

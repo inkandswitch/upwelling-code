@@ -48,7 +48,7 @@ describe('upwell', () => {
     let edoc = Layer.load(file)
     await e.add(edoc)
 
-    ddoc.title = 'Upwelling: Contextual Writing'
+    ddoc.insertAt(0, Array.from('Upwelling: Contextual Writing'), 'title')
 
     let binary = ddoc.save()
     let layer = Layer.load(binary)
@@ -91,7 +91,7 @@ describe('upwell', () => {
     assert.equal(newLayer.author, author)
   })
 
-  it('merge two layers', async () => {
+  it('merges two layers', async () => {
     let first_author: Author =  'Susan'
     let d = await Upwell.create({ author: first_author})
     let layers = await d.layers()
@@ -104,6 +104,32 @@ describe('upwell', () => {
     doc.insertAt(4, 'o')
     assert.equal(doc.text, 'Hello')
     await d.persist(doc)
+
+    let name = 'Started typing on the train'
+    let author: Author = 'Theroux'
+    let newLayer = Layer.create(name, author, doc)
+    await d.add(newLayer)
+    assert.equal(d.authors.size, 2)
+
+
+    newLayer.insertAt(5, ' ')
+    newLayer.insertAt(6, 'w')
+    newLayer.insertAt(7, 'o')
+    newLayer.insertAt(8, 'r')
+    newLayer.insertAt(9, 'l')
+    newLayer.insertAt(10, 'd')
+
+    let merged = Layer.merge(doc, newLayer)
+    assert.equal(merged.text, 'Hello world')
+
+    await d.add(merged)
+    layers = await d.layers()
+    console.log(layers)
+    assert.equal(layers.length, 2)
+    await d.archive(newLayer.id)
+    layers = await d.layers()
+    assert.equal(layers[1].archived, true)
+    
 
   })
 })

@@ -91,8 +91,8 @@ export class Layer {
     return this._getValue('archived') as boolean
   }
 
-  set title(value: string) {
-    this.doc.set(ROOT, 'title', value)
+  set archived(value: boolean) {
+    this.doc.set(ROOT, 'archived', value)
   }
 
   checkout(heads?: Heads) {
@@ -120,7 +120,7 @@ export class Layer {
     })
   }
 
-  insertAt(position: number, value: string, prop = 'text') {
+  insertAt(position: number, value: string | Array<string>, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 0, value)
     else throw new Error('Text field not properly initialized')
@@ -142,6 +142,17 @@ export class Layer {
     return this.doc.save()
   }
 
+  clone(): Layer {
+    let newDoc = this.doc.clone()
+    return new Layer(newDoc)
+  }
+
+  static merge(ours: Layer, theirs: Layer) {
+    let changes = theirs.doc.getChanges(ours.doc.getHeads())
+    ours.doc.applyChanges(changes)
+    return ours
+  }
+
   static load(binary: Uint8Array): Layer {
     let doc = Automerge.loadDoc(binary)
     return new Layer(doc)
@@ -152,6 +163,7 @@ export class Layer {
       let doc = layer.doc.clone()
       doc.set(ROOT, 'id', nanoid())
       doc.set(ROOT, 'message', message)
+      doc.set(ROOT, 'author', author)
       doc.set(ROOT, 'parent_id', layer.id)
       doc.set(ROOT, 'author', author)
       return new Layer(doc)
@@ -171,10 +183,5 @@ export class Layer {
     let heads = this.doc.commit(JSON.stringify(meta))
     if (this.subscriber) this.subscriber(this, heads)
     return heads
-  }
-
-  sync(theirs: Layer) {
-    let changes = theirs.doc.getChanges(this.doc.getHeads())
-    this.doc.applyChanges(changes)
   }
 }
