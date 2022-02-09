@@ -27,4 +27,4 @@ yarn-error.log*
 # session-specific
 server/data
 
-# automerge
+app/build

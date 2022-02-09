@@ -25,7 +25,7 @@ export default function App() {
     async function fetchLayers() {
       let layers = await upwell.layers()
       if (layers.length === 0) await upwell.initialize(author)
-      setMain((await upwell.metadata()).main_id)
+      setMain((await upwell.metadata()).main)
     }
 
     fetchLayers()
