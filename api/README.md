@@ -23,18 +23,6 @@ To set 16 as the default, do
 nvm alias default 16
 ```
 
-We'll also need yarn; on a Mac you can use homebrew to install it
-
-```
-brew install yarn
-```
-
-or use npm on other platforms
-
-```
-npm install --global yarn
-```
-
 For Rust, you can use the default installer.
 
 ```
@@ -56,7 +44,7 @@ git clone https://github.com/automerge/automerge-rs.git
 cd automerge-rs
 git checkout marks
 cd automerge-wasm
-yarn && yarn pkg && npm run build
+npm i && npm run pkg && npm run build
 cd ../..
 ```
 
