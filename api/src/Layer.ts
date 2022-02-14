@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import init from 'automerge-wasm'
 import * as Automerge from 'automerge-wasm';
 import { Author } from './Upwell';
+import * as Diff from 'diff';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -121,10 +122,33 @@ export class Layer {
     this.subscriber = subscriber  
   }
 
-  getEdits(other: Layer): void {
-    let changes = this.doc.getChangesAdded(other.doc)
-    let decodedChanges: Automerge.DecodedChange[] = changes.map(change => Automerge.decodeChange(change))
-    decodedChanges.map((value: Automerge.DecodedChange) => {
+  getEdits(other: Layer) {
+
+    let ours = this.text
+    let theirs = other.text
+
+    let diffs = Diff.diffWords(ours, theirs)
+
+    let idx = 0
+    return diffs.map(d => {
+      let type: string
+
+      if (d.added) {
+        type = 'insert'
+      } else if (d.removed) {
+        type = 'delete'
+      } else {
+        type = 'retain'
+      }
+
+      let currIdx = idx
+      if (type === 'insert' || type === 'retain') idx = currIdx + d.value.length
+
+      return {
+        type,
+        start: currIdx,
+        value: d.value
+      }
     })
   }
 
@@ -134,9 +158,9 @@ export class Layer {
     else throw new Error('Text field not properly initialized')
   }
 
-  deleteAt(position: number, prop = 'text') {
+  deleteAt(position: number, count: number = 1, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
-    if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 1, '')
+    if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, count, '')
     else throw new Error('Text field not properly initialized')
   }
 
