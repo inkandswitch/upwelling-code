@@ -1,7 +1,7 @@
-import LoadingIcons from 'react-loading-icons'
 import { SYNC_STATE } from '../types';
 
 export function SyncIndicator (props: { state: SYNC_STATE }) {
+  /*
   let indicator
   switch(props.state) {
     case SYNC_STATE.SYNCED:
@@ -20,6 +20,7 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
       indicator = <LoadingIcons.Circles speed="1" stroke="yellow" />
       break;
   }
+  */
   return <span id="sync-indicator">
 
   </span>
