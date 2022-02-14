@@ -166,8 +166,18 @@ export class Layer {
 
   mark(name: string, range: string, value: Automerge.Value, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
-    if (obj && obj[0] === 'text') return this.doc.mark(obj[1], name, range, value)
+    if (obj && obj[0] === 'text') return this.doc.mark(obj[1], range, name, value)
     else throw new Error('Text field not properly initialized')
+  }
+
+  getMarks(prop = 'text') {
+    let obj = this.doc.value(ROOT, 'text')
+    if (obj && obj[0] === 'text') return this.doc.raw_spans(obj[1])
+    else throw new Error('Text field not properly initialized')
+  }
+
+  get marks () {
+    return this.getMarks()
   }
 
   save (): Uint8Array {
