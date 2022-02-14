@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid"
-import * as Automerge from "automerge-wasm"
+import * as Automerge from "automerge-wasm-pack"
 import { Author } from "./Upwell"
 
 const ROOT = "_root"

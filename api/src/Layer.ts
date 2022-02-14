@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
-import init from 'automerge-wasm'
-import * as Automerge from 'automerge-wasm';
+import init from 'automerge-wasm-pack'
+import * as Automerge from 'automerge-wasm-pack';
 import { Author } from './Upwell';
 
 export async function loadForTheFirstTimeLoL() {
