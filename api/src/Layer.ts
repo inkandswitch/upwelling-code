@@ -20,6 +20,7 @@ export type ChangeMetadata = {
 export type Heads = string[];
 export type LayerMetadata = {
   id: string,
+  shared: boolean;
   parent_id: string,
   author: Author,
   message: string,
@@ -28,6 +29,7 @@ export type LayerMetadata = {
 export type Subscriber = (doc: Layer, heads: Heads) => void 
 
 export class Layer {
+  visible: boolean = false;
   doc: Automerge.Automerge
   private heads?: Heads;
   private subscriber?: Subscriber 
@@ -45,6 +47,14 @@ export class Layer {
   private _getValue(prop: string) {
     let value = this.doc.value(ROOT, prop, this.heads)
     if (value && value[0]) return value[1]
+  }
+
+  get shared () {
+    return this._getValue('shared') as boolean;
+  }
+
+  set shared (value: boolean) {
+    this.doc.set(ROOT, 'shared', value)
   }
 
   get version () {
@@ -105,7 +115,8 @@ export class Layer {
       message: this.message,
       author: this.author,
       parent_id: this.parent_id,
-      archived: this.archived
+      archived: this.archived,
+      shared: this.shared
     }
   }
 
@@ -163,6 +174,8 @@ export class Layer {
     doc.set(ROOT, 'id', nanoid())
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
+    doc.set(ROOT, 'shared', false)
+    doc.set(ROOT, 'archived', false)
     doc.set(ROOT, 'parent_id', layer.id)
     return new Layer(doc)
   }
@@ -171,10 +184,13 @@ export class Layer {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', nanoid())
     doc.set(ROOT, 'message', message)
+    doc.set(ROOT, 'shared', false)
+    doc.set(ROOT, 'archived', false)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'title', Automerge.TEXT)
     doc.set(ROOT, 'text', Automerge.TEXT)
     return new Layer(doc)
+
   }
 
   commit(message: string): Heads {

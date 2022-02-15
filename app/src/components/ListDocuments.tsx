@@ -6,10 +6,17 @@ type Props = {
 }
 
 export default function ListDocuments({ layers}: Props) {
+
+  let onLayerClick = (layer: Layer) => {
+    layer.visible = true
+    console.log(layers)
+
+  }
+
   return <div>
     <ul>
-      {layers.map((meta: Layer) => {
-        return <li><a href={`/layer/${meta.id}`}>{meta.message}</a></li>
+      {layers.map((layer: Layer) => {
+        return <li><button onClick={() => onLayerClick(layer)}>{layer.message}</button></li>
       })}
     </ul>
   </div>

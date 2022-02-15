@@ -130,4 +130,28 @@ describe('upwell', () => {
     layers = await d.layers()
     assert.equal(layers[1].archived, true)
   })
+
+  it('makes layers visible and shared', async () => {
+    let first_author: Author =  'Susan'
+    let d = await Upwell.create({ author: first_author})
+    let layers = await d.layers()
+    let doc = layers[0]
+
+    doc.shared = true
+
+    assert.equal(doc.shared, true)
+
+    let serialized = doc.save()
+
+    let inc = await Upwell.create({ author: 'Theroux' })
+    await inc.add(Layer.load(serialized))
+    let incomingLayers = await inc.layers()
+    assert.equal(incomingLayers.length, 2)
+
+    let incomingShared = incomingLayers[1]
+    assert.deepEqual(incomingShared.metadata, doc.metadata)
+    assert.equal(incomingShared.author, 'Susan')
+    assert.equal(incomingShared.shared, true)
+    assert.equal(incomingShared.archived, false)
+  })
 })
