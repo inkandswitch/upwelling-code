@@ -9,7 +9,7 @@ let upwell: Upwell = Documents()
 
 
 export default function App() {
-  let [location, setLocation] = useLocation()
+  let [, setLocation] = useLocation()
   let [author, setAuthor] = useState<string>('')
 
   async function newUpwell() {
