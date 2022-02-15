@@ -22,11 +22,13 @@ type LayerState = {
   title: string
 }
 
+/*
 async function open (): Promise<Uint8Array> {
   let [fileHandle] = await showOpenFilePicker()
   const file = await fileHandle.getFile()
   return new Uint8Array(await file.arrayBuffer())
 }
+*/
 
 function DocumentView(props: DocumentViewProps) {
   const { author, layer } = props
@@ -39,6 +41,7 @@ function DocumentView(props: DocumentViewProps) {
     })
   }, [])
 
+  /*
 
   let onOpenClick = async () => {
     let binary: Uint8Array = await open()
@@ -48,7 +51,16 @@ function DocumentView(props: DocumentViewProps) {
     await upwell.add(layer)
     window.location.href = '/layer/' + layer.id
   }
+  */
 
+  let onCreateLayer = async () => {
+    let message = 'Very cool layer'
+    let newLayer = Layer.fork(message, author, layer)
+    await upwell.add(newLayer)
+    setLayers(await upwell.layers())
+  }
+
+  /*
   let onDownloadClick = async () => {
     let filename = layer.title + '.up'
     let el = window.document.createElement('a')
@@ -56,13 +68,6 @@ function DocumentView(props: DocumentViewProps) {
     el.setAttribute('href', 'data:application/octet-stream;base64,' + buf.toString());
     el.setAttribute('download', filename)
     el.click()
-  }
-
-  let onCreateLayer = async () => {
-    let message = 'Very cool layer'
-    let newLayer = Layer.create(message, author, layer)
-    await upwell.persist(newLayer)
-    setLayers(await upwell.layers())
   }
 
   let onSyncClick = async () => {
@@ -75,9 +80,10 @@ function DocumentView(props: DocumentViewProps) {
       setStatus(SYNC_STATE.OFFLINE)
     }
   }
+  */
 
   let mergeVisible = () => {
-    let visible = layers.filter(l => l.visible)
+    layers.filter(l => l.visible)
 
   }
 
