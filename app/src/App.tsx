@@ -1,7 +1,7 @@
 import React, {useEffect, useState } from 'react'
 import DocumentView from './components/DocumentView'
 import { Upwell } from 'api'
-import { Route, Redirect } from "wouter";
+import { Route, useLocation } from "wouter";
 import Documents from './Documents'
 import catnames from 'cat-names';
 
@@ -9,9 +9,14 @@ let upwell: Upwell = Documents()
 
 
 export default function App() {
+  let [location, setLocation] = useLocation()
   let [author, setAuthor] = useState<string>('')
-  let [ main_id, setMain] = useState<string | null>(null)
 
+  async function newUpwell() {
+    await upwell.initialize(author)
+    let meta = await (upwell.metadata())
+    setLocation('/document/' + meta.main)
+  }
   useEffect(() => {
     let localName = localStorage.getItem('name')
     if (!localName || localName === '?') localName = catnames.random()
@@ -21,26 +26,15 @@ export default function App() {
     setAuthor(localName)
   }, [author])
 
-  useEffect(() => {
-    async function fetchLayers() {
-      let layers = await upwell.layers()
-      if (layers.length === 0) await upwell.initialize(author)
-      setMain((await upwell.metadata()).main)
-    }
-
-    fetchLayers()
-  })
-
   return <div>
     <div id="topbar">
       My name is {author}
     </div>
-    <Route path="/layer/:id">
+    <Route path="/document/:id">
       {(params) => <DocumentView author={author} id={params.id} />}
     </Route>
     <Route path="/">{() => {
-      if (main_id) return <Redirect to={'layer/' + main_id} />
-      else return <div>Loading...</div>
+      return <div><button onClick={newUpwell}>New Document</button></div>
     }}
     </Route>
   </div>
