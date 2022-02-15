@@ -60,8 +60,8 @@ function DocumentView(props: DocumentViewProps) {
 
   let onCreateLayer = async () => {
     let message = 'Very cool layer'
-    let newLayer = Layer.create(message, author, layer)
-    await upwell.persist(newLayer)
+    let newLayer = Layer.fork(message, author, layer)
+    await upwell.add(newLayer)
     setLayers(await upwell.layers())
   }
 
