@@ -76,6 +76,11 @@ function DocumentView(props: DocumentViewProps) {
     }
   }
 
+  let mergeVisible = () => {
+    let visible = layers.filter(l => l.visible)
+
+  }
+
   function onTextChange(e: React.ChangeEvent<HTMLTextAreaElement>, key: string) {
     e.preventDefault()
     setStatus(SYNC_STATE.LOADING)
@@ -101,11 +106,6 @@ function DocumentView(props: DocumentViewProps) {
     <div id="container">
       <div id="app">
         <div id="toolbar">
-            <div id="toolbar.buttons">
-              <button onClick={onOpenClick}>Open</button>
-              <button onClick={onDownloadClick}>Download</button>
-              <button onClick={onSyncClick}>Sync</button>
-            </div>
           <div>
             <SyncIndicator state={status} />
           </div>
@@ -113,17 +113,11 @@ function DocumentView(props: DocumentViewProps) {
         <textarea className="title" value={state.title} onChange={(e) => onTextChange(e, 'title')}></textarea>
         <textarea className="text" value={state.text} onChange={(e) => onTextChange(e, 'text')}></textarea>
       
-        <div id="debug">
-        id: {layer.id}
-        <br></br>
-        author: {layer.author}
-        <br></br>
-        message: {layer.message}
-      </div>
       </div>
       <ul id="panel">
         <button onClick={onCreateLayer}>+ Layer</button>
         <ListDocuments layers={layers}/>
+        <button onClick={mergeVisible}>Merge Visible</button>
       </ul>
     </div>
   )

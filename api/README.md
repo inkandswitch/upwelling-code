@@ -32,5 +32,13 @@ npm test
 # Building API
 
 ```
+cd api
 npm run build
+```
+
+# Starting App
+
+```
+cd app
+npm start
 ```
