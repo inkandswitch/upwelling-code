@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@types/chai": "^4.3.0",
-    "automerge-wasm-pack": "^0.0.7",
+    "automerge-wasm-pack": "^0.0.8",
     "chai": "^4.3.6",
     "nanoid": "^3.2.0",
     "sializer": "^0.2.0",
