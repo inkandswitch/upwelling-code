@@ -29,12 +29,12 @@ describe('save and load', () => {
 
     let layers = await a.layers()
     let author = "Jon Jacob Jingleheimer Schmidt"
-    let newLayer = Layer.create("Thinking about new introduction", author, layers[0])
+    let newLayer = layers[0].fork("Thinking about new introduction", author)
     await a.add(newLayer)
 
     let blayers = await b.layers()
     let bauthor = "Bon Bacob Bingleheimer Schmibt"
-    let bnewLayer = Layer.create("Thinking about new introduction", bauthor, blayers[0])
+    let bnewLayer = blayers[0].fork("Thinking about new introduction", bauthor)
     await b.add(bnewLayer)
 
     // give binary from a to b
