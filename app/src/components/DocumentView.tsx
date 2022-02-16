@@ -24,12 +24,6 @@ type LayerState = {
   title: string;
 };
 
-async function open(): Promise<Uint8Array> {
-  let [fileHandle] = await showOpenFilePicker();
-  const file = await fileHandle.getFile();
-  return new Uint8Array(await file.arrayBuffer());
-}
-
 function DocumentView(props: DocumentViewProps) {
   const { author, layer } = props;
   let [status, setStatus] = React.useState(SYNC_STATE.LOADING);
@@ -43,6 +37,13 @@ function DocumentView(props: DocumentViewProps) {
       setLayers(layers);
     });
   }, []);
+
+  /*
+  async function open(): Promise<Uint8Array> {
+    let [fileHandle] = await showOpenFilePicker();
+    const file = await fileHandle.getFile();
+    return new Uint8Array(await file.arrayBuffer());
+  }
 
   let onOpenClick = async () => {
     let binary: Uint8Array = await open();
@@ -65,13 +66,6 @@ function DocumentView(props: DocumentViewProps) {
     el.click();
   };
 
-  let onCreateLayer = async () => {
-    let message = "Very cool layer";
-    let newLayer = Layer.create(message, author, layer);
-    await upwell.persist(newLayer);
-    setLayers(await upwell.layers());
-  };
-
   let onSyncClick = async () => {
     try {
       setStatus(SYNC_STATE.LOADING);
@@ -82,9 +76,19 @@ function DocumentView(props: DocumentViewProps) {
       setStatus(SYNC_STATE.OFFLINE);
     }
   };
+  */
+
+
+  let onCreateLayer = async () => {
+    let message = "Very cool layer";
+    let main = upwell.rootLayer()
+    let newLayer = Layer.fork(message, author, main);
+    await upwell.persist(newLayer);
+    setLayers(await upwell.layers());
+  };
 
   let mergeVisible = () => {
-    let visible = layers.filter((l) => l.visible);
+    layers.filter((l) => l.visible);
   };
 
   function onTextChange(
