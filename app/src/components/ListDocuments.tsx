@@ -5,6 +5,7 @@ import { Layer } from "api";
 import { JSX } from "@emotion/react/jsx-runtime";
 
 type Props = {
+  onLayerClick: Function;
   layers: Layer[];
 };
 
@@ -105,11 +106,7 @@ const FileTab = ({ index, "aria-pressed": isVisible, ...props }: TabType) => (
   />
 );
 
-export default function ListDocuments({ layers }: Props) {
-  let onLayerClick = (layer: Layer) => {
-    layer.visible = !layer.visible;
-    console.log(layers);
-  };
+export default function ListDocuments({ layers, onLayerClick }: Props) {
 
   return (
     <div
@@ -122,7 +119,7 @@ export default function ListDocuments({ layers }: Props) {
         margin-top: 6px;
       `}
     >
-      {layers.map((layer: Layer, index) => {
+      {layers.filter(l => !l.archived).map((layer: Layer, index) => {
         return (
           <FileTab
             key={layer.id}

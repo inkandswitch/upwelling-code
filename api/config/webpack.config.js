@@ -29,7 +29,9 @@ module.exports = {
   resolve: {
 	  fallback: {
 		  "fs": false,
-		  "path": require.resolve('path-browserify')
+		  "path": require.resolve('path-browserify'),
+      "constants": require.resolve('constants-browserify'),
+      "buffer": require.resolve('buffer/'),
 	  },
 	  extensions: ['.wasm', '.ts', '.js'],
   },
