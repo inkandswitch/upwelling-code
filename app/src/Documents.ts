@@ -1,6 +1,6 @@
 import { Upwell } from 'api';
 import FS from './storage/localStorage'
-import concat from 'concat-stream'
+import intoStream from 'into-stream';
 
 let upwells: Map<string, Upwell> = new Map<string, Upwell>();
 let storage = new FS('upwell-')
@@ -19,24 +19,16 @@ export async function get(id: string): Promise<Upwell> {
   return new Promise(async (resolve, reject) => {
     let upwell = upwells.get(id)
     if (upwell) return resolve(upwell)
-    let binary = storage.getItem(id)
+    let binary = await storage.getItem(id)
     if (!binary) return reject(new Error('item does not exist with id=' + id))
-    resolve(await Upwell.fromFile(binary))
+    resolve(Upwell.deserialize(intoStream(binary)))
   })
 }
 
 export async function save(upwell: Upwell): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    let toBinaryStream = concat(async (binary: Buffer) => {
-      let id = await upwell.id()
-      console.log('saving', id)
-      storage.setItem(id, binary)
-      resolve()
-    })
-
-    let readStream = await upwell.serialize()
-    readStream.pipe(toBinaryStream)
-  }) 
+  let id = await upwell.id()
+  let binary = await upwell.toFile()
+  storage.setItem(id, binary)
 }
 
 export function stopSaveInterval () {
