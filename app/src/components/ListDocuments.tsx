@@ -119,7 +119,7 @@ export default function ListDocuments({ layers, onLayerClick }: Props) {
         margin-top: 6px;
       `}
     >
-      {layers.map((layer: Layer, index) => {
+      {layers.filter(l => !l.archived).map((layer: Layer, index) => {
         return (
           <FileTab
             key={layer.id}

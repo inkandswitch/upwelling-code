@@ -1,8 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
-import { Author, Layer } from "api";
-import { Upwell } from "api";
+import { Upwell, Author, Layer } from "api";
 import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
 import Documents from '../Documents'
 
@@ -25,14 +24,15 @@ export default function DocumentView(props: DocumentViewProps) {
     title: '',
   });
   let [layers, setLayers] = React.useState<Layer[]>([]);
-  let [layer, setLayer] = React.useState<Layer>();
+  let [root, setRoot] = React.useState<Layer>();
+  let [editableLayer, setEditableLayer] = React.useState<Layer>();
 
   useEffect(() => {
     upwell.layers().then((layers: Layer[]) => {
       setLayers(layers);
     });
     upwell.rootLayer().then((root: Layer) => {
-      setLayer(root)
+      setRoot(root)
       setState({ title: root.title, text: root.text });
     })
   }, []);
@@ -92,31 +92,38 @@ export default function DocumentView(props: DocumentViewProps) {
     setLayers(await upwell.layers());
   };
 
-  let mergeVisible = () => {
-    layers.filter((l) => l.visible);
+  let mergeVisible = async () => {
+    let visible = layers.filter((l) => l.visible);
+    if (!root) throw new Error('no root? this is bad')
+    let merged = visible.reduce((prev: Layer, cur: Layer) => {
+      if (cur.id !== root?.id) upwell.archive(prev.id)
+      return Layer.merge(prev, cur)
+    }, root)
+    upwell.add(merged)
+    setEditableLayer(merged)
   };
 
   function onTextChange(
     e: React.ChangeEvent<HTMLTextAreaElement>,
     key: string
   ) {
-    if (layer) {
+    if (editableLayer) {
       e.preventDefault();
       // @ts-ignore
       switch (e.nativeEvent.inputType) {
         case "insertText":
           //@ts-ignore
-          layer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key);
+          editableLayer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key);
           break;
         case "deleteContentBackward":
-          layer.deleteAt(e.target.selectionEnd, key);
+          editableLayer.deleteAt(e.target.selectionEnd, key);
           break;
         case "insertLineBreak":
-          layer.insertAt(e.target.selectionEnd - 1, "\n", key);
+          editableLayer.insertAt(e.target.selectionEnd - 1, "\n", key);
           break;
       }
-      setState({ title: layer.title, text: layer.text });
-      upwell.persist(layer);
+      setState({ title: editableLayer.title, text: editableLayer.text });
+      upwell.persist(editableLayer);
     }
   }
 

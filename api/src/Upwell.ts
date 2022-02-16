@@ -36,9 +36,11 @@ export class Upwell {
   async layers(): Promise<Layer[]> {
     let ids = await this.db.ids()
       
+    let rootId = (await this.metadata()).main
     let tasks = ids.filter(id => id.endsWith(LAYER_EXT)).map(async (id: string) => {
       let value = await this.db.getItem(id)
       let layer = Layer.load(value)
+      if (layer.id === rootId) layer.visible = true
       this.authors.add(layer.author)
       return layer
     }, [])
