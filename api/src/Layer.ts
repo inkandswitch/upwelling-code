@@ -20,7 +20,7 @@ export type ChangeMetadata = {
 export type Heads = string[];
 export type LayerMetadata = {
   id: string,
-  shared: boolean;
+  shared: boolean,
   parent_id: string,
   author: Author,
   message: string,
@@ -29,6 +29,7 @@ export type LayerMetadata = {
 export type Subscriber = (doc: Layer, heads: Heads) => void 
 
 export class Layer {
+  id: string = nanoid()
   visible: boolean = false;
   doc: Automerge.Automerge
   private heads?: Heads;
@@ -65,17 +66,8 @@ export class Layer {
     this.doc.set(ROOT, 'version', value)
   }
 
-  get id (): string {
-    return this._getValue('id') as string;
-  }
-
   get time(): Date {
     return new Date(this._getValue('time') as number)
-
-  }
-
-  set id (value: string) {
-    this.doc.set(ROOT, 'id', value)
   }
 
   get message (): string {
@@ -160,7 +152,6 @@ export class Layer {
 
   fork(message: string, author: Author): Layer {
     let doc = this.doc.fork()
-    doc.set(ROOT, 'id', nanoid())
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)
@@ -175,14 +166,15 @@ export class Layer {
     return ours
   }
 
-  static load(binary: Uint8Array): Layer {
+  static load(id: string, binary: Uint8Array): Layer {
     let doc = Automerge.loadDoc(binary)
-    return new Layer(doc)
+    let layer = new Layer(doc)
+    layer.id = id
+    return layer
   }
 
   static create(message: string, author: Author): Layer {
     let doc = Automerge.create()
-    doc.set(ROOT, 'id', nanoid())
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)

@@ -13,7 +13,6 @@ export type UpwellOptions = {
 }
 
 const METADATA_FILENAME = 'metadata.automerge'
-const LAYER_EXT = 'layer'
 
 // An Upwell that is persisted on disk
 export class Upwell {
@@ -37,9 +36,10 @@ export class Upwell {
     let ids = await this.db.ids()
       
     let rootId = (await this.metadata()).main
-    let tasks = ids.filter(id => id.endsWith(LAYER_EXT)).map(async (id: string) => {
+    let tasks = ids.filter(id => id !== METADATA_FILENAME ).map(async (id: string) => {
       let value = await this.db.getItem(id)
-      let layer = Layer.load(value)
+      let layer = Layer.load(id, value)
+      layer.id = id
       if (layer.id === rootId) layer.visible = true
       this.authors.add(layer.author)
       return layer
@@ -61,7 +61,7 @@ export class Upwell {
   }
 
   async persist(layer: Layer): Promise<void> {
-    return this.db.setItem(`${layer.id}.${LAYER_EXT}`, layer.save())
+    return this.db.setItem(`${layer.id}`, layer.save())
   }
 
   async archive(layer_id: string): Promise<void> {
@@ -72,9 +72,9 @@ export class Upwell {
 
   async getLocal(id: string): Promise<Layer | null> { 
     // local-first
-    let saved = await this.db.getItem(`${id}.${LAYER_EXT}`)
+    let saved = await this.db.getItem(id)
     if (!saved) return null
-    return Layer.load(saved)
+    return Layer.load(id, saved)
   }
 
   static deserialize(stream: tar.Pack, options?: UpwellOptions): Promise<Upwell> {
@@ -94,15 +94,15 @@ export class Upwell {
 
       let extract = tar.extract()
       extract.on('entry', (header, stream, next) => {
-        if (header.name.endsWith(LAYER_EXT)) {
-          unpackFileStream(stream, (buf) => {
-            let layer = Layer.load(buf)
-            upwell.add(layer).then(next)
-          })
-        } else {
+        if (header.name === METADATA_FILENAME) {
           unpackFileStream(stream, (buf) => {
             let metadata = UpwellMetadata.load(buf)
             upwell.saveMetadata(metadata).then(next)
+          })
+        } else {
+          unpackFileStream(stream, (buf) => {
+            let layer = Layer.load(header.name, buf)
+            upwell.add(layer).then(next)
           })
         }
       })
@@ -120,10 +120,10 @@ export class Upwell {
     let layers = await this.layers()
     layers.forEach(layer => {
       let binary = layer.save()
-      pack.entry({ name: `${layer.id}.${LAYER_EXT}`}, Buffer.from(binary))
+      pack.entry({ name: layer.id}, Buffer.from(binary))
     })
 
-    pack.entry({ name: 'upwell.metadata'}, Buffer.from((await this.metadata()).doc.save()))
+    pack.entry({ name: METADATA_FILENAME }, Buffer.from((await this.metadata()).doc.save()))
     pack.finalize()
     return pack
   }
