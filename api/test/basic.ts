@@ -45,13 +45,13 @@ describe('upwell', () => {
     let layers = await d.layers()
     let ddoc = layers[0]
     let file = ddoc.save()
-    let edoc = Layer.load(file)
+    let edoc = Layer.load(ddoc.id, file)
     await e.add(edoc)
 
     ddoc.insertAt(0, Array.from('Upwelling: Contextual Writing'), 'title')
 
     let binary = ddoc.save()
-    let layer = Layer.load(binary)
+    let layer = Layer.load(ddoc.id, binary)
     await e.add(layer)
     assert.equal(layer.title, ddoc.title)
   })
@@ -96,7 +96,7 @@ describe('upwell', () => {
     let d = await Upwell.create({ author: first_author})
     let layers = await d.layers()
     let doc = layers[0]
-
+    assert.equal(layers.length, 1)
     doc.insertAt(0, 'H')
     doc.insertAt(1, 'e')
     doc.insertAt(2, 'l')
@@ -111,6 +111,7 @@ describe('upwell', () => {
     await d.add(newLayer)
     assert.equal(d.authors.size, 2)
 
+    let rootId = (await d.rootLayer()).id
 
     newLayer.insertAt(5, ' ')
     newLayer.insertAt(6, 'w')
@@ -128,6 +129,9 @@ describe('upwell', () => {
     await d.archive(newLayer.id)
     layers = await d.layers()
     assert.equal(layers[1].archived, true)
+    let root = await d.rootLayer()
+    assert.equal(root.id, rootId)
+    assert.equal(doc.id, rootId)
   })
 
   it('makes layers visible and shared', async () => {
@@ -143,7 +147,7 @@ describe('upwell', () => {
     let serialized = doc.save()
 
     let inc = await Upwell.create({ author: 'Theroux' })
-    await inc.add(Layer.load(serialized))
+    await inc.add(Layer.load(doc.id, serialized))
     let incomingLayers = await inc.layers()
     assert.equal(incomingLayers.length, 2)
 
