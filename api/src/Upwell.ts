@@ -2,36 +2,47 @@ import { Layer } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 import AsyncStorage from './storage'
 import { memoryStore } from './storage/memory';
+import concat from 'concat-stream'
+import tar from 'tar-stream'
 
 export type Author = string 
 
 export type UpwellOptions = {
   fs?: AsyncStorage,
   author?: Author,
-  remote?: AsyncStorage
 }
 
+const LAYER_EXT = '.layer'
 const METADATA_FILENAME = 'metadata.automerge'
-const LAYER_EXT = 'layer'
-
 
 // An Upwell that is persisted on disk
 export class Upwell {
   db: AsyncStorage 
-  remote: AsyncStorage | undefined
   authors: Set<Author> = new Set()
 
   constructor(options?: UpwellOptions) {
     this.db = options?.fs || new memoryStore()
-    this.remote = options?.remote
   }
 
-  async layers(archived?: boolean): Promise<Layer[]> {
+  async id() {
+    return (await this.metadata()).id
+  }
+
+  async rootLayer() {
+    let rootId = (await this.metadata()).main
+    return (await this.layers()).find(l => l.id === rootId)
+  }
+
+  async layers(): Promise<Layer[]> {
     let ids = await this.db.ids()
       
-    let tasks = ids.filter(id => id.endsWith(LAYER_EXT)).map(async (id: string) => {
-      let value = await this.db.getItem(id)
-      let layer = Layer.load(value)
+    let rootId = (await this.metadata()).main
+    let tasks = ids.filter(id => id.endsWith(LAYER_EXT)).map(async (filename: string) => {
+      let value = await this.db.getItem(filename)
+      let id = filename.split('.')[0]
+      let layer = Layer.load(id, value)
+      layer.id = id
+      if (layer.id === rootId) layer.visible = true
       this.authors.add(layer.author)
       return layer
     }, [])
@@ -43,7 +54,6 @@ export class Upwell {
     if (existing) {
       // we know about this layer already.
       // merge this layer with our existing layer 
-      console.log('merging layers')
       let merged = Layer.merge(existing, layer)
       return this.persist(merged)
     } else { 
@@ -56,23 +66,6 @@ export class Upwell {
     return this.db.setItem(`${layer.id}.${LAYER_EXT}`, layer.save())
   }
 
-  async syncWithServer(layer: Layer) {
-    if (!this.remote) throw new Error('Server not configured. Must supply remote to constructor.')
-    try {
-      let binary = await this.remote.getItem(layer.id)
-      if (binary) {
-        let theirs = Layer.load(binary)
-        let merged = Layer.merge(layer, theirs)
-        this.persist(merged)
-      }
-    } catch (err) {
-      console.log('No remote item exists for layer with id=', layer.id)
-      // this is no big deal. this just means this might be a new layer that hasn't been synced
-      // with anyone yet
-    }
-    return this.remote.setItem(layer.id, layer.save())
-  }
-
   async archive(layer_id: string): Promise<void> {
     let layer = await this.getLocal(layer_id)
     layer.archived = true
@@ -83,35 +76,69 @@ export class Upwell {
     // local-first
     let saved = await this.db.getItem(`${id}.${LAYER_EXT}`)
     if (!saved) return null
-    return Layer.load(saved)
+    return Layer.load(id, saved)
   }
 
-  async getRemote(id: string) {
-    try {
-      let remote = await this.remote.getItem(id)
-      if (remote) return Layer.load(remote)
-      else return null
-    } catch (err) {
-      console.error(err)
-      return null
-    }
+  static deserialize(stream: tar.Pack, options?: UpwellOptions): Promise<Upwell> {
+    return new Promise<Upwell>((resolve, reject) => {
+      let upwell = new Upwell(options)
+
+      let unpackFileStream = (stream, next) => {
+        let concatStream = concat((buf) => {
+          next(buf)
+        })
+        stream.on('error', (err) => {
+          console.error(err)
+        })
+        stream.pipe(concatStream)
+        stream.resume() 
+      }
+
+      let extract = tar.extract()
+      extract.on('entry', (header, stream, next) => {
+        if (header.name === METADATA_FILENAME) {
+          unpackFileStream(stream, (buf) => {
+            let metadata = UpwellMetadata.load(buf)
+            upwell.saveMetadata(metadata).then(next)
+          })
+        } else {
+          unpackFileStream(stream, (buf) => {
+            let filename = header.name
+            let id = filename.split('.')[0]
+            let layer = Layer.load(id, buf)
+            upwell.add(layer).then(next)
+          })
+        }
+      })
+  
+      extract.on('finish', function () {
+        resolve(upwell)
+      })
+
+      stream.pipe(extract)
+    })
+  }
+
+  async serialize(): Promise<tar.Pack> {
+    let pack = tar.pack()
+    let layers = await this.layers()
+    layers.forEach(layer => {
+      let binary = layer.save()
+      pack.entry({ name: `${layer.id}.${LAYER_EXT}`}, Buffer.from(binary))
+    })
+
+    pack.entry({ name: METADATA_FILENAME }, Buffer.from((await this.metadata()).doc.save()))
+    pack.finalize()
+    return pack
   }
 
   static async create(options?: UpwellOptions): Promise<Upwell> {
     let upwell = new Upwell(options)
-    await upwell.initialize(options?.author || 'Unknown')
-    return upwell
-  }
-
-  async initialize(author: Author) {
-    let layer = Layer.create('Document initialized', author)
+    let layer = Layer.create('Document initialized', options?.author || 'Unknown')
     let metadata = UpwellMetadata.create(layer.id)
-    await this.saveMetadata(metadata)
-    await this.persist(layer)
-  }
-
-  exists(id: string): boolean {
-    return this.db.getItem(id) !== null
+    await upwell.saveMetadata(metadata)
+    await upwell.persist(layer)
+    return upwell
   }
 
   async metadata() : Promise<UpwellMetadata> {
@@ -124,6 +151,19 @@ export class Upwell {
 
   async saveMetadata(metadata: UpwellMetadata) {
     await this.db.setItem(METADATA_FILENAME, metadata.doc.save())
+  }
+
+  async merge(other: Upwell) {
+    let layersToMerge = await other.layers()
+
+    layersToMerge.forEach(async layer => {
+      await this.add(layer)
+    })
+
+    let theirs = await other.metadata()
+    let ours = await this.metadata()
+    ours.doc.merge(theirs.doc)
+    this.saveMetadata(ours)
   }
 }
 

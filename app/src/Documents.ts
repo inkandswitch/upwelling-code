@@ -1,10 +1,9 @@
 import { Upwell } from 'api';
-import * as localStorage from './storage/localStorage'
-import * as http from './storage/http'
+import * as fs from './storage/localStorage'
 
 let upwell: Upwell;
 
 export default function init () {
-  if (!upwell) upwell = new Upwell({ fs: localStorage, remote: http })
-  return upwell 
+  if (!upwell) upwell = new Upwell({fs})
+  return upwell
 }
