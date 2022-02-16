@@ -69,6 +69,11 @@ export class Layer {
     return this._getValue('id') as string;
   }
 
+  get time(): Date {
+    return new Date(this._getValue('time') as number)
+
+  }
+
   set id (value: string) {
     this.doc.set(ROOT, 'id', value)
   }
@@ -153,9 +158,15 @@ export class Layer {
     return this.doc.save()
   }
 
-  clone(): Layer {
-    let newDoc = this.doc.clone()
-    return new Layer(newDoc)
+  fork(message: string, author: Author): Layer {
+    let doc = this.doc.fork()
+    doc.set(ROOT, 'id', nanoid())
+    doc.set(ROOT, 'message', message)
+    doc.set(ROOT, 'author', author)
+    doc.set(ROOT, 'shared', false)
+    doc.set(ROOT, 'archived', false)
+    doc.set(ROOT, 'parent_id', this.id)
+    return new Layer(doc)
   }
 
   static merge(ours: Layer, theirs: Layer) {
@@ -169,27 +180,16 @@ export class Layer {
     return new Layer(doc)
   }
 
-  static create(message: string, author: Author, layer?: Layer): Layer {
-    if (layer) {
-      let doc = layer.doc.fork()
-      doc.set(ROOT, 'id', nanoid())
-      doc.set(ROOT, 'message', message)
-      doc.set(ROOT, 'author', author)
-      doc.set(ROOT, 'shared', false)
-      doc.set(ROOT, 'archived', false)
-      doc.set(ROOT, 'parent_id', layer.id)
-      return new Layer(doc)
-    } else {
-      let doc = Automerge.create()
-      doc.set(ROOT, 'id', nanoid())
-      doc.set(ROOT, 'message', message)
-      doc.set(ROOT, 'author', author)
-      doc.set(ROOT, 'shared', false)
-      doc.set(ROOT, 'archived', false)
-      doc.set(ROOT, 'title', Automerge.TEXT)
-      doc.set(ROOT, 'text', Automerge.TEXT)
-      return new Layer(doc)
-    }
+  static create(message: string, author: Author): Layer {
+    let doc = Automerge.create()
+    doc.set(ROOT, 'id', nanoid())
+    doc.set(ROOT, 'message', message)
+    doc.set(ROOT, 'author', author)
+    doc.set(ROOT, 'shared', false)
+    doc.set(ROOT, 'archived', false)
+    doc.set(ROOT, 'title', Automerge.TEXT)
+    doc.set(ROOT, 'text', Automerge.TEXT)
+    return new Layer(doc)
   }
 
   commit(message: string): Heads {
