@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import init from 'automerge-wasm'
 import * as Automerge from 'automerge-wasm';
 import { Author } from './Upwell';
+import * as Diff from 'diff';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -121,10 +122,33 @@ export class Layer {
     this.subscriber = subscriber  
   }
 
-  getEdits(other: Layer): void {
-    let changes = this.doc.getChangesAdded(other.doc)
-    let decodedChanges: Automerge.DecodedChange[] = changes.map(change => Automerge.decodeChange(change))
-    decodedChanges.map((value: Automerge.DecodedChange) => {
+  getEdits(other: Layer) {
+
+    let ours = this.text
+    let theirs = other.text
+
+    let diffs = Diff.diffWords(ours, theirs)
+
+    let idx = 0
+    return diffs.map(d => {
+      let type: string
+
+      if (d.added) {
+        type = 'insert'
+      } else if (d.removed) {
+        type = 'delete'
+      } else {
+        type = 'retain'
+      }
+
+      let currIdx = idx
+      if (type === 'insert' || type === 'retain') idx = currIdx + d.value.length
+
+      return {
+        type,
+        start: currIdx,
+        value: d.value
+      }
     })
   }
 
@@ -134,16 +158,26 @@ export class Layer {
     else throw new Error('Text field not properly initialized')
   }
 
-  deleteAt(position: number, prop = 'text') {
+  deleteAt(position: number, count: number = 1, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
-    if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 1, '')
+    if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, count, '')
     else throw new Error('Text field not properly initialized')
   }
 
   mark(name: string, range: string, value: Automerge.Value, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
-    if (obj && obj[0] === 'text') return this.doc.mark(obj[1], name, range, value)
+    if (obj && obj[0] === 'text') return this.doc.mark(obj[1], range, name, value)
     else throw new Error('Text field not properly initialized')
+  }
+
+  getMarks(prop = 'text') {
+    let obj = this.doc.value(ROOT, 'text')
+    if (obj && obj[0] === 'text') return this.doc.raw_spans(obj[1])
+    else throw new Error('Text field not properly initialized')
+  }
+
+  get marks () {
+    return this.getMarks()
   }
 
   save (): Uint8Array {
@@ -164,6 +198,29 @@ export class Layer {
     let changes = theirs.doc.getChanges(ours.doc.getHeads())
     ours.doc.applyChanges(changes)
     return ours
+  }
+
+  static mergeWithEdits(ours: Layer, theirs: Layer) {
+    let edits = ours.getEdits(theirs)
+    let newLayer = Layer.merge(ours.fork('Merge', ours.author), theirs)
+
+    edits.forEach((edit) => {
+      if (edit.type === 'retain') return
+
+      let start = edit.start
+      let end = edit.start + edit.value.length
+
+      newLayer.mark(
+        edit.type,
+        `(${start}..${end})`,
+        JSON.stringify({ // I *really* don't want to do this, but as a quick hack it's not the worst thing I've ever done. Pending a better solution.
+          author: theirs.author
+        })
+      )
+    })
+    newLayer.commit('Merge')
+
+    return newLayer
   }
 
   static load(id: string, binary: Uint8Array): Layer {
