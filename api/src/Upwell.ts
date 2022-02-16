@@ -12,6 +12,7 @@ export type UpwellOptions = {
   author?: Author,
 }
 
+const LAYER_EXT = '.layer'
 const METADATA_FILENAME = 'metadata.automerge'
 
 // An Upwell that is persisted on disk
@@ -36,8 +37,9 @@ export class Upwell {
     let ids = await this.db.ids()
       
     let rootId = (await this.metadata()).main
-    let tasks = ids.filter(id => id !== METADATA_FILENAME ).map(async (id: string) => {
-      let value = await this.db.getItem(id)
+    let tasks = ids.filter(id => id.endsWith(LAYER_EXT)).map(async (filename: string) => {
+      let value = await this.db.getItem(filename)
+      let id = filename.split('.')[0]
       let layer = Layer.load(id, value)
       layer.id = id
       if (layer.id === rootId) layer.visible = true
@@ -61,7 +63,7 @@ export class Upwell {
   }
 
   async persist(layer: Layer): Promise<void> {
-    return this.db.setItem(`${layer.id}`, layer.save())
+    return this.db.setItem(`${layer.id}.${LAYER_EXT}`, layer.save())
   }
 
   async archive(layer_id: string): Promise<void> {
@@ -72,7 +74,7 @@ export class Upwell {
 
   async getLocal(id: string): Promise<Layer | null> { 
     // local-first
-    let saved = await this.db.getItem(id)
+    let saved = await this.db.getItem(`${id}.${LAYER_EXT}`)
     if (!saved) return null
     return Layer.load(id, saved)
   }
@@ -101,7 +103,9 @@ export class Upwell {
           })
         } else {
           unpackFileStream(stream, (buf) => {
-            let layer = Layer.load(header.name, buf)
+            let filename = header.name
+            let id = filename.split('.')[0]
+            let layer = Layer.load(id, buf)
             upwell.add(layer).then(next)
           })
         }
@@ -120,7 +124,7 @@ export class Upwell {
     let layers = await this.layers()
     layers.forEach(layer => {
       let binary = layer.save()
-      pack.entry({ name: layer.id}, Buffer.from(binary))
+      pack.entry({ name: `${layer.id}.${LAYER_EXT}`}, Buffer.from(binary))
     })
 
     pack.entry({ name: METADATA_FILENAME }, Buffer.from((await this.metadata()).doc.save()))
@@ -135,10 +139,6 @@ export class Upwell {
     await upwell.saveMetadata(metadata)
     await upwell.persist(layer)
     return upwell
-  }
-
-  exists(id: string): boolean {
-    return this.db.getItem(id) !== null
   }
 
   async metadata() : Promise<UpwellMetadata> {
