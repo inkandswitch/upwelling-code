@@ -24,15 +24,15 @@ export default function DocumentView(props: DocumentViewProps) {
     title: '',
   });
   let [layers, setLayers] = React.useState<Layer[]>([]);
-  let [root, setRoot] = React.useState<string>();
+  let [root, setRoot] = React.useState<Layer>();
   let [editableLayer, setEditableLayer] = React.useState<Layer>();
 
   useEffect(() => {
     upwell.layers().then((layers: Layer[]) => {
       setLayers(layers);
     });
-    upwell.metadata().then((meta: UpwellMetadata) => {
-      setRoot(meta.main)
+    upwell.rootLayer().then((root: Layer) => {
+      setRoot(root)
     })
   }, []);
 
@@ -77,15 +77,16 @@ export default function DocumentView(props: DocumentViewProps) {
   */
 
   let onLayerClick = (layer: Layer) => {
+    // TODO: Blaine Magic
     if (!root) return console.error('no root race condition')
-    if (layer.id === root) return  // do nothing
+    if (layer.id === root.id) return  // do nothing
 
     layer.visible = !layer.visible;
-    // TODO: Blaine Magic
-    if (layer.visible && layer.id !== root) {
+    if (layer.visible) {
       setEditableLayer(layer)
       setState({ title: layer.title, text: layer.text });
-    } 
+    }
+    else setState({ title: root.title, text: root.text });
   };
 
   let onCreateLayer = async () => {
@@ -100,23 +101,18 @@ export default function DocumentView(props: DocumentViewProps) {
   let mergeVisible = async () => {
     if (!root) return console.error('no root race condition')
 
-
-    /*
-    // TODO: THIS IS BROKEN!!!!
     let visible = layers.filter((l) => l.visible);
-    let rootLayer = visible.find((l) => l.id === root)
-    if (!rootLayer) return console.error('could not find root layer')
+    if (!root) return console.error('could not find root layer')
     let merged = visible.reduce((prev: Layer, cur: Layer) => {
-      if (cur.id !== root) {
+      if (cur.id !== root?.id) {
         upwell.archive(cur.id)
         console.log('archiving', cur.id)
       }
       return Layer.merge(prev, cur)
-    }, rootLayer)
+    }, root)
     await upwell.add(merged)
-    setEditableLayer(merged)
     setLayers(await upwell.layers())
-    */
+    setState({ title: merged.title, text: merged.text });
   };
 
   function onTextChange(
