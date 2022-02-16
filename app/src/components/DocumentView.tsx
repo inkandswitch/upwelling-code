@@ -128,7 +128,7 @@ export default function DocumentView(props: DocumentViewProps) {
           editableLayer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key);
           break;
         case "deleteContentBackward":
-          editableLayer.deleteAt(e.target.selectionEnd, key);
+          editableLayer.deleteAt(e.target.selectionEnd, 1, key);
           break;
         case "insertLineBreak":
           editableLayer.insertAt(e.target.selectionEnd - 1, "\n", key);
