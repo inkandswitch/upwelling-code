@@ -338,6 +338,8 @@ module.exports = function (webpackEnv) {
         fs: false,
         constants: require.resolve("constants-browserify"),
         "buffer": require.resolve('buffer'),
+        "stream": require.resolve('stream-browserify'),
+        "crypto": require.resolve('crypto-browserify'),
       },
     },
     module: {

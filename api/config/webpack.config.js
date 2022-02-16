@@ -34,6 +34,7 @@ module.exports = {
       "constants": require.resolve('constants-browserify'),
       "buffer": require.resolve('buffer/'),
       "util": require.resolve('util/'),
+      "stream": require.resolve("stream-browserify")
 	  },
 	  extensions: ['.wasm', '.ts', '.js'],
   },

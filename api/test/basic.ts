@@ -176,4 +176,10 @@ describe('upwell', () => {
     assert.deepEqual(root.metadata, doc.metadata)
 
   })
+
+  it('can share storage between instances on the same machine', async () => {
+    let first_author: Author =  'Susan'
+    let d = await Upwell.create({ author: first_author })
+    let layers = await d.layers()
+  })
 })
