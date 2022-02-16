@@ -1,9 +1,9 @@
 import { Upwell } from 'api';
-import * as localStorage from './storage/localStorage'
+import * as fs from './storage/localStorage'
 
 let upwell: Upwell;
 
 export default function init () {
-  if (!upwell) upwell = new Upwell({ fs: localStorage })
-  return upwell 
+  if (!upwell) upwell = new Upwell({fs})
+  return upwell
 }

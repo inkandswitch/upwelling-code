@@ -2,10 +2,8 @@ import React, { useEffect, useState } from "react";
 import DocumentView from "./components/DocumentView";
 import { Upwell } from "api";
 import { Route, useLocation } from "wouter";
-import Documents from "./Documents";
+import * as fs from './storage/localStorage'
 import catnames from "cat-names";
-
-let upwell: Upwell = Documents()
 
 export default function App() {
   let [author, setAuthor] = useState<string>("");
@@ -21,7 +19,7 @@ export default function App() {
   }, [author]);
 
   async function newUpwell() {
-    await upwell.initialize(author)
+    let upwell = await Upwell.create({ fs, author })
     let meta = await (upwell.metadata())
     setLocation('/document/' + meta.main)
   }
@@ -31,7 +29,7 @@ export default function App() {
       {/* <div id="topbar">
       My name is {author}
     </div> */}
-      <Route path="/layer/:id">
+      <Route path="/document/:id">
         {(params) => <DocumentView author={author} id={params.id} />}
       </Route>
       <Route path="/">
