@@ -40,7 +40,6 @@
     "chai": "^4.3.6",
     "concat-stream": "^2.0.0",
     "debug": "^4.3.3",
-    "into-stream": "^7.0.0",
     "nanoid": "^3.2.0",
     "sializer": "^0.2.0",
     "stream-browserify": "^3.0.0",
