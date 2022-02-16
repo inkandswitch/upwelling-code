@@ -1,4 +1,5 @@
 const path = require('path')
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'production',
@@ -32,7 +33,14 @@ module.exports = {
 		  "path": require.resolve('path-browserify'),
       "constants": require.resolve('constants-browserify'),
       "buffer": require.resolve('buffer/'),
+      "util": require.resolve('util/'),
 	  },
 	  extensions: ['.wasm', '.ts', '.js'],
   },
-}
+  plugins: [
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+      Buffer: ["buffer", "Buffer"],
+    }),
+  ],
+};
