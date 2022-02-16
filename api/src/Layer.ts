@@ -202,7 +202,7 @@ export class Layer {
 
   static mergeWithEdits(ours: Layer, theirs: Layer) {
     let edits = ours.getEdits(theirs)
-    let newLayer = Layer.merge(ours.clone(), theirs)
+    let newLayer = Layer.merge(ours.fork('Merge', ours.author), theirs)
 
     edits.forEach((edit) => {
       if (edit.type === 'retain') return
