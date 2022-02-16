@@ -28,3 +28,6 @@ yarn-error.log*
 server/data
 
 app/build
+
+# swap files
+[._]*.sw[a-p]
