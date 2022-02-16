@@ -331,8 +331,14 @@ module.exports = function (webpackEnv) {
           babelRuntimeEntry,
           babelRuntimeEntryHelpers,
           babelRuntimeRegenerator,
-        ]),
+        ])
       ],
+      fallback: {
+        path: require.resolve("path-browserify"),
+        fs: false,
+        constants: require.resolve("constants-browserify"),
+        "buffer": require.resolve('buffer'),
+      },
     },
     module: {
       strictExportPresence: true,
@@ -562,6 +568,10 @@ module.exports = function (webpackEnv) {
     },
     plugins: [
       // Generates an `index.html` file with the <script> injected.
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer'],
+      }),
       new HtmlWebpackPlugin(
         Object.assign(
           {},

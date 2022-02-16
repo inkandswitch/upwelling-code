@@ -1,21 +1,15 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
-import { SyncIndicator } from "./SyncIndicator";
-import { SYNC_STATE } from "../types";
-import { Author, Layer, Upwell } from "api";
-import Documents from "../Documents";
+import { Author, Layer } from "api";
+import { Upwell } from "api";
 import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
+import Documents from '../Documents'
 
-let upwell: Upwell = Documents();
-
-type DocumentProps = {
-  id: string;
-  author: Author;
-};
+let upwell: Upwell = Documents()
 
 type DocumentViewProps = {
-  layer: Layer;
+  id: string;
   author: Author;
 };
 
@@ -24,18 +18,23 @@ type LayerState = {
   title: string;
 };
 
-function DocumentView(props: DocumentViewProps) {
-  const { author, layer } = props;
-  let [status, setStatus] = React.useState(SYNC_STATE.LOADING);
+export default function DocumentView(props: DocumentViewProps) {
+  const { author } = props;
   let [state, setState] = React.useState<LayerState>({
-    text: layer.text,
-    title: layer.title,
+    text: '',
+    title: '',
   });
   let [layers, setLayers] = React.useState<Layer[]>([]);
+  let [layer, setLayer] = React.useState<Layer>();
+
   useEffect(() => {
     upwell.layers().then((layers: Layer[]) => {
       setLayers(layers);
     });
+    upwell.rootLayer().then((root: Layer) => {
+      setLayer(root)
+      setState({ title: root.title, text: root.text });
+    })
   }, []);
 
   /*
@@ -78,11 +77,17 @@ function DocumentView(props: DocumentViewProps) {
   };
   */
 
+  let onLayerClick = (layer: Layer) => {
+    layer.visible = !layer.visible;
+    // TODO: Blaine Magic
+    setState({ title: layer.title, text: layer.text });
+  };
 
   let onCreateLayer = async () => {
     let message = "Very cool layer";
-    let main = upwell.rootLayer()
-    let newLayer = Layer.fork(message, author, main);
+    // always forking from root layer (for now)
+    let root = await upwell.rootLayer()
+    let newLayer = root.fork(message, author);
     await upwell.persist(newLayer);
     setLayers(await upwell.layers());
   };
@@ -95,24 +100,24 @@ function DocumentView(props: DocumentViewProps) {
     e: React.ChangeEvent<HTMLTextAreaElement>,
     key: string
   ) {
-    e.preventDefault();
-    setStatus(SYNC_STATE.LOADING);
-    // @ts-ignore
-    switch (e.nativeEvent.inputType) {
-      case "insertText":
-        //@ts-ignore
-        layer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key);
-        break;
-      case "deleteContentBackward":
-        layer.deleteAt(e.target.selectionEnd, key);
-        break;
-      case "insertLineBreak":
-        layer.insertAt(e.target.selectionEnd - 1, "\n", key);
-        break;
+    if (layer) {
+      e.preventDefault();
+      // @ts-ignore
+      switch (e.nativeEvent.inputType) {
+        case "insertText":
+          //@ts-ignore
+          layer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key);
+          break;
+        case "deleteContentBackward":
+          layer.deleteAt(e.target.selectionEnd, key);
+          break;
+        case "insertLineBreak":
+          layer.insertAt(e.target.selectionEnd - 1, "\n", key);
+          break;
+      }
+      setState({ title: layer.title, text: layer.text });
+      upwell.persist(layer);
     }
-    setState({ title: layer.title, text: layer.text });
-    upwell.persist(layer);
-    setStatus(SYNC_STATE.SYNCED);
   }
 
   return (
@@ -143,7 +148,6 @@ function DocumentView(props: DocumentViewProps) {
             width: 100%;
           `}
         >
-          <SyncIndicator state={status} />
           {/* <textarea className="title" value={state.title} onChange={(e) => onTextChange(e, 'title')}></textarea> */}
           <textarea
             css={css`
@@ -186,7 +190,7 @@ function DocumentView(props: DocumentViewProps) {
             <ButtonTab onClick={onCreateLayer} title="new layer">
               ➕
             </ButtonTab>
-            <ListDocuments layers={layers} />
+            <ListDocuments onLayerClick={onLayerClick} layers={layers} />
             <ButtonTab onClick={mergeVisible} title="merge visible">
               👇
             </ButtonTab>
@@ -200,25 +204,4 @@ function DocumentView(props: DocumentViewProps) {
       </div>
     </div>
   );
-}
-
-export default function MaybeDocumentView({ author, id }: DocumentProps) {
-  let [layer, setState] = React.useState<Layer | null>(null);
-
-  useEffect(() => {
-    // FIXME: what if the id isn't a real one (and just junk?)
-    // Make sure to handle errors gracefully (either redirect to list or just make a new document)
-    upwell
-      .getLocal(id)
-      .then((layer: Layer | null) => {
-        console.log(layer);
-        if (layer) setState(layer);
-      })
-      .catch((err: Error) => {
-        console.error("got error", err);
-      });
-  }, [id]);
-
-  if (layer) return <DocumentView author={author} layer={layer} />;
-  else return <div>Loading...</div>;
 }

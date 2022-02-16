@@ -35,7 +35,7 @@ export default function App() {
       {/* <div id="topbar">
       My name is {author}
     </div> */}
-      <Route path="/layer/:id">
+      <Route path="/document/:id">
         {(params) => <DocumentView author={author} id={params.id} />}
       </Route>
       <Route path="/">
