@@ -50,7 +50,6 @@ export class Upwell {
     if (existing) {
       // we know about this layer already.
       // merge this layer with our existing layer 
-      console.log('merging layers')
       let merged = Layer.merge(existing, layer)
       return this.persist(merged)
     } else { 
