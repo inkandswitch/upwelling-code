@@ -8,7 +8,7 @@ describe('upwell', () => {
     let layers = await d.layers()
     assert.lengthOf(layers, 1)
 
-    let doc: Layer = Layer.create('New layer', 'Susan', layers[0])
+    let doc: Layer = layers[0].fork('New layer', 'Susan')
     await d.add(doc)
     assert.lengthOf(await d.layers(), 2)
 
@@ -75,7 +75,7 @@ describe('upwell', () => {
 
     let name = 'Started typing on the train'
     let author: Author = 'Theroux'
-    let newLayer = Layer.create(name, author, doc)
+    let newLayer = doc.fork(name, author)
     await d.add(newLayer)
     assert.equal(d.authors.size, 2)
     assert.sameMembers(Array.from(d.authors), [first_author, author])
@@ -107,7 +107,7 @@ describe('upwell', () => {
 
     let name = 'Started typing on the train'
     let author: Author = 'Theroux'
-    let newLayer = Layer.create(name, author, doc)
+    let newLayer = doc.fork(name, author)
     await d.add(newLayer)
     assert.equal(d.authors.size, 2)
 
@@ -164,7 +164,7 @@ describe('upwell', () => {
     assert.deepEqual(root.title, doc.title)
     assert.deepEqual(root.metadata, doc.metadata)
 
-    await d.add(Layer.create("beep boop", "john", doc))
+    await d.add(doc.fork("beep boop", "john"))
 
     root = await d.rootLayer()
     assert.deepEqual(root.text, doc.text)
