@@ -44,7 +44,7 @@ git clone https://github.com/automerge/automerge-rs.git
 cd automerge-rs
 git checkout 06f0b201c9fdc9012d196197ebe7ecdfd24466b4
 cd automerge-wasm
-npm i && npm run build
+npm i && npm run build && npm run pkg
 cd ../..
 ```
 
