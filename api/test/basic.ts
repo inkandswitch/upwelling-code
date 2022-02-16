@@ -59,7 +59,7 @@ describe('upwell', () => {
 
   it('creates layers with authors', async () => {
     let first_author: Author =  'Susan'
-    let d = await Upwell.create({ author: first_author})
+    let d = await Upwell.create({ author: first_author })
     let layers = await d.layers()
     let doc = layers[0]
     assert.equal(d.authors.size, 1)
@@ -124,7 +124,6 @@ describe('upwell', () => {
 
     await d.add(merged)
     layers = await d.layers()
-    console.log(layers)
     assert.equal(layers.length, 2)
     await d.archive(newLayer.id)
     layers = await d.layers()
@@ -153,5 +152,24 @@ describe('upwell', () => {
     assert.equal(incomingShared.author, 'Susan')
     assert.equal(incomingShared.shared, true)
     assert.equal(incomingShared.archived, false)
+  })
+
+  it('gets root layer', async () => {
+    let first_author: Author =  'Susan'
+    let d = await Upwell.create({ author: first_author })
+    let layers = await d.layers()
+    let doc = layers[0]
+    let root = await d.rootLayer()
+    assert.deepEqual(root.text, doc.text)
+    assert.deepEqual(root.title, doc.title)
+    assert.deepEqual(root.metadata, doc.metadata)
+
+    await d.add(Layer.create("beep boop", "john", doc))
+
+    root = await d.rootLayer()
+    assert.deepEqual(root.text, doc.text)
+    assert.deepEqual(root.title, doc.title)
+    assert.deepEqual(root.metadata, doc.metadata)
+
   })
 })

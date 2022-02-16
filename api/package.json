@@ -31,10 +31,13 @@
   },
   "dependencies": {
     "@types/chai": "^4.3.0",
+    "@types/tar-stream": "^2.2.2",
     "automerge-wasm": "file:automerge-rs/automerge-wasm",
     "chai": "^4.3.6",
+    "concat-stream": "^2.0.0",
     "nanoid": "^3.2.0",
     "sializer": "^0.2.0",
+    "tar-stream": "^2.2.0",
     "ts-mocha": "^9.0.2",
     "ts-node": "^10.4.0",
     "tslint": "^6.1.3",
