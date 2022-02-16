@@ -1,46 +1,44 @@
-import React, {useEffect, useState } from 'react'
-import DocumentView from './components/DocumentView'
-import { Upwell } from 'api'
-import { Route, Redirect } from "wouter";
-import Documents from './Documents'
-import catnames from 'cat-names';
+import React, { useEffect, useState } from "react";
+import DocumentView from "./components/DocumentView";
+import { Upwell } from "api";
+import { Route, useLocation } from "wouter";
+import Documents from "./Documents";
+import catnames from "cat-names";
 
 let upwell: Upwell = Documents()
 
 export default function App() {
-  let [author, setAuthor] = useState<string>('')
-  let [ main_id, setMain] = useState<string | null>(null)
+  let [author, setAuthor] = useState<string>("");
+  let [, setLocation] = useLocation()
 
   useEffect(() => {
-    let localName = localStorage.getItem('name')
-    if (!localName || localName === '?') localName = catnames.random()
+    let localName = localStorage.getItem("name");
+    if (!localName || localName === "?") localName = catnames.random();
     if (localName && author !== localName) {
-      localStorage.setItem('name', localName)
+      localStorage.setItem("name", localName);
     }
-    setAuthor(localName)
-  }, [author])
+    setAuthor(localName);
+  }, [author]);
 
-  useEffect(() => {
-    async function fetchLayers() {
-      let layers = await upwell.layers()
-      if (layers.length === 0) await upwell.initialize(author)
-      setMain((await upwell.metadata()).main)
-    }
+  async function newUpwell() {
+    await upwell.initialize(author)
+    let meta = await (upwell.metadata())
+    setLocation('/document/' + meta.main)
+  }
 
-    fetchLayers()
-  })
-
-  return <div>
-    <div id="topbar">
+  return (
+    <>
+      {/* <div id="topbar">
       My name is {author}
-    </div>
-    <Route path="/layer/:id">
-      {(params) => <DocumentView author={author} id={params.id} />}
-    </Route>
-    <Route path="/">{() => {
-      if (main_id) return <Redirect to={'layer/' + main_id} />
-      else return <div>Loading...</div>
-    }}
-    </Route>
-  </div>
+    </div> */}
+      <Route path="/layer/:id">
+        {(params) => <DocumentView author={author} id={params.id} />}
+      </Route>
+      <Route path="/">
+        {() => {
+          return <div><button onClick={newUpwell}>New Document</button></div>
+        }}
+      </Route>
+    </>
+  );
 }
