@@ -3,9 +3,7 @@ import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
 import { Upwell, Author, Layer } from "api";
 import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
-import Documents from '../Documents'
-
-let upwell: Upwell = Documents()
+import * as Documents from '../Documents'
 
 type DocumentViewProps = {
   id: string;
@@ -17,8 +15,27 @@ type LayerState = {
   title: string;
 };
 
-export default function DocumentView(props: DocumentViewProps) {
-  const { author } = props;
+export default function MaybeDocument(props: DocumentViewProps) {
+  let [upwell, setUpwell] = React.useState<Upwell>()
+
+  useEffect(() => {
+    console.log('getting upwell')
+    Documents.get(props.id).then(( upwell: Upwell) => {
+      if (!upwell) return console.error('could not find upwell with id', props.id) 
+      // Saves every X seconds
+      Documents.startSaveInterval(upwell, 3000)
+      setUpwell(upwell)
+    })
+    return () => {
+      Documents.stopSaveInterval()
+    }
+  }, [props.id]);
+  if (!upwell) return <div>Loading..</div>
+  return <DocumentView upwell={upwell} author={props.author} />
+}
+
+export function DocumentView(props: {upwell: Upwell, author: Author}) {
+  const { upwell, author } = props;
   let [state, setState] = React.useState<LayerState>({
     text: '',
     title: '',
@@ -29,12 +46,14 @@ export default function DocumentView(props: DocumentViewProps) {
 
   useEffect(() => {
     upwell.layers().then((layers: Layer[]) => {
+      console.log('layers', layers)
       setLayers(layers);
     });
     upwell.rootLayer().then((root: Layer) => {
+      console.log('root', root)
       setRoot(root)
     })
-  }, []);
+  },[])
 
   /*
   async function open(): Promise<Uint8Array> {
@@ -96,6 +115,7 @@ export default function DocumentView(props: DocumentViewProps) {
     let newLayer = root.fork(message, author);
     await upwell.persist(newLayer);
     setLayers(await upwell.layers());
+    Documents.save(upwell)
   };
 
   let mergeVisible = async () => {
@@ -113,6 +133,7 @@ export default function DocumentView(props: DocumentViewProps) {
     await upwell.add(merged)
     setLayers(await upwell.layers())
     setState({ title: merged.title, text: merged.text });
+    Documents.save(upwell)
   };
 
   function onTextChange(

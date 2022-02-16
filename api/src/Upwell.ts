@@ -4,10 +4,14 @@ import AsyncStorage from './storage'
 import { memoryStore } from './storage/memory';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
+import { nanoid } from 'nanoid';
+import { Readable }  from 'stream';
+import intoStream from 'into-stream';
 
 export type Author = string 
 
 export type UpwellOptions = {
+  id?: string,
   fs?: AsyncStorage,
   author?: Author,
 }
@@ -79,7 +83,12 @@ export class Upwell {
     return Layer.load(id, saved)
   }
 
-  static deserialize(stream: tar.Pack, options?: UpwellOptions): Promise<Upwell> {
+  static fromFile(binary: Buffer) {
+    let stream = intoStream(binary)
+    return Upwell.deserialize(stream)
+  }
+
+  static deserialize(stream: Readable, options?: UpwellOptions): Promise<Upwell> {
     return new Promise<Upwell>((resolve, reject) => {
       let upwell = new Upwell(options)
 
@@ -135,7 +144,8 @@ export class Upwell {
   static async create(options?: UpwellOptions): Promise<Upwell> {
     let upwell = new Upwell(options)
     let layer = Layer.create('Document initialized', options?.author || 'Unknown')
-    let metadata = UpwellMetadata.create(layer.id)
+    let id = options?.id || nanoid()
+    let metadata = UpwellMetadata.create(id, layer.id)
     await upwell.saveMetadata(metadata)
     await upwell.persist(layer)
     return upwell

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import DocumentView from "./components/DocumentView";
-import { Upwell } from "api";
 import { Route, useLocation } from "wouter";
-import * as fs from './storage/localStorage'
+import * as Documents from './Documents'
 import catnames from "cat-names";
+require("setimmediate"); 
 
 export default function App() {
   let [author, setAuthor] = useState<string>("");
@@ -19,9 +19,9 @@ export default function App() {
   }, [author]);
 
   async function newUpwell() {
-    let upwell = await Upwell.create({ fs, author })
-    let meta = await (upwell.metadata())
-    setLocation('/document/' + meta.main)
+    let doc = await Documents.create()
+    let meta = await (doc.metadata())
+    setLocation('/document/' + meta.id)
   }
 
   return (

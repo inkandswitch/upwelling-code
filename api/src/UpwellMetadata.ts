@@ -1,5 +1,5 @@
-import { nanoid } from "nanoid"
 import * as Automerge from "automerge-wasm"
+import debug from "debug"
 
 const ROOT = "_root"
 
@@ -14,12 +14,12 @@ export class UpwellMetadata {
     return new UpwellMetadata(Automerge.loadDoc(binary))
   }
 
-  static create(main_id: string): UpwellMetadata {
+  static create(id: string, main_id: string): UpwellMetadata {
+    debug("creating metadata", id, main_id)
     let doc = Automerge.create()
-    doc.set(ROOT, 'id', nanoid())
+    doc.set(ROOT, 'id', id) 
     doc.set(ROOT, 'main_id', main_id)
-    let upwell = new UpwellMetadata(doc)
-    return upwell
+    return new UpwellMetadata(doc)
   }
 
   get id(): string {
