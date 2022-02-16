@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
-import { UpwellMetadata, Upwell, Author, Layer } from "api";
+import { Upwell, Author, Layer } from "api";
 import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
 import Documents from '../Documents'
 
