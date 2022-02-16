@@ -4,11 +4,6 @@ import React from "react";
 import { Layer } from "api";
 import { JSX } from "@emotion/react/jsx-runtime";
 
-type Props = {
-  onLayerClick: Function;
-  layers: Layer[];
-};
-
 const tabStyles = css`
   border: 1px #bbc6ff solid;
   border-left: 0;
@@ -82,7 +77,7 @@ type TabType = {
 } & React.ClassAttributes<HTMLDivElement> &
   React.ButtonHTMLAttributes<HTMLDivElement>;
 
-const FileTab = ({ index, "aria-pressed": isVisible, ...props }: TabType) => (
+export const FileTab = ({ index, "aria-pressed": isVisible, ...props }: TabType) => (
   <div
     css={css`
       ${tabStyles};
@@ -106,32 +101,39 @@ const FileTab = ({ index, "aria-pressed": isVisible, ...props }: TabType) => (
   />
 );
 
-export default function ListDocuments({ layers, onLayerClick }: Props) {
+export const sidewaysTabStyle = css`
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  margin-top: 6px;
+`;
 
+type Props = {
+  onLayerClick: Function;
+  layers: Layer[];
+  root: Layer;
+};
+
+export default function ListDocuments({ layers, onLayerClick, root }: Props) {
   return (
-    <div
-      css={css`
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        display: flex;
-        flex-direction: row;
-        align-items: flex-end;
-        margin-top: 6px;
-      `}
-    >
-      {layers.filter(l => !l.archived).map((layer: Layer, index) => {
-        return (
-          <FileTab
-            key={layer.id}
-            aria-pressed={layer.visible}
-            index={index}
-            onClick={() => onLayerClick(layer)}
-          >
-            {layer.id.slice(0, 4)}
-            {/* TODO add author and time  */}
-          </FileTab>
-        );
-      })}
+    <div css={sidewaysTabStyle}>
+      {layers
+        .filter((l) => !l.archived && l.id !== root.id)
+        .map((layer: Layer, index) => {
+          return (
+            <FileTab
+              key={layer.id}
+              aria-pressed={layer.visible}
+              index={index}
+              onClick={() => onLayerClick(layer)}
+            >
+              {layer.id.slice(0, 4)}
+              {/* TODO add author and time  */}
+            </FileTab>
+          );
+        })}
     </div>
   );
 }

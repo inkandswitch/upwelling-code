@@ -2,10 +2,15 @@
 import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
 import { Upwell, Author, Layer } from "api";
-import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
-import Documents from '../Documents'
+import ListDocuments, {
+  ButtonTab,
+  InfoTab,
+  sidewaysTabStyle,
+  FileTab,
+} from "./ListDocuments";
+import Documents from "../Documents";
 
-let upwell: Upwell = Documents()
+let upwell: Upwell = Documents();
 
 type DocumentViewProps = {
   id: string;
@@ -20,8 +25,8 @@ type LayerState = {
 export default function DocumentView(props: DocumentViewProps) {
   const { author } = props;
   let [state, setState] = React.useState<LayerState>({
-    text: '',
-    title: '',
+    text: "",
+    title: "",
   });
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
@@ -32,8 +37,8 @@ export default function DocumentView(props: DocumentViewProps) {
       setLayers(layers);
     });
     upwell.rootLayer().then((root: Layer) => {
-      setRoot(root)
-    })
+      setRoot(root);
+    });
   }, []);
 
   /*
@@ -78,40 +83,39 @@ export default function DocumentView(props: DocumentViewProps) {
 
   let onLayerClick = (layer: Layer) => {
     // TODO: Blaine Magic
-    if (!root) return console.error('no root race condition')
-    if (layer.id === root.id) return  // do nothing
+    if (!root) return console.error("no root race condition");
+    if (layer.id === root.id) return; // do nothing
 
     layer.visible = !layer.visible;
     if (layer.visible) {
-      setEditableLayer(layer)
+      setEditableLayer(layer);
       setState({ title: layer.title, text: layer.text });
-    }
-    else setState({ title: root.title, text: root.text });
+    } else setState({ title: root.title, text: root.text });
   };
 
   let onCreateLayer = async () => {
     let message = "Very cool layer";
     // always forking from root layer (for now)
-    let root = await upwell.rootLayer()
+    let root = await upwell.rootLayer();
     let newLayer = root.fork(message, author);
     await upwell.persist(newLayer);
     setLayers(await upwell.layers());
   };
 
   let mergeVisible = async () => {
-    if (!root) return console.error('no root race condition')
+    if (!root) return console.error("no root race condition");
 
     let visible = layers.filter((l) => l.visible);
-    if (!root) return console.error('could not find root layer')
+    if (!root) return console.error("could not find root layer");
     let merged = visible.reduce((prev: Layer, cur: Layer) => {
       if (cur.id !== root?.id) {
-        upwell.archive(cur.id)
-        console.log('archiving', cur.id)
+        upwell.archive(cur.id);
+        console.log("archiving", cur.id);
       }
-      return Layer.merge(prev, cur)
-    }, root)
-    await upwell.add(merged)
-    setLayers(await upwell.layers())
+      return Layer.merge(prev, cur);
+    }, root);
+    await upwell.add(merged);
+    setLayers(await upwell.layers());
     setState({ title: merged.title, text: merged.text });
   };
 
@@ -124,8 +128,12 @@ export default function DocumentView(props: DocumentViewProps) {
       // @ts-ignore
       switch (e.nativeEvent.inputType) {
         case "insertText":
-          //@ts-ignore
-          editableLayer.insertAt(e.target.selectionEnd - 1, e.nativeEvent.data, key);
+          editableLayer.insertAt(
+            e.target.selectionEnd - 1,
+            //@ts-ignore
+            e.nativeEvent.data,
+            key
+          );
           break;
         case "deleteContentBackward":
           editableLayer.deleteAt(e.target.selectionEnd, 1, key);
@@ -202,21 +210,51 @@ export default function DocumentView(props: DocumentViewProps) {
             align-items: flex-start;
           `}
         >
-          <div id="top" css={css``}>
-            <InfoTab css={css``} title="Layers">
+          <div
+            id="top"
+            css={css`
+              margin-top: -17px;
+            `}
+          >
+            <InfoTab css={css``} title="Layers area">
               🌱
             </InfoTab>
             <ButtonTab onClick={onCreateLayer} title="new layer">
               ➕
             </ButtonTab>
-            <ListDocuments onLayerClick={onLayerClick} layers={layers} />
+            {root && (
+              <ListDocuments
+                onLayerClick={onLayerClick}
+                layers={layers}
+                root={root}
+              />
+            )}
             <ButtonTab onClick={mergeVisible} title="merge visible">
               👇
             </ButtonTab>
           </div>
-          <div id="bottom" css={css``}>
-            <InfoTab css={css``} title="Published Doc">
-              👀
+          <div
+            id="bottom"
+            css={css`
+              margin-bottom: -20px;
+            `}
+          >
+            {root && (
+              <FileTab
+                css={css`
+                  border-radius: 0 10px 10px 0; /* top rounded edges */
+                `}
+                key={root.id}
+                index={1}
+                aria-pressed={root.visible}
+                title="The canonical document"
+              >
+                <span css={sidewaysTabStyle}>{root.id.slice(0, 4)}</span>
+                {/* TODO add author and time  */}
+              </FileTab>
+            )}
+            <InfoTab css={css``} title="Published area">
+              🎂
             </InfoTab>
           </div>
         </div>
