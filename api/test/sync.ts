@@ -20,7 +20,7 @@ describe('save and load', () => {
     await upwellEquals(a, b)
   })
 
-  it.only('merges all layers on an upwell', async () => {
+  it('merges all layers on an upwell', async () => {
     let a = await helloWorld()
     let binary = await a.serialize()
     // give binary to friend 
