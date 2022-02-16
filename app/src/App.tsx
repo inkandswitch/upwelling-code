@@ -7,7 +7,6 @@ import catnames from 'cat-names';
 
 let upwell: Upwell = Documents()
 
-
 export default function App() {
   let [author, setAuthor] = useState<string>('')
   let [ main_id, setMain] = useState<string | null>(null)
