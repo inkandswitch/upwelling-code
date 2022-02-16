@@ -1,7 +1,7 @@
 let app = require('./')
 
-const port = 5000
+let port = 5000
 
-app.listen(5000, () => {
+app.listen(() => {
 	console.log('listening on http://localhost:' + port)
 })

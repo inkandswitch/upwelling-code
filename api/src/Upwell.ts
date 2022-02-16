@@ -6,7 +6,6 @@ import concat from 'concat-stream'
 import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
-import intoStream from 'into-stream';
 
 export type Author = string 
 
@@ -83,9 +82,17 @@ export class Upwell {
     return Layer.load(id, saved)
   }
 
-  static fromFile(binary: Buffer) {
-    let stream = intoStream(binary)
-    return Upwell.deserialize(stream)
+  async toFile(): Promise<Buffer> {
+    return new Promise(async (resolve, reject) => {
+      let pack = await this.serialize()
+
+      let toBinaryStream = concat(async (binary: Buffer) => {
+        let id = await this.id()
+        resolve(binary)
+      })
+
+      pack.pipe(toBinaryStream)
+    })
   }
 
   static deserialize(stream: Readable, options?: UpwellOptions): Promise<Upwell> {
