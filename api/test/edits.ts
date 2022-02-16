@@ -5,29 +5,31 @@ import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
 
+  let doc1: Layer, doc2: Layer
+
+  beforeEach(async () => {
+    let d = await Upwell.create()
+    doc1 = (await d.layers())[0]
+    doc1.insertAt(0, 'Hello of course');
+    doc1.commit('Hello!');
+
+    doc2 = Layer.create('Fork layer', 'editor', doc1)
+    await d.add(doc2)
+
+    doc2.insertAt(5, ' World');
+    doc2.insertAt(0, 'Hey Everybody - ');
+    doc2.deleteAt(16, 6)
+    doc2.commit('I hope you like my changes!')
+  })
+
+  it('has the correct base documents', () => {
+    assert.equal(doc1.text, 'Hello of course')
+    assert.equal(doc2.text, 'Hey Everybody - World of course')
+  })
+
   describe('getEdits', () => {
 
-    let edits = [], doc1: Layer, doc2: Layer
-
-    beforeEach(async () => {
-      let d = await Upwell.create()
-      doc1 = (await d.layers())[0]
-      doc1.insertAt(0, 'Hello of course');
-      doc1.commit('Hello!');
-
-      doc2 = Layer.create('Fork layer', null, doc1)
-      await d.add(doc2)
-
-      doc2.insertAt(5, ' World');
-      doc2.insertAt(0, 'Hey Everybody - ');
-      doc2.deleteAt(16, 6)
-      doc2.commit('I hope you like my changes!')
-    })
-
-    it('has the correct base documents', () => {
-      assert.equal(doc1.text, 'Hello of course')
-      assert.equal(doc2.text, 'Hey Everybody - World of course')
-    })
+    let edits = []
 
     describe('with (root, modified) document order', () => {
       beforeEach(() => {
@@ -84,6 +86,50 @@ describe('upwell', () => {
           }
         }, '')
         assert.equal(fullText, doc1.text)
+      })
+    })
+  })
+
+  describe('mergeWithEdits', () => {
+
+    let merged: Layer
+
+    beforeEach(async () => {
+      merged = Layer.mergeWithEdits(doc1, doc2)
+    })
+
+    describe('with a single layer', () => {
+
+      it('has the correct number of marks', () => {
+        assert.equal(merged.marks.length, 3)
+      })
+
+      it('preserves changes as marks', () => {
+
+        let marks = merged.marks.map(({type, start, end}) => ({ type, start, end }))
+
+        assert.deepEqual([
+          { type: 'delete', start: 0, end: 5 },
+          { type: 'insert', start: 0, end: 3 },
+          { type: 'insert', start: 4, end: 22 }
+        ], marks)
+      })
+
+      it('retains metadata', () => {
+        let marksValues = merged.marks.map(mark => {
+          return mark.value
+        })
+
+        assert.deepEqual([
+          JSON.stringify({author: 'editor'}),
+          JSON.stringify({author: 'editor'}),
+          JSON.stringify({author: 'editor'}),
+        ], marksValues)
+      })
+    })
+
+    describe.skip('with multiple layers', () => {
+      it('correctly modifies the marks', () => {
       })
     })
   })

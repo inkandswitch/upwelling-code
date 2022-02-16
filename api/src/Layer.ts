@@ -187,6 +187,29 @@ export class Layer {
     return ours
   }
 
+  static mergeWithEdits(ours: Layer, theirs: Layer) {
+    let edits = ours.getEdits(theirs)
+    let newLayer = Layer.merge(ours.clone(), theirs)
+
+    edits.forEach((edit) => {
+      if (edit.type === 'retain') return
+
+      let start = edit.start
+      let end = edit.start + edit.value.length
+
+      newLayer.mark(
+        edit.type,
+        `(${start}..${end})`,
+        JSON.stringify({ // I *really* don't want to do this, but as a quick hack it's not the worst thing I've ever done. Pending a better solution.
+          author: theirs.author
+        })
+      )
+    })
+    newLayer.commit('Merge')
+
+    return newLayer
+  }
+
   static load(binary: Uint8Array): Layer {
     let doc = Automerge.loadDoc(binary)
     return new Layer(doc)

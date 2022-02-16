@@ -10,6 +10,5 @@ describe('upwell', () => {
     doc1.insertAt(0, 'Hello bold plain italic whatever');
     doc1.mark('bold', "(5..9)", true)
     doc1.commit('Hello!');
-    console.log(doc1.marks)
   })
 })
