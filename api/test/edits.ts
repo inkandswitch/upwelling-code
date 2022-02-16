@@ -3,17 +3,17 @@ import { it } from 'mocha';
 import { assert } from 'chai';
 import { nanoid } from 'nanoid';
 
-describe('upwell', () => {
+describe('edits', () => {
 
   let doc1: Layer, doc2: Layer
 
   beforeEach(async () => {
-    let d = await Upwell.create()
+    let d = await Upwell.create({author: 'author'})
     doc1 = (await d.layers())[0]
     doc1.insertAt(0, 'Hello of course');
     doc1.commit('Hello!');
 
-    doc2 = Layer.create('Fork layer', 'editor', doc1)
+    doc2 = doc1.fork('Fork layer', 'editor')
     await d.add(doc2)
 
     doc2.insertAt(5, ' World');
