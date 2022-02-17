@@ -109,7 +109,7 @@ describe('edits', () => {
         let marks = merged.marks.map(({type, start, end}) => ({ type, start, end }))
 
         assert.deepEqual([
-          { type: 'delete', start: 0, end: 5 },
+          { type: 'delete', start: 0, end: 0 },
           { type: 'insert', start: 0, end: 3 },
           { type: 'insert', start: 4, end: 22 }
         ], marks)
@@ -121,9 +121,9 @@ describe('edits', () => {
         })
 
         assert.deepEqual([
-          JSON.stringify({author: 'editor'}),
-          JSON.stringify({author: 'editor'}),
-          JSON.stringify({author: 'editor'}),
+          JSON.stringify({author: 'editor', text: 'Hello'}),
+          JSON.stringify({author: 'editor', text: 'Hey'}),
+          JSON.stringify({author: 'editor', text: 'Everybody - World '}),
         ], marksValues)
       })
     })

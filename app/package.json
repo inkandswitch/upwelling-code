@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@atjson/document": "^0.24.5",
+    "@atjson/renderer-react": "^0.24.12",
     "@babel/core": "^7.16.0",
     "@emotion/babel-plugin": "^11.7.2",
     "@emotion/react": "^11.7.1",

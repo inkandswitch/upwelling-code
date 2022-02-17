@@ -9,6 +9,8 @@ import ListDocuments, {
   FileTab,
 } from "./ListDocuments";
 import * as Documents from '../Documents'
+import { TextAreaView } from './TextArea'
+import UpwellSource from './upwell-source'
 
 type DocumentViewProps = {
   id: string;
@@ -18,6 +20,8 @@ type DocumentViewProps = {
 type LayerState = {
   text: string;
   title: string;
+  layer?: Layer;
+  atjsonLayer?: UpwellSource;
 };
 
 export default function MaybeDocument(props: DocumentViewProps) {
@@ -47,6 +51,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
   });
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
+
   let [editableLayer, setEditableLayer] = React.useState<Layer>();
 
   useEffect(() => {
@@ -139,34 +144,6 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
     Documents.save(upwell)
   };
 
-  function onTextChange(
-    e: React.ChangeEvent<HTMLTextAreaElement>,
-    key: string
-  ) {
-    if (editableLayer) {
-      e.preventDefault();
-      // @ts-ignore
-      switch (e.nativeEvent.inputType) {
-        case "insertText":
-          editableLayer.insertAt(
-            e.target.selectionEnd - 1,
-            //@ts-ignore
-            e.nativeEvent.data,
-            key
-          );
-          break;
-        case "deleteContentBackward":
-          editableLayer.deleteAt(e.target.selectionEnd, 1, key);
-          break;
-        case "insertLineBreak":
-          editableLayer.insertAt(e.target.selectionEnd - 1, "\n", key);
-          break;
-      }
-      setState({ title: editableLayer.title, text: editableLayer.text });
-      upwell.persist(editableLayer);
-    }
-  }
-
   return (
     <div
       id="folio"
@@ -190,38 +167,8 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
           flex-direction: row;
         `}
       >
-        <div
-          css={css`
-            width: 100%;
-          `}
-        >
-          {/* <textarea className="title" value={state.title} onChange={(e) => onTextChange(e, 'title')}></textarea> */}
-          <textarea
-            css={css`
-              width: 100%;
-              height: 100%;
-              border: 1px solid lightgray;
-              border-width: 0 1px 1px 0;
-              padding: 34px;
-              resize: none;
-              font-size: 16px;
-              line-height: 20px;
-              border-radius: 3px;
-
-              background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
-              background-size: 20px 20px;
-              background-attachment: local;
-
-              :focus-visible {
-                outline: 0;
-              }
-            `}
-            className="text"
-            value={state.text}
-            onChange={(e) => onTextChange(e, "text")}
-          ></textarea>
-        </div>
-        <div
+       <TextAreaView upwell={upwell} state={state} setState={setState} editableLayer={editableLayer} ></TextAreaView>
+       <div
           id="right-side"
           css={css`
             display: flex;
