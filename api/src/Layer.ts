@@ -208,13 +208,20 @@ export class Layer {
       if (edit.type === 'retain') return
 
       let start = edit.start
-      let end = edit.start + edit.value.length
+      let end: number
+
+      if (edit.type === 'delete') {
+        end = edit.start
+      } else if (edit.type === 'insert') {
+        end = edit.start + edit.value.length
+      }
 
       newLayer.mark(
         edit.type,
         `(${start}..${end})`,
         JSON.stringify({ // I *really* don't want to do this, but as a quick hack it's not the worst thing I've ever done. Pending a better solution.
-          author: theirs.author
+          author: theirs.author,
+          text: edit.value
         })
       )
     })
