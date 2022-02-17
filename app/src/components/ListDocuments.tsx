@@ -8,10 +8,42 @@ const tabStyles = css`
   border: 1px #bbc6ff solid;
   border-left: 0;
   border-top: 0;
-  margin-right: 6px;
+  margin-right: 8px;
   padding: 12px 4px 12px 4px;
   border-radius: 0 10px 10px 0; /* top rounded edges */
   box-sizing: content-box;
+  background: white;
+  line-height: 16px;
+`;
+const tabVisibleStyles = css`
+  border-radius: 0 10px 10px 0; /* top rounded edges */
+  padding-left: 12px;
+  margin-right: 0;
+`;
+
+const wiggleStyle = css`
+  @keyframes wiggle {
+    0% {
+      transform: rotate(25deg);
+    }
+    20% {
+      transform: rotate(-25deg);
+    }
+    35% {
+      transform: rotate(0deg);
+    }
+    95% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  &:hover {
+    display: inline-block;
+    animation: wiggle 2.5s infinite;
+  }
 `;
 
 export const InfoTab = (
@@ -39,32 +71,10 @@ export const ButtonTab = (
   <div
     css={css`
       ${tabStyles};
+      ${wiggleStyle}
       border-radius: 0 6px 6px 0;
       background: white;
       cursor: pointer;
-
-      @keyframes wiggle {
-        0% {
-          transform: rotate(25deg);
-        }
-        20% {
-          transform: rotate(-25deg);
-        }
-        35% {
-          transform: rotate(0deg);
-        }
-        95% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(0deg);
-        }
-      }
-
-      &:hover {
-        display: inline-block;
-        animation: wiggle 2.5s infinite;
-      }
     `}
     role="button"
     {...props}
@@ -77,23 +87,22 @@ type TabType = {
 } & React.ClassAttributes<HTMLDivElement> &
   React.ButtonHTMLAttributes<HTMLDivElement>;
 
-export const FileTab = ({ index, "aria-pressed": isVisible, ...props }: TabType) => (
+export const FileTab = ({
+  index,
+  "aria-pressed": isVisible,
+  ...props
+}: TabType) => (
   <div
     css={css`
       ${tabStyles};
       margin-top: -6px;
       border-radius: 0 0 10px 0; /* front rounded edge only */
-      background: ${isVisible ? "#d1eaff" : "white"};
       cursor: pointer;
       z-index: ${1000 - index};
-
-      // &:first-of-type {
-      // }
+      ${isVisible ? tabVisibleStyles : ""}
 
       &:hover {
-        border-radius: 0 10px 10px 0; /* top rounded edges */
-        padding-left: 10px;
-        margin-right: 0;
+        background: #d1eaff;
       }
     `}
     role="button"
@@ -107,33 +116,81 @@ export const sidewaysTabStyle = css`
   display: flex;
   flex-direction: row;
   align-items: flex-end;
-  margin-top: 6px;
+  overflow: auto; /* scroll tabs when they collide */
 `;
 
 type Props = {
   onLayerClick: Function;
+  editableLayer?: Layer;
   layers: Layer[];
-  root: Layer;
+  handleShareClick: any; // TODO
 };
 
-export default function ListDocuments({ layers, onLayerClick, root }: Props) {
+export default function ListDocuments({
+  layers,
+  onLayerClick,
+  handleShareClick,
+  editableLayer,
+}: Props) {
   return (
     <div css={sidewaysTabStyle}>
-      {layers
-        .filter((l) => !l.archived && l.id !== root.id)
-        .map((layer: Layer, index) => {
-          return (
-            <FileTab
-              key={layer.id}
-              aria-pressed={layer.visible}
-              index={index}
-              onClick={() => onLayerClick(layer)}
-            >
-              {layer.id.slice(0, 4)}
-              {/* TODO add author and time  */}
-            </FileTab>
-          );
-        })}
+      {layers.map((layer: Layer, index) => {
+        return (
+          <FileTab
+            key={layer.id}
+            aria-pressed={layer.visible}
+            index={index}
+            onClick={() => onLayerClick(layer)}
+            title={`by ${layer.author}`}
+            css={css`
+              ${editableLayer?.id === layer.id ? "background: #d6d7ff;" : ""}
+            `}
+          >
+            {layer.id.slice(0, 4)}
+            {!layer.shared && (
+              <EmojiButton
+                css={wiggleStyle}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleShareClick(layer);
+                }}
+              >
+                👀
+              </EmojiButton>
+            )}
+          </FileTab>
+        );
+      })}
     </div>
+  );
+}
+
+type ButtonType = React.ClassAttributes<HTMLButtonElement> &
+  React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+function EmojiButton(props: ButtonType) {
+  return (
+    <button
+      css={css`
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        color: black;
+        &:hover {
+          background: red;
+        }
+        &:disabled {
+          opacity: 70%;
+          cursor: not-allowed;
+          filter: grayscale(40%) brightness(90%);
+        }
+      `}
+      {...props}
+    />
   );
 }
