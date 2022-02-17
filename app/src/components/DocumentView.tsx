@@ -238,6 +238,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
               <>
                 <ListDocuments
                   onLayerClick={onLayerClick}
+                  visible={visible}
                   layers={layers.filter(
                     (l: Layer) => !l.archived && l.shared && l.id !== root?.id
                   )}
@@ -252,7 +253,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
                     `}
                     key={root.id}
                     index={1}
-                    aria-pressed={root.visible}
+                    aria-pressed={true}
                     title={`by ${root.author} at ${root.time.toDateString()}`}
                   >
                     root
