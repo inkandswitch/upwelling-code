@@ -8,7 +8,7 @@ import ListDocuments, {
   sidewaysTabStyle,
   FileTab,
 } from "./ListDocuments";
-import * as Documents from '../Documents'
+import * as Documents from "../Documents";
 
 type DocumentViewProps = {
   id: string;
@@ -21,25 +21,26 @@ type LayerState = {
 };
 
 export default function MaybeDocument(props: DocumentViewProps) {
-  let [upwell, setUpwell] = React.useState<Upwell>()
+  let [upwell, setUpwell] = React.useState<Upwell>();
 
   useEffect(() => {
-    console.log('getting upwell')
-    Documents.get(props.id).then(( upwell: Upwell) => {
-      if (!upwell) return console.error('could not find upwell with id', props.id) 
+    console.log("getting upwell");
+    Documents.get(props.id).then((upwell: Upwell) => {
+      if (!upwell)
+        return console.error("could not find upwell with id", props.id);
       // Saves every X seconds
-      Documents.startSaveInterval(upwell, 3000)
-      setUpwell(upwell)
-    })
+      Documents.startSaveInterval(upwell, 3000);
+      setUpwell(upwell);
+    });
     return () => {
-      Documents.stopSaveInterval()
-    }
+      Documents.stopSaveInterval();
+    };
   }, [props.id]);
-  if (!upwell) return <div>Loading..</div>
-  return <DocumentView upwell={upwell} author={props.author} />
+  if (!upwell) return <div>Loading..</div>;
+  return <DocumentView upwell={upwell} author={props.author} />;
 }
 
-export function DocumentView(props: {upwell: Upwell, author: Author}) {
+export function DocumentView(props: { upwell: Upwell; author: Author }) {
   const { upwell, author } = props;
   let [state, setState] = React.useState<LayerState>({
     text: "",
@@ -51,13 +52,13 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
 
   useEffect(() => {
     upwell.layers().then((layers: Layer[]) => {
-      console.log('layers', layers)
+      console.log("layers", layers);
       setLayers(layers);
     });
     upwell.rootLayer().then((root: Layer) => {
       setRoot(root);
     });
-  }, []);
+  }, [upwell]);
 
   /*
   async function open(): Promise<Uint8Array> {
@@ -118,7 +119,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
     let newLayer = root.fork(message, author);
     await upwell.persist(newLayer);
     setLayers(await upwell.layers());
-    Documents.save(upwell)
+    Documents.save(upwell);
   };
 
   let mergeVisible = async () => {
@@ -136,7 +137,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
     await upwell.add(merged);
     setLayers(await upwell.layers());
     setState({ title: merged.title, text: merged.text });
-    Documents.save(upwell)
+    Documents.save(upwell);
   };
 
   function onTextChange(
@@ -182,7 +183,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
         id="writing-zone"
         css={css`
           flex: 1 0 auto;
-          padding: 20px 40px;
+          padding: 20px 40px 40px;
           padding-right: 20px;
           background: #ccecc1;
           border-radius: 10px;
@@ -234,6 +235,10 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
             id="top"
             css={css`
               margin-top: -17px;
+              display: flex;
+              flex-direction: column;
+              flex: 1 1 auto;
+              overflow: auto;
             `}
           >
             <InfoTab css={css``} title="Layers area">
@@ -245,13 +250,16 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
             {root && (
               <ListDocuments
                 onLayerClick={onLayerClick}
-                layers={layers}
-                root={root}
+                layers={layers.filter(
+                  (l: Layer) => !l.archived && !l.shared && l.id !== root?.id
+                )}
+                handleShareClick={(l: Layer) => {
+                  l.shared = true;
+                  upwell.persist(l);
+                }}
+                editableLayer={editableLayer}
               />
             )}
-            <ButtonTab onClick={mergeVisible} title="merge visible">
-              👇
-            </ButtonTab>
           </div>
           <div
             id="bottom"
@@ -260,25 +268,81 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
             `}
           >
             {root && (
-              <FileTab
-                css={css`
-                  border-radius: 0 10px 10px 0; /* top rounded edges */
-                `}
-                key={root.id}
-                index={1}
-                aria-pressed={root.visible}
-                title="The canonical document"
-              >
-                <span css={sidewaysTabStyle}>{root.id.slice(0, 4)}</span>
-                {/* TODO add author and time  */}
-              </FileTab>
+              <>
+                <ListDocuments
+                  onLayerClick={onLayerClick}
+                  layers={layers.filter(
+                    (l: Layer) => !l.archived && l.shared && l.id !== root?.id
+                  )}
+                  handleShareClick={(l: Layer) => (l.shared = true)}
+                  editableLayer={editableLayer}
+                />
+                <div css={sidewaysTabStyle}>
+                  <FileTab
+                    css={css`
+                      margin-top: 0;
+                      border-radius: 0 10px 10px 0; /* top rounded edges */
+                    `}
+                    key={root.id}
+                    index={1}
+                    aria-pressed={root.visible}
+                    title={`by ${root.author} at ${root.time.toDateString()}`}
+                  >
+                    root
+                    {/* TODO add author and time  */}
+                  </FileTab>
+                </div>
+              </>
             )}
             <InfoTab css={css``} title="Published area">
               🎂
             </InfoTab>
           </div>
         </div>
+        <div
+          id="bottom-bar"
+          css={css`
+            position: absolute;
+            bottom: 40px;
+            right: 88px;
+          `}
+        >
+          <Button onClick={mergeVisible}>Flatten visible</Button>
+        </div>
       </div>
     </div>
+  );
+}
+
+type ButtonType = React.ClassAttributes<HTMLButtonElement> &
+  React.ButtonHTMLAttributes<HTMLButtonElement>;
+
+function Button(props: ButtonType) {
+  return (
+    <button
+      css={css`
+        padding: 3px 14px;
+        font-size: 14px;
+        border-radius: 3px;
+        border: none;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        color: black;
+        &:hover {
+          background: #d1eaff;
+        }
+        &:disabled {
+          opacity: 70%;
+          cursor: not-allowed;
+          filter: grayscale(40%) brightness(90%);
+        }
+      `}
+      {...props}
+    />
   );
 }
