@@ -13,7 +13,7 @@ type LayerState = {
   atjsonLayer?: UpwellSource;
 };
 
-export function TextAreaView(props: {upwell: Upwell, state: LayerState, setState: React.Dispatch<React.SetStateAction<LayerState>>, editableLayer?: Layer}) {
+export function EditReviewView(props: {upwell: Upwell, state: LayerState, setState: React.Dispatch<React.SetStateAction<LayerState>>, editableLayer?: Layer}) {
 
   const { upwell, state, setState, editableLayer } = props;
 

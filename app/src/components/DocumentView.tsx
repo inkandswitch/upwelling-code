@@ -9,7 +9,7 @@ import ListDocuments, {
   FileTab,
 } from "./ListDocuments";
 import * as Documents from '../Documents'
-import { TextAreaView } from './TextArea'
+import { EditReviewView } from './EditReview'
 import UpwellSource from './upwell-source'
 
 type DocumentViewProps = {
@@ -179,7 +179,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
           flex-direction: row;
         `}
       >
-       <TextAreaView upwell={upwell} state={state} setState={setState} editableLayer={editableLayer} ></TextAreaView>
+       <EditReviewView upwell={upwell} state={state} setState={setState} editableLayer={editableLayer} ></EditReviewView>
        <div
           id="right-side"
           css={css`
