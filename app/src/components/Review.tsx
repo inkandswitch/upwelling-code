@@ -1,27 +1,33 @@
-import React, { useEffect } from "react";
+import React from "react";
 import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
 import UpwellSource from "./upwell-source"
-import { Upwell, Author, Layer } from "api";
+import { Layer } from "api";
 
 type ReviewState = {
-  atjsonLayer: UpwellSource;
+  atjsonLayer?: UpwellSource;
 };
 
-export function ReviewView(props: {upwell: Upwell, editableLayer: Layer}) {
+export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
 
-  const { upwell, editableLayer } = props;
-
-  let initialSource: UpwellSource = new UpwellSource({content: 'loading...', annotations: []});
-
-  let [ state, setState ] = React.useState<ReviewState>({atjsonLayer: initialSource});
+  const { rootLayer, visible } = props;
 
   // This is not a good proxy for the correct state, but DEMO MODE.
-  setImmediate(updateAtjsonState)
+  let [ state, setState ] = React.useState<ReviewState>({})
+  if (!state.atjsonLayer) {
+    updateAtjsonState()
+    return <div>Loading...</div>
+  } else {
+    return (
+      <ReactRendererProvider value={components}>
+        <article>{ReactRenderer.render(state.atjsonLayer)}</article>
+      </ReactRendererProvider>
+    )
+  }
 
   async function updateAtjsonState() {
-    let rootLayer = await upwell.rootLayer()
-    let editsLayer = await Layer.mergeWithEdits(rootLayer, editableLayer)
+    // TODO: mergeWithEdits on all layers
+    let editsLayer = visible.reduce(Layer.mergeWithEdits, rootLayer)
     let marks = editsLayer.marks.map((m: any) => {
       let attrs = JSON.parse(m.value)
       // I wonder if there's a (good) way to preserve identity of the mark
@@ -33,10 +39,4 @@ export function ReviewView(props: {upwell: Upwell, editableLayer: Layer}) {
     let atjsonLayer = new UpwellSource({content: editsLayer.text, annotations: marks});
     setState({ atjsonLayer: atjsonLayer });
   }
-
-  return (
-    <ReactRendererProvider value={components}>
-      <article>{ReactRenderer.render(state.atjsonLayer)}</article>
-    </ReactRendererProvider>
-  )
 }

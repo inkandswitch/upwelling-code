@@ -1,18 +1,50 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";        
-import React, { useEffect } from "react";
-import { Upwell, Author, Layer } from "api";
+import React from "react";
+import { Layer } from "api";
 
-export function TextAreaView(props: {upwell: Upwell, editableLayer: Layer}) {
+function TextArea(props: any) {
+  return <textarea
+      css={css`
+        width: 100%;
+        height: 96%;
+        border: 1px solid lightgray;
+        border-width: 0 1px 1px 0;
+        padding: 34px;
+        resize: none;
+        font-size: 16px;
+        line-height: 20px;
+        border-radius: 3px;
 
-  const { upwell, editableLayer } = props;
+        background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
+        background-size: 20px 20px;
+        background-attachment: local;
 
-  let [ state, setState ] = React.useState<string>(editableLayer.text)
+        :focus-visible {
+          outline: 0;
+        }
+      `}
+      className="text"
+      value={props.state}
+      onChange={(e) => props.onTextChange(e, "text")}
+    ></textarea> 
+}
+
+
+type Props = {
+  editableLayer: Layer,
+  onChange: any
+}
+
+export function TextAreaView(props: Props) {
+  let { editableLayer, onChange } = props
+  let [ state, setState ] = React.useState<string>(editableLayer.text || '')
 
   function onTextChange(
     e: React.ChangeEvent<HTMLTextAreaElement>,
     key: string
   ) {
+    if (!editableLayer) return console.error('Layer not editable.')
       // @ts-ignore
       switch (e.nativeEvent.inputType) {
         case "insertText":
@@ -31,33 +63,8 @@ export function TextAreaView(props: {upwell: Upwell, editableLayer: Layer}) {
           break;
       }
       setState(editableLayer.text)
-      upwell.persist(editableLayer);
+      onChange(editableLayer)
   }
 
-  return (
-          <textarea
-            css={css`
-              width: 100%;
-              height: 96%;
-              border: 1px solid lightgray;
-              border-width: 0 1px 1px 0;
-              padding: 34px;
-              resize: none;
-              font-size: 16px;
-              line-height: 20px;
-              border-radius: 3px;
-
-              background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
-              background-size: 20px 20px;
-              background-attachment: local;
-
-              :focus-visible {
-                outline: 0;
-              }
-            `}
-            className="text"
-            value={state}
-            onChange={(e) => onTextChange(e, "text")}
-          ></textarea> 
-        )
+  return <TextArea onChange={onTextChange} state={state} />
 }

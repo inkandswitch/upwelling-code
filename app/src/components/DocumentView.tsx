@@ -10,19 +10,15 @@ import ListDocuments, {
 } from "./ListDocuments";
 import * as Documents from '../Documents'
 import { EditReviewView } from './EditReview'
-import UpwellSource from './upwell-source'
+//@ts-ignore
+import debounce from 'lodash.debounce'
 
 type DocumentViewProps = {
   id: string;
   author: Author;
 };
 
-type LayerState = {
-  text: string;
-  title: string;
-  layer?: Layer;
-  atjsonLayer?: UpwellSource;
-};
+const AUTOSAVE_INTERVAL = 300 //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [upwell, setUpwell] = React.useState<Upwell>();
@@ -44,14 +40,9 @@ export default function MaybeDocument(props: DocumentViewProps) {
 
 export function DocumentView(props: { upwell: Upwell; author: Author }) {
   const { upwell, author } = props;
-  let [state, setState] = React.useState<LayerState>({
-    text: "",
-    title: "",
-  });
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
   let [visible, setVisible] = React.useState<Layer[]>([]);
-  let [editableLayer, setEditableLayer] = React.useState<Layer>();
 
   useEffect(() => {
     Documents.subscribe(() => {
@@ -76,45 +67,6 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     }
   }, []);
 
-  /*
-  async function open(): Promise<Uint8Array> {
-    let [fileHandle] = await showOpenFilePicker();
-    const file = await fileHandle.getFile();
-    return new Uint8Array(await file.arrayBuffer());
-  }
-
-  let onOpenClick = async () => {
-    let binary: Uint8Array = await open();
-    // this is a hack for demos as of December 21, we probably want to do something
-    // totally different
-    let layer = Layer.load(binary);
-    await upwell.add(layer);
-    window.location.href = "/layer/" + layer.id;
-  };
-
-  let onDownloadClick = async () => {
-    let filename = layer.title + ".up";
-    let el = window.document.createElement("a");
-    let buf: Uint8Array = layer.save();
-    el.setAttribute(
-      "href",
-      "data:application/octet-stream;base64," + buf.toString()
-    );
-    el.setAttribute("download", filename);
-    el.click();
-  };
-
-  let onSyncClick = async () => {
-    try {
-      setStatus(SYNC_STATE.LOADING);
-      await upwell.syncWithServer(layer);
-      setState({ title: layer.title, text: layer.text });
-      setStatus(SYNC_STATE.SYNCED);
-    } catch (err) {
-      setStatus(SYNC_STATE.OFFLINE);
-    }
-  };
-  */
 
   useEffect(() => {
     console.log('RENDER BLAINE MAGIC')
@@ -136,6 +88,12 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     }
   };
 
+  let onTextChange = debounce(async (layer: Layer) => {
+    // this is saving every time text changes, do we want this??????
+    await upwell.persist(layer)
+    Documents.save(upwell);
+  }, AUTOSAVE_INTERVAL)
+
   let onCreateLayer = async () => {
     let message = "Very cool layer";
     // always forking from root layer (for now)
@@ -145,6 +103,11 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     setLayers(await upwell.layers());
     Documents.save(upwell);
   };
+
+  let getEditableLayer = () => {
+    if (visible.length === 1) return visible[0]
+    else return undefined
+  }
 
   let mergeVisible = async () => {
     if (!root) return console.error("no root race condition");
@@ -160,7 +123,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     }, root);
     await upwell.add(merged);
     setLayers(await upwell.layers());
-    setState({ title: merged.title, text: merged.text });
+    setVisible([])
     Documents.save(upwell);
   };
 
@@ -187,7 +150,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
           flex-direction: row;
         `}
       >
-       <EditReviewView upwell={upwell} editableLayer={editableLayer} ></EditReviewView>
+       <EditReviewView onChange={onTextChange} visible={visible} root={root} ></EditReviewView>
        <div
           id="right-side"
           css={css`
@@ -224,7 +187,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
                   l.shared = true;
                   upwell.persist(l);
                 }}
-                editableLayer={editableLayer}
+                editableLayer={getEditableLayer()}
               />
             )}
           </div>
@@ -243,7 +206,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
                     (l: Layer) => !l.archived && l.shared && l.id !== root?.id
                   )}
                   handleShareClick={(l: Layer) => (l.shared = true)}
-                  editableLayer={editableLayer}
+                  editableLayer={getEditableLayer()}
                 />
                 <div css={sidewaysTabStyle}>
                   <FileTab
@@ -314,3 +277,45 @@ function Button(props: ButtonType) {
     />
   );
 }
+
+
+
+  /*
+  async function open(): Promise<Uint8Array> {
+    let [fileHandle] = await showOpenFilePicker();
+    const file = await fileHandle.getFile();
+    return new Uint8Array(await file.arrayBuffer());
+  }
+
+  let onOpenClick = async () => {
+    let binary: Uint8Array = await open();
+    // this is a hack for demos as of December 21, we probably want to do something
+    // totally different
+    let layer = Layer.load(binary);
+    await upwell.add(layer);
+    window.location.href = "/layer/" + layer.id;
+  };
+
+  let onDownloadClick = async () => {
+    let filename = layer.title + ".up";
+    let el = window.document.createElement("a");
+    let buf: Uint8Array = layer.save();
+    el.setAttribute(
+      "href",
+      "data:application/octet-stream;base64," + buf.toString()
+    );
+    el.setAttribute("download", filename);
+    el.click();
+  };
+
+  let onSyncClick = async () => {
+    try {
+      setStatus(SYNC_STATE.LOADING);
+      await upwell.syncWithServer(layer);
+      setState({ title: layer.title, text: layer.text });
+      setStatus(SYNC_STATE.SYNCED);
+    } catch (err) {
+      setStatus(SYNC_STATE.OFFLINE);
+    }
+  };
+  */
