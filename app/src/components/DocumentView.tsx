@@ -179,7 +179,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
           flex-direction: row;
         `}
       >
-       <EditReviewView upwell={upwell} state={state} setState={setState} editableLayer={editableLayer} ></EditReviewView>
+       <EditReviewView upwell={upwell} editableLayer={editableLayer} ></EditReviewView>
        <div
           id="right-side"
           css={css`
