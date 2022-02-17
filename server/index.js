@@ -3,84 +3,87 @@ const path = require('path')
 const fs = require('fs')
 const cors = require('cors')
 const bodyParser = require('body-parser');
-const { PutObjectCommand, S3Client } = require('@aws-sdk/client-s3');
+const { GetObjectCommand, S3Client } = require('@aws-sdk/client-s3');
 
+let accessKeyId = "FU6M64FABLBB5WQ4G5UM"
+let secretAccessKey = process.env.SPACES_SECRET
+let endpoint = 'https://sfo3.digitaloceanspaces.com'
+let region = 'sfo3'
 const s3Client = new S3Client({
-	endpoint: 'https://sfo3.digitaloceanspaces.com',
-	region: 'sfo3',
-	credentials: {
-		accessKeyId: "FU6M64FABLBB5WQ4G5UM",
-		secretAccessKey: process.env.SPACES_SECRET
-	}
+  endpoint,
+  region, 
+  credentials: {
+    accessKeyId,
+    secretAccessKey
+  }
 })
 
-
-// Step 4: Define a function that uploads your object using SDK's PutObjectCommand object and catches any errors.
-const uploadObject = async () => {
-	try {
-		const data = await s3Client.send(new PutObjectCommand(params));
-		console.log(
-			"Successfully uploaded object: " +
-			params.Bucket +
-			"/" +
-			params.Key
-		);
-		return data;
-	} catch (err) {
-		console.log("Error", err);
-	}
-};
-
+const BUCKET = "upwelling-semi-reliable-storage"
 let app = express()
-var options = {
-	inflate: true,
-	limit: '100kb',
-	type: 'application/octet-stream'
-};
-app.use(bodyParser.raw(options));
 app.use(cors());
+app.use(require('skipper')());
+
 
 try { 
-	fs.mkdirSync(path.join(__dirname, 'data'))
+  fs.mkdirSync(path.join(__dirname, 'data'))
 } catch (err) {
-	if (err.code !== 'EEXIST') {
-		console.error(err)
-	} 
+  if (err.code !== 'EEXIST') {
+    console.error(err)
+  } 
 }
 
+// Function to turn the file's body into a string.
+const streamToString = (stream) => {
+  const chunks = [];
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on('error', (err) => reject(err));
+    stream.on('end', () => resolve(Buffer.concat(chunks)));
+  });
+};
+
 app.get('/:id', (req, res) => {
-	let id = req.params.id
-	let filename = path.join(__dirname, 'data', id)
-	fs.stat(filename, (err, stats) => {
-		if (err) {
-			console.error(err)
-			res.status(404).send('Not found')
-		} else { 
-			res.sendFile(filename)
-			console.log('sending')
-		}
-	})
+  let id = req.params.id
+  console.log('got key', id)
+
+  // Specifies a path within your Space and the file to download.
+  const bucketParams = {
+    Bucket: BUCKET,
+    Key: id
+  };
+  s3Client.send(new GetObjectCommand(bucketParams)).then(async response => {
+    const data = await streamToString(response.Body);
+    res.send(data)
+    console.log('sending')
+  }).catch(err => {
+    console.error(err)
+    res.status(404).send('Not found')
+  })
+
 })
 
 app.post('/:id', (req, res) => {
-	let id = req.params.id
+  let id = req.params.id
 
-	// Step 3: Define the parameters for the object you want to upload.
-	const params = {
-		Bucket: "upwelling-semi-reliable-storage/v1", // The path to the directory you want to upload the object to, starting with your Space name.
-		Key: id, // Object key, referenced whenever you want to access this file later.
-		Body: req.body, // The object's contents. This variable is an object, not a string.
-		ACL: "public", // Defines ACL permissions, such as private or public.
-		Metadata: { // Defines metadata tags.
-			"id": id
-		}
-	};
+  console.log('uploading', id)
+  req.file(id).upload({
+    adapter: require('skipper-s3'),
+    key: accessKeyId,
+    secret: secretAccessKey,
+    bucket: BUCKET, 
+    region,
+    saveAs: id,
+    endpoint,
+  }, (err, uploadedFiles) => {
+    if (err) {
+      return res.status(500).send(err.message)
+    }
 
-	uploadObject(params).then(value => {
-		res.status(200).send('ok')
-	}).catch(err => {
-		res.status(500).send(err.message)
-	})
+    return res.json({
+      message: uploadedFiles.length + ' file(s) uploaded successfully!',
+      files: uploadedFiles
+    });
+  })
 })
 
 module.exports = app

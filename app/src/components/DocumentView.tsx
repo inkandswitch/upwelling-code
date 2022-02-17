@@ -27,7 +27,6 @@ export default function MaybeDocument(props: DocumentViewProps) {
     console.log('getting upwell')
     Documents.get(props.id).then(( upwell: Upwell) => {
       if (!upwell) return console.error('could not find upwell with id', props.id) 
-      // Saves every X seconds
       Documents.startSaveInterval(upwell, 3000)
       setUpwell(upwell)
     })
@@ -50,13 +49,26 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
   let [editableLayer, setEditableLayer] = React.useState<Layer>();
 
   useEffect(() => {
-    upwell.layers().then((layers: Layer[]) => {
-      console.log('layers', layers)
-      setLayers(layers);
-    });
-    upwell.rootLayer().then((root: Layer) => {
-      setRoot(root);
-    });
+    Documents.subscribe(() => {
+      // an external document (on the server) has changed
+      render()
+    })
+
+    function render() {
+      upwell.layers().then((layers: Layer[]) => {
+        console.log('layers', layers)
+        setLayers(layers);
+      });
+      upwell.rootLayer().then((root: Layer) => {
+        setRoot(root);
+      });
+    }
+
+    render()
+
+    return () => {
+      Documents.unsubscribe()
+    }
   }, []);
 
   /*
@@ -164,6 +176,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
       }
       setState({ title: editableLayer.title, text: editableLayer.text });
       upwell.persist(editableLayer);
+      Documents.save(upwell)
     }
   }
 
