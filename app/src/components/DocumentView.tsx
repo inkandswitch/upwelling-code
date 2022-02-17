@@ -50,7 +50,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
   });
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
-
+  let [visible, setVisible] = React.useState<Layer[]>([]);
   let [editableLayer, setEditableLayer] = React.useState<Layer>();
 
   useEffect(() => {
@@ -116,16 +116,24 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
   };
   */
 
-  let onLayerClick = (layer: Layer) => {
-    // TODO: Blaine Magic
-    if (!root) return console.error("no root race condition");
-    if (layer.id === root.id) return; // do nothing
+  useEffect(() => {
+    console.log('RENDER BLAINE MAGIC')
+     
+  }, [visible])
 
-    layer.visible = !layer.visible;
-    if (layer.visible) {
-      setEditableLayer(layer);
-      setState({ title: layer.title, text: layer.text });
-    } else setState({ title: root.title, text: root.text });
+  let onLayerClick = (layer: Layer) => {
+    if (!root) return console.error("no root race condition");
+    if (layer.id === root.id) {
+      setVisible([])
+      return; // reset visible layers
+    }
+
+    let exists = visible.findIndex(l => l.id === layer.id)
+    if (exists > -1) {
+      setVisible(visible.filter(l => l.id !== layer.id))
+    } else {
+      setVisible(visible.concat(layer))
+    }
   };
 
   let onCreateLayer = async () => {
@@ -204,6 +212,7 @@ export function DocumentView(props: {upwell: Upwell, author: Author}) {
             {root && (
               <ListDocuments
                 onLayerClick={onLayerClick}
+                visible={visible}
                 layers={layers}
                 root={root}
               />

@@ -114,18 +114,21 @@ type Props = {
   onLayerClick: Function;
   layers: Layer[];
   root: Layer;
+  visible: Layer[];
 };
 
-export default function ListDocuments({ layers, onLayerClick, root }: Props) {
+export default function ListDocuments({ visible, layers, onLayerClick, root }: Props) {
+  console.log('rendering', visible, layers)
   return (
     <div css={sidewaysTabStyle}>
       {layers
         .filter((l) => !l.archived && l.id !== root.id)
         .map((layer: Layer, index) => {
+          let visibleMaybe = visible.findIndex(l => l.id === layer.id)
           return (
             <FileTab
               key={layer.id}
-              aria-pressed={layer.visible}
+              aria-pressed={visibleMaybe > -1}
               index={index}
               onClick={() => onLayerClick(layer)}
             >

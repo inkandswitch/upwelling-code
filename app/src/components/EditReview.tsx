@@ -13,13 +13,17 @@ type LayerState = {
   atjsonLayer?: UpwellSource;
 };
 
+export function Wrapper() {
+
+}
+
 export function EditReviewView(props: {upwell: Upwell, state: LayerState, setState: React.Dispatch<React.SetStateAction<LayerState>>, editableLayer?: Layer}) {
 
   const { upwell, state, setState, editableLayer } = props;
 
   let [ reviewMode, setReviewMode ] = React.useState<Boolean>(true)
 
-  if (editableLayer && state.atjsonLayer?.content != editableLayer.text) {
+  if (editableLayer && state.atjsonLayer?.content !== editableLayer.text) {
     setImmediate(updateAtjsonState)
   }
 
