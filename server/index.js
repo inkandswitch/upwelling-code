@@ -5,7 +5,7 @@ const cors = require('cors')
 const bodyParser = require('body-parser');
 const { GetObjectCommand, S3Client } = require('@aws-sdk/client-s3');
 
-let accessKeyId = "FU6M64FABLBB5WQ4G5UM"
+let accessKeyId = "ZRJT7RHB37KDQC72YYAT"
 let secretAccessKey = process.env.SPACES_SECRET
 let endpoint = 'https://sfo3.digitaloceanspaces.com'
 let region = 'sfo3'
