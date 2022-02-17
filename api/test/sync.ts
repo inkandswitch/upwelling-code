@@ -1,7 +1,6 @@
 import { Author, Upwell, Layer, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
-import http from '../src/storage/http'
 
 async function helloWorld(): Promise<Upwell> {
   let upwell = await Upwell.create()
@@ -52,20 +51,6 @@ describe('save and load', () => {
     c = await Upwell.deserialize(binary)
     await a.merge(c)
     await upwellEquals(a, b)
-  })
-
-  it.skip('syncs with server', async () => {
-    let remote = new http()
-
-    let a = await helloWorld()
-    let binary = await a.toFile()
-    
-    // give binary to friend 
-    await remote.setItem(await a.id(), binary)
-    let file = await remote.getItem(await a.id())
-    let b = Buffer.from(file)
-    await upwellEquals(a, b)
-
   })
 })
 
