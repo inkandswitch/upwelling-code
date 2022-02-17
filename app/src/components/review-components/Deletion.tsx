@@ -6,6 +6,17 @@ import { Deletion as Annotation } from "../upwell-source";
 
 export const Delete: React.FC<AttributesOf<Annotation>> = (props) => {
   return (
-    <span css={css`color: red;`} className="deletion">{props.text}</span>
+    <span css={css`
+      &:hover .text {
+        display: inline
+      }
+
+      &:hover .mark {
+        display: none
+      }
+    `} className="deletion">
+      <span className="mark" css={css`width: 5px; color: red;`}>⌫</span>
+      <span className="text" css={css`color: red; display: none;`}>{props.text}</span>
+    </span>
   );
 };
