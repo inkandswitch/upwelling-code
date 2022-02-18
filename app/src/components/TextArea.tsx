@@ -59,6 +59,9 @@ export function TextAreaView(props: Props) {
         case "deleteContentBackward":
           editableLayer.deleteAt(e.target.selectionEnd, 1, key);
           break;
+        case "deleteContentForward":
+          editableLayer.deleteAt(e.target.selectionEnd, 1, key);
+          break;
         case "insertLineBreak":
           editableLayer.insertAt(e.target.selectionEnd - 1, "\n", key);
           break;
