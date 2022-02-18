@@ -14,7 +14,8 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   const { rootLayer, visible } = props;
 
   let updateAtjsonState = useCallback(async function () {
-    let editsLayer = visible.reduce(Layer.mergeWithEdits, rootLayer)
+    let mergedVisible = visible.slice(1).reduce(Layer.merge, visible[0])
+    let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
     let marks = editsLayer.marks.map((m: any) => {
       let attrs = JSON.parse(m.value)
       // I wonder if there's a (good) way to preserve identity of the mark
