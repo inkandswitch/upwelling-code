@@ -27,12 +27,8 @@ export default function MaybeDocument(props: DocumentViewProps) {
     console.log('getting upwell')
     Documents.get(props.id).then(( upwell: Upwell) => {
       if (!upwell) return console.error('could not find upwell with id', props.id) 
-      Documents.startSaveInterval(upwell, 3000)
       setUpwell(upwell)
     })
-    return () => {
-      Documents.stopSaveInterval();
-    };
   }, [props.id]);
   if (!upwell) return <div>Loading..</div>;
   return <DocumentView upwell={upwell} author={props.author} />;
