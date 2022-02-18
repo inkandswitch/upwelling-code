@@ -5,20 +5,23 @@ import { Layer } from "api";
 import { JSX } from "@emotion/react/jsx-runtime";
 
 const tabStyles = css`
-  border: 1px #bbc6ff solid;
-  border-left: 0;
+  border: 1px #b9b9b9 solid;
+  background: #eaeaea;
+  border-left: 1px solid lightgray;
   border-top: 0;
   margin-right: 8px;
   padding: 12px 4px 12px 4px;
   border-radius: 0 10px 10px 0; /* top rounded edges */
   box-sizing: content-box;
-  background: white;
   line-height: 16px;
 `;
 const tabVisibleStyles = css`
+  background: white;
+  border: 1px lightgray solid;
   border-radius: 0 10px 10px 0; /* top rounded edges */
   padding-left: 12px;
   margin-right: 0;
+  min-height: 60px;
 `;
 
 const wiggleStyle = css`
@@ -83,23 +86,37 @@ export const ButtonTab = (
 
 type TabType = {
   index: number;
+  isBottom?: boolean;
   "aria-pressed": boolean;
 } & React.ClassAttributes<HTMLDivElement> &
   React.ButtonHTMLAttributes<HTMLDivElement>;
 
+const fileTabBottomStyles = css`
+  border-radius: 0 10px 0 0; /* top rounded edge only */
+  border-width: 1px 1px 0px 1px;
+  min-width: 19px;
+  margin-top: 0;
+  margin-bottom: -6px;
+`;
+
 export const FileTab = ({
   index,
+  isBottom = false,
   "aria-pressed": isVisible,
   ...props
 }: TabType) => (
   <div
     css={css`
       ${tabStyles};
+      min-height: 40px;
+      text-align: end;
       margin-top: -6px;
-      border-radius: 0 0 10px 0; /* front rounded edge only */
+      min-width: 20px;
+      border-radius: 0 0 10px 0; /* bottom rounded edge only */
       cursor: pointer;
-      z-index: ${1000 - index};
+      z-index: ${isBottom ? 1000 + index : 1000 - index};
       ${isVisible ? tabVisibleStyles : ""}
+      ${isBottom ? fileTabBottomStyles : ""}
 
       &:hover {
         background: #d1eaff;
@@ -120,12 +137,19 @@ export const sidewaysTabStyle = css`
   overflow: auto; /* scroll tabs when they collide */
 `;
 
+const editableTabStyle = css`
+  background: white;
+  border-left: 0;
+  border-radius: 0 10px 10px 0; /* top rounded edges */
+`;
+
 type Props = {
   onLayerClick: Function;
   editableLayer?: Layer;
   layers: Layer[];
   visible: Layer[];
   handleShareClick: any; // TODO
+  isBottom?: boolean;
 };
 
 export default function ListDocuments({
@@ -134,29 +158,42 @@ export default function ListDocuments({
   handleShareClick,
   editableLayer,
   visible,
+  isBottom = false,
 }: Props) {
   return (
-    <div css={sidewaysTabStyle}>
+    <div
+      css={css`
+        ${sidewaysTabStyle}
+        ${isBottom ? "overflow: unset;" : ""}
+      `}
+    >
       {layers.map((layer: Layer, index) => {
-      let visibleMaybe = visible.findIndex(l => l.id === layer.id)
+        let visibleMaybe = visible.findIndex((l) => l.id === layer.id);
         return (
           <FileTab
             key={layer.id}
             aria-pressed={visibleMaybe > -1}
             index={index}
+            isBottom={isBottom}
             onClick={() => onLayerClick(layer)}
             title={`by ${layer.author}`}
             css={css`
-              ${editableLayer?.id === layer.id ? "background: #d6d7ff;" : ""}
+              ${editableLayer?.id === layer.id ? editableTabStyle : ""}
             `}
           >
-            {layer.id.slice(0, 4)}
             {!layer.shared && (
               <EmojiButton
                 css={wiggleStyle}
                 onClick={(e) => {
                   e.preventDefault();
-                  handleShareClick(layer);
+                  if (
+                    // eslint-disable-next-line no-restricted-globals
+                    confirm(
+                      "Do you want to share your layer? it can't be unshared."
+                    )
+                  ) {
+                    handleShareClick(layer);
+                  }
                 }}
               >
                 👀
@@ -185,6 +222,7 @@ function EmojiButton(props: ButtonType) {
         justify-content: center;
         background: transparent;
         color: black;
+        padding: 0;
         &:hover {
           background: red;
         }
