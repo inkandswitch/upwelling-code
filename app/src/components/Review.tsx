@@ -23,6 +23,16 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
       // as a proxy.
       return { start: m.start, end: m.end, type: `-upwell-${m.type}`, attributes: attrs }
     })
+
+    // generate paragraph annotations
+    let pidx = 0;
+    while (pidx !== -1) {
+      let start = pidx;
+      pidx = editsLayer.text.indexOf("\n", pidx + 1)
+      let end = (pidx === -1) ? editsLayer.text.length : pidx
+      marks.push({ start: start, end: end, type: "-upwell-paragraph", attributes: {}})
+    }
+
     let atjsonLayer = new UpwellSource({content: editsLayer.text, annotations: marks});
     setState({ atjsonLayer: atjsonLayer });
   }, [visible, rootLayer])
