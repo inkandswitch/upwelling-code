@@ -8,38 +8,42 @@ import ListDocuments, {
   sidewaysTabStyle,
   FileTab,
 } from "./ListDocuments";
-import * as Documents from '../Documents'
-import { EditReviewView } from './EditReview'
+import * as Documents from "../Documents";
+import { EditReviewView } from "./EditReview";
 //@ts-ignore
-import debounce from 'lodash.debounce'
+import debounce from "lodash.debounce";
 
 type DocumentViewProps = {
   id: string;
   author: Author;
 };
 
-const AUTOSAVE_INTERVAL = 300 //ms
+const AUTOSAVE_INTERVAL = 300; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [upwell, setUpwell] = React.useState<Upwell>();
 
   useEffect(() => {
-    Documents.open(props.id).then(( upwell: Upwell) => {
-      if (!upwell) return console.error('could not find upwell with id', props.id) 
-      setUpwell(upwell)
-    })
+    Documents.open(props.id).then((upwell: Upwell) => {
+      if (!upwell)
+        return console.error("could not find upwell with id", props.id);
+      setUpwell(upwell);
+    });
   }, [props.id]);
   if (!upwell) return <div>Loading..</div>;
   return <DocumentView id={props.id} upwell={upwell} author={props.author} />;
 }
 
-
 async function broadcastChanges(upwell: Upwell, layer: Layer) {
-  await Documents.save(upwell)
-  await Documents.sync(await upwell.id())
+  await Documents.save(upwell);
+  await Documents.sync(await upwell.id());
 }
 
-export function DocumentView(props: { id: string, upwell: Upwell; author: Author }) {
+export function DocumentView(props: {
+  id: string;
+  upwell: Upwell;
+  author: Author;
+}) {
   const { id, upwell, author } = props;
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
@@ -55,32 +59,32 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
   }
 
   useEffect(() => {
-    Documents.sync(id).then(upwell => {
-      render(upwell)
-    })
-    render(upwell)
+    Documents.sync(id).then((upwell) => {
+      render(upwell);
+    });
+    render(upwell);
   }, []); // THIS IS IMPORTANT LOL
 
   let onRootClick = () => {
-    setVisible([])
+    setVisible([]);
     return; // reset visible layers
-  }
+  };
 
   let onLayerClick = (layer: Layer) => {
-    let exists = visible.findIndex(l => l.id === layer.id)
+    let exists = visible.findIndex((l) => l.id === layer.id);
     if (exists > -1) {
-      setVisible(visible.filter(l => l.id !== layer.id))
+      setVisible(visible.filter((l) => l.id !== layer.id));
     } else {
-      console.log('before', visible)
-      setVisible(visible.concat([layer]))
+      console.log("before", visible);
+      setVisible(visible.concat([layer]));
     }
   };
 
   let onTextChange = debounce(async (layer: Layer) => {
     // this is saving every time text changes, do we want this??????
-    await upwell.persist(layer)
-    await Documents.save(upwell)
-  }, AUTOSAVE_INTERVAL)
+    await upwell.persist(layer);
+    await Documents.save(upwell);
+  }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
     let message = "Very cool layer";
@@ -88,14 +92,14 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
     let root = await upwell.rootLayer();
     let newLayer = root.fork(message, author);
     await upwell.add(newLayer);
-    await Documents.save(upwell)
+    await Documents.save(upwell);
     setLayers(await upwell.layers());
   };
 
   let getEditableLayer = () => {
-    if (visible.length === 1) return visible[0]
-    else return undefined
-  }
+    if (visible.length === 1) return visible[0];
+    else return undefined;
+  };
 
   let mergeVisible = async () => {
     if (!root) return console.error("no root race condition");
@@ -106,10 +110,10 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
       return Layer.merge(prev, cur);
     }, root);
     await upwell.add(merged);
-    broadcastChanges(upwell, merged)
-    await Documents.save(upwell)
+    broadcastChanges(upwell, merged);
+    await Documents.save(upwell);
     setLayers(await upwell.layers());
-    setVisible([])
+    setVisible([]);
   };
 
   return (
@@ -127,9 +131,9 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
         id="writing-zone"
         css={css`
           flex: 1 0 auto;
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
+          max-width: 900px;
+          margin-left: auto;
+          margin-right: auto;
           padding: 20px 40px 40px;
           padding-right: 20px;
           background: #ccecc1;
@@ -138,14 +142,20 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
           flex-direction: row;
         `}
       >
-        <EditReviewView author={author} onChange={onTextChange} visible={visible} root={root} ></EditReviewView>
-       <div
+        <EditReviewView
+          onChange={onTextChange}
+          visible={visible}
+          author={author}
+          root={root}
+        ></EditReviewView>
+        <div
           id="right-side"
           css={css`
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             align-items: flex-start;
+            margin-left: -1px;
           `}
         >
           <div
@@ -168,15 +178,19 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
               <ListDocuments
                 onLayerClick={onLayerClick}
                 layers={layers.filter(
-                  (l: Layer) => !l.archived && !l.shared && l.id !== root?.id && l.author === author
+                  (l: Layer) =>
+                    !l.archived &&
+                    !l.shared &&
+                    l.id !== root?.id &&
+                    l.author === author
                 )}
                 visible={visible}
                 handleShareClick={(l: Layer) => {
                   l.shared = true;
                   upwell.persist(l).then(() => {
-                    broadcastChanges(upwell, l)
-                    Documents.save(upwell)
-                  })
+                    broadcastChanges(upwell, l);
+                    Documents.save(upwell);
+                  });
                 }}
                 editableLayer={getEditableLayer()}
               />
@@ -185,12 +199,18 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
           <div
             id="bottom"
             css={css`
-              margin-bottom: -20px;
+              flex: 1 1 auto;
+              display: flex;
+              flex-direction: column;
+              justify-content: flex-end;
+              overflow: auto;
+              overflow-x: hidden;
             `}
           >
             {root && (
               <>
                 <ListDocuments
+                  isBottom
                   onLayerClick={onLayerClick}
                   visible={visible}
                   layers={layers.filter(
@@ -202,6 +222,7 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
                 <div css={sidewaysTabStyle}>
                   <FileTab
                     css={css`
+                      z-index: 2000;
                       margin-top: 0;
                       border-radius: 0 10px 10px 0; /* top rounded edges */
                     `}
@@ -227,7 +248,7 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
           css={css`
             position: absolute;
             bottom: 40px;
-            right: 88px;
+            right: 150px;
           `}
         >
           <Button onClick={mergeVisible}>Flatten visible</Button>
@@ -270,9 +291,7 @@ function Button(props: ButtonType) {
   );
 }
 
-
-
-  /*
+/*
   async function open(): Promise<Uint8Array> {
     let [fileHandle] = await showOpenFilePicker();
     const file = await fileHandle.getFile();
