@@ -14,7 +14,8 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   const { rootLayer, visible } = props;
 
   let updateAtjsonState = useCallback(async function () {
-    let mergedVisible = visible.slice(1).reduce(Layer.merge, visible[0])
+    if (!visible.length) return
+    let mergedVisible = visible.slice(0).reduce(Layer.merge, visible[0])
     let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
     let marks = editsLayer.marks.map((m: any) => {
       let attrs = JSON.parse(m.value)
@@ -46,7 +47,7 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   let [ state, setState ] = React.useState<ReviewState>({})
   if (!state.atjsonLayer) {
     updateAtjsonState()
-    return <div>Loading...</div>
+    return <div>Pick a layer...</div>
   } else {
     return (
       <ReactRendererProvider value={components}>
