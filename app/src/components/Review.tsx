@@ -14,7 +14,11 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   const { rootLayer, visible } = props;
 
   let updateAtjsonState = useCallback(async function () {
-    if (!visible.length) return
+    if (!visible.length) {
+      let atjsonLayer = new UpwellSource({ content: rootLayer.text, annotations: []})
+      setState({atjsonLayer })
+      return
+    }
     let mergedVisible = visible.slice(1).reduce(Layer.merge, visible[0])
     let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
     let marks = editsLayer.marks.map((m: any) => {
@@ -47,7 +51,7 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   let [ state, setState ] = React.useState<ReviewState>({})
   if (!state.atjsonLayer) {
     updateAtjsonState()
-    return <div>Pick a layer...</div>
+    return <div>Loading...</div>
   } else {
     return (
       <ReactRendererProvider value={components}>
