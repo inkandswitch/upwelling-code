@@ -27,6 +27,7 @@ export function TextArea(props: any) {
       className="text"
       value={props.state}
       onChange={(e) => props.onChange(e, "text")}
+      onPaste={(e) => props.onPaste(e)}
     ></textarea> 
 }
 
@@ -66,5 +67,13 @@ export function TextAreaView(props: Props) {
       onChange(editableLayer)
   }
 
-  return <TextArea onChange={onTextChange} state={state} />
+  function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    if (!editableLayer) return console.error('Layer not editable.')
+    //@ts-ignore
+    editableLayer.insertAt(e.target.selectionEnd, e.clipboardData.getData("text/plain"))
+    setState(editableLayer.text)
+    onChange(editableLayer)
+  }
+
+  return <TextArea onChange={onTextChange} onPaste={onPaste} state={state} />
 }
