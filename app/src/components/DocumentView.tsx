@@ -82,6 +82,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
 
   let onTextChange = debounce(async (layer: Layer) => {
     // this is saving every time text changes, do we want this??????
+    upwell.persist(layer)
     Documents.save(upwell);
   }, AUTOSAVE_INTERVAL)
 
