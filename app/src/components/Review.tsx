@@ -15,7 +15,7 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
 
   let updateAtjsonState = useCallback(async function () {
     if (!visible.length) return
-    let mergedVisible = visible.slice(0).reduce(Layer.merge, visible[0])
+    let mergedVisible = visible.slice(1).reduce(Layer.merge, visible[0])
     let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
     let marks = editsLayer.marks.map((m: any) => {
       let attrs = JSON.parse(m.value)
