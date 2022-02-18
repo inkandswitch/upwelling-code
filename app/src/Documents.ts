@@ -49,6 +49,13 @@ export async function open(id: string): Promise<Upwell> {
         let ours = await toUpwell(localBinary)
         upwells.set(id, ours)
         return resolve(ours)
+      } else {
+        let remoteBinary = await remote.getItem(id)
+        if (remoteBinary) {
+          let theirs = await toUpwell(Buffer.from(remoteBinary))
+          upwells.set(id, theirs)
+          return resolve(theirs)
+        }
       }
     } 
     
