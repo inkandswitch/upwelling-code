@@ -24,41 +24,41 @@ export default function MaybeDocument(props: DocumentViewProps) {
   let [upwell, setUpwell] = React.useState<Upwell>();
 
   useEffect(() => {
-    console.log('getting upwell')
-    Documents.get(props.id).then(( upwell: Upwell) => {
+    Documents.open(props.id).then(( upwell: Upwell) => {
       if (!upwell) return console.error('could not find upwell with id', props.id) 
       setUpwell(upwell)
     })
   }, [props.id]);
   if (!upwell) return <div>Loading..</div>;
-  return <DocumentView upwell={upwell} author={props.author} />;
+  return <DocumentView id={props.id} upwell={upwell} author={props.author} />;
 }
 
-export function DocumentView(props: { upwell: Upwell; author: Author }) {
-  const { upwell, author } = props;
+
+async function broadcastChanges(upwell: Upwell, layer: Layer) {
+  await Documents.save(upwell)
+  await Documents.sync(await upwell.id())
+}
+
+export function DocumentView(props: { id: string, upwell: Upwell; author: Author }) {
+  const { id, upwell, author } = props;
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
   let [visible, setVisible] = React.useState<Layer[]>([]);
 
+  function render(upwell: Upwell) {
+    upwell.layers().then((layers: Layer[]) => {
+      setLayers(layers);
+    });
+    upwell.rootLayer().then((root: Layer) => {
+      setRoot(root);
+    });
+  }
+
   useEffect(() => {
-    Documents.subscribe(async () => {
-      // an external document (on the server) has changed
-      console.log('oh we have new things')
+    Documents.sync(id).then(upwell => {
+      render(upwell)
     })
-
-    function render() {
-      upwell.layers().then((layers: Layer[]) => {
-        setLayers(layers);
-      });
-      upwell.rootLayer().then((root: Layer) => {
-        setRoot(root);
-      });
-    }
-    render()
-
-    return () => {
-      Documents.unsubscribe()
-    }
+    render(upwell)
   }, []); // THIS IS IMPORTANT LOL
 
   let onRootClick = () => {
@@ -78,8 +78,8 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
 
   let onTextChange = debounce(async (layer: Layer) => {
     // this is saving every time text changes, do we want this??????
-    upwell.persist(layer)
-    Documents.save(upwell);
+    await upwell.persist(layer)
+    await Documents.save(upwell)
   }, AUTOSAVE_INTERVAL)
 
   let onCreateLayer = async () => {
@@ -88,8 +88,8 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     let root = await upwell.rootLayer();
     let newLayer = root.fork(message, author);
     await upwell.add(newLayer);
+    await Documents.save(upwell)
     setLayers(await upwell.layers());
-    Documents.save(upwell);
   };
 
   let getEditableLayer = () => {
@@ -102,14 +102,14 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     let merged = visible.reduce((prev: Layer, cur: Layer) => {
       if (cur.id !== root?.id) {
         upwell.archive(cur.id);
-        console.log("archiving", cur.id);
       }
       return Layer.merge(prev, cur);
     }, root);
     await upwell.add(merged);
+    broadcastChanges(upwell, merged)
+    await Documents.save(upwell)
     setLayers(await upwell.layers());
     setVisible([])
-    Documents.save(upwell);
   };
 
   return (
@@ -127,6 +127,9 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
         id="writing-zone"
         css={css`
           flex: 1 0 auto;
+        max-width: 900px;
+        margin-left: auto;
+        margin-right: auto;
           padding: 20px 40px 40px;
           padding-right: 20px;
           background: #ccecc1;
@@ -170,6 +173,10 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
                 visible={visible}
                 handleShareClick={(l: Layer) => {
                   l.shared = true;
+                  upwell.persist(l).then(() => {
+                    broadcastChanges(upwell, l)
+                    Documents.save(upwell)
+                  })
                 }}
                 editableLayer={getEditableLayer()}
               />

@@ -3,7 +3,7 @@ import { css } from "@emotion/react/macro";
 import React from "react";
 import { Layer } from "api";
 
-function TextArea(props: any) {
+export function TextArea(props: any) {
   return <textarea
       css={css`
         width: 100%;

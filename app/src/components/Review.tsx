@@ -1,3 +1,5 @@
+/** @jsxImportSource @emotion/react */
+import { css } from "@emotion/react/macro";
 import React, { useCallback, useEffect } from "react";
 import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
@@ -37,7 +39,25 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   } else {
     return (
       <ReactRendererProvider value={components}>
-        <article>{ReactRenderer.render(state.atjsonLayer)}</article>
+        <article css={css`
+        width: 100%;
+        height: 96%;
+        border: 1px solid lightgray;
+        border-width: 0 1px 1px 0;
+        padding: 34px;
+        resize: none;
+        font-size: 16px;
+        line-height: 20px;
+        border-radius: 3px;
+
+        background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
+        background-size: 20px 20px;
+        background-attachment: local;
+
+        :focus-visible {
+          outline: 0;
+        }
+        `}>{ReactRenderer.render(state.atjsonLayer)}</article>
       </ReactRendererProvider>
     )
   }

@@ -12,8 +12,7 @@ let storage = new FS('upwell-')
 let remote = new HTTP(STORAGE_URL)
 let interval: any = null
 let subscriber: Subscriber = noop
-
-type Subscriber = (upwell: Upwell) => void
+type Subscriber = (id: string, upwell: Upwell) => void
 
 export async function unsubscribe() {
   subscriber = noop
@@ -31,57 +30,70 @@ export async function create () {
   return upwell
 }
 
-let toUpwell = function (binary: Buffer): Promise<Upwell> {
+function toUpwell (binary: Buffer): Promise<Upwell> {
   return Upwell.deserialize(intoStream(binary))
 }
 
-export async function get(id: string): Promise<Upwell> {
+export function get(id: string) {
+  return upwells.get(id)
+}
+
+export async function open(id: string): Promise<Upwell> {
   return new Promise(async (resolve, reject) => {
     let upwell = upwells.get(id)
     if (upwell) return resolve(upwell)
-    let buf = await storage.getItem(id)
-
-    if (!buf) {
-      let remoteBinary = await remote.getItem(id)
-      if (remoteBinary) buf = Buffer.from(remoteBinary)
-      return resolve(await toUpwell(buf!))
-    }
-    if (buf) {
-      let ours = await toUpwell(buf)
-      sync(ours)
-      return resolve(ours)
-    }
-
-    return reject(new Error('item does not exist with id=' + id))
+    else {
+      // local-first
+     let localBinary = await storage.getItem(id)
+      if (localBinary) {
+        let ours = await toUpwell(localBinary)
+        upwells.set(id, ours)
+        return resolve(ours)
+      }
+    } 
+    
+    resolve(await sync(id))
   })
 }
 
 export async function save(upwell: Upwell): Promise<void> {
   let id = await upwell.id()
   let binary = await upwell.toFile()
-  storage.setItem(id, binary)
+  await storage.setItem(id, binary)
+  return remote.setItem(id, binary)
 }
 
-export function stopSaveInterval () {
+export function stopSyncInterval () {
   clearInterval(interval)
 }
 
-export function startSaveInterval (upwell: Upwell, timeout: number) {
+export function startSyncInterval (id: string, timeout: number) {
   console.log('starting save inteval')
   clearInterval(interval)
   return setInterval(() => {
-    sync(upwell)
+    sync(id)
   }, timeout)
 }
 
-export async function sync(ours: Upwell): Promise<void> {
-  let id = await ours.id()
+export async function sync(id: string): Promise<Upwell> {
   console.log('syncing with external')
-  let binary = await remote.getItem(id)
-  if (binary) {
-    let theirs = await toUpwell(Buffer.from(binary))
-    ours.merge(theirs)
-    subscriber(ours)
+  let inMemory = upwells.get(id)
+  if (!inMemory) throw new Error('open or create the upwell first before syncing!')
+  let remoteBinary = await remote.getItem(id)
+  if (remoteBinary) {
+    let buf = Buffer.from(remoteBinary)
+    let inMemoryBuf = await inMemory.toFile()
+    if (buf.equals(inMemoryBuf)) {
+      // the one we have in memory is up to date
+      return inMemory
+    }
+    console.log('external is new')
+    let theirs = await toUpwell(buf)
+    await inMemory.merge(theirs)
+    let newFile = await inMemory.toFile()
+    await storage.setItem(id, newFile)
+    await remote.setItem(id, newFile)
+    subscriber(id, inMemory)
   }
-  await remote.setItem(id, await ours.toFile())
+  return inMemory
 }

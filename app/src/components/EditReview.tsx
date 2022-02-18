@@ -15,7 +15,7 @@ export function EditReviewView(props: Props) {
 
   const { root, visible, onChange } = props;
 
-  let [reviewMode, setReviewMode] = React.useState<Boolean>(true);
+  let [reviewMode, setReviewMode] = React.useState<Boolean>(false);
   if (!root) return <div></div>
 
   return (
