@@ -65,10 +65,8 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
         font-size: 16px;
         line-height: 20px;
         border-radius: 3px;
-
-        background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
-        background-size: 20px 20px;
-        background-attachment: local;
+        background: white;
+        margin-top: 1px;
 
         :focus-visible {
           outline: 0;

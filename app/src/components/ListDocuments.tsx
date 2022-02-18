@@ -178,6 +178,9 @@ export default function ListDocuments({
             onClick={() => onLayerClick(layer)}
             title={`by ${layer.author}`}
             css={css`
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
               ${editableLayer?.id === layer.id ? editableTabStyle : ""}
             `}
           >
@@ -196,8 +199,19 @@ export default function ListDocuments({
                   }
                 }}
               >
-                👀
+                →
               </EmojiButton>
+            )}
+            {editableLayer?.id === layer.id && (
+              <div
+                css={css`
+                  margin-right: 3px;
+                  margin-bottom: 3px;
+                  display: inline-block;
+                `}
+              >
+                ✏️
+              </div>
             )}
           </FileTab>
         );
@@ -224,7 +238,7 @@ function EmojiButton(props: ButtonType) {
         color: black;
         padding: 0;
         &:hover {
-          background: red;
+          // background: red;
         }
         &:disabled {
           opacity: 70%;
