@@ -138,7 +138,7 @@ export function DocumentView(props: { id: string, upwell: Upwell; author: Author
           flex-direction: row;
         `}
       >
-       <EditReviewView onChange={onTextChange} visible={visible} root={root} ></EditReviewView>
+        <EditReviewView author={author} onChange={onTextChange} visible={visible} root={root} ></EditReviewView>
        <div
           id="right-side"
           css={css`
