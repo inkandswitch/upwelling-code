@@ -25,15 +25,12 @@ export function EditReviewView(props: Props) {
             <ReviewView visible={visible} rootLayer={root}></ReviewView>
           )}
           { visible.length === 1 && (
-            <div>
-                <button css={css`margin-bottom: 1ex`} onClick={() => setReviewMode(!reviewMode)}>toggle mode</button>
-                ({ reviewMode ? 'review' : 'edit' })
-
-              {/* <textarea className="title" value={state.title} onChange={(e) => onTextChange(e, 'title')}></textarea> */}
-
+        <React.Fragment>
               { reviewMode && <ReviewView visible={visible} rootLayer={root}></ReviewView> }
           {!reviewMode && (<TextAreaView onChange={onChange} editableLayer={visible[0]}></TextAreaView>) }
-            </div>
+                <button css={css`margin-bottom: 1ex`} onClick={() => setReviewMode(!reviewMode)}>toggle mode</button>
+                ({ reviewMode ? 'review' : 'edit' })
+            </React.Fragment>
           )}
 
         </div>
