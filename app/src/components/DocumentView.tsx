@@ -45,52 +45,43 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
   let [visible, setVisible] = React.useState<Layer[]>([]);
 
   useEffect(() => {
-    Documents.subscribe(() => {
+    Documents.subscribe(async () => {
       // an external document (on the server) has changed
-      render()
+      console.log('oh we have new things')
     })
 
     function render() {
       upwell.layers().then((layers: Layer[]) => {
-        console.log('layers', layers)
         setLayers(layers);
       });
       upwell.rootLayer().then((root: Layer) => {
         setRoot(root);
       });
     }
-
     render()
 
     return () => {
       Documents.unsubscribe()
     }
-  }, []);
+  }, []); // THIS IS IMPORTANT LOL
 
-
-  useEffect(() => {
-    console.log('RENDER BLAINE MAGIC')
-     
-  }, [visible])
+  let onRootClick = () => {
+    setVisible([])
+    return; // reset visible layers
+  }
 
   let onLayerClick = (layer: Layer) => {
-    if (!root) return console.error("no root race condition");
-    if (layer.id === root.id) {
-      setVisible([])
-      return; // reset visible layers
-    }
-
     let exists = visible.findIndex(l => l.id === layer.id)
     if (exists > -1) {
       setVisible(visible.filter(l => l.id !== layer.id))
     } else {
-      setVisible(visible.concat(layer))
+      console.log('before', visible)
+      setVisible(visible.concat([layer]))
     }
   };
 
   let onTextChange = debounce(async (layer: Layer) => {
     // this is saving every time text changes, do we want this??????
-    await upwell.persist(layer)
     Documents.save(upwell);
   }, AUTOSAVE_INTERVAL)
 
@@ -99,7 +90,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
     // always forking from root layer (for now)
     let root = await upwell.rootLayer();
     let newLayer = root.fork(message, author);
-    await upwell.persist(newLayer);
+    await upwell.add(newLayer);
     setLayers(await upwell.layers());
     Documents.save(upwell);
   };
@@ -111,9 +102,6 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
 
   let mergeVisible = async () => {
     if (!root) return console.error("no root race condition");
-
-    let visible = layers.filter((l) => l.visible);
-    if (!root) return console.error("could not find root layer");
     let merged = visible.reduce((prev: Layer, cur: Layer) => {
       if (cur.id !== root?.id) {
         upwell.archive(cur.id);
@@ -180,12 +168,11 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
               <ListDocuments
                 onLayerClick={onLayerClick}
                 layers={layers.filter(
-                  (l: Layer) => !l.archived && !l.shared && l.id !== root?.id
+                  (l: Layer) => !l.archived && !l.shared && l.id !== root?.id && l.author === author
                 )}
                 visible={visible}
                 handleShareClick={(l: Layer) => {
                   l.shared = true;
-                  upwell.persist(l);
                 }}
                 editableLayer={getEditableLayer()}
               />
@@ -218,6 +205,7 @@ export function DocumentView(props: { upwell: Upwell; author: Author }) {
                     index={1}
                     aria-pressed={true}
                     title={`by ${root.author} at ${root.time.toDateString()}`}
+                    onClick={onRootClick}
                   >
                     root
                     {/* TODO add author and time  */}

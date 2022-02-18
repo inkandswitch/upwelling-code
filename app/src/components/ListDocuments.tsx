@@ -106,6 +106,7 @@ export const FileTab = ({
       }
     `}
     role="button"
+    onClick={props.onClick}
     {...props}
   />
 );

@@ -26,7 +26,7 @@ function TextArea(props: any) {
       `}
       className="text"
       value={props.state}
-      onChange={(e) => props.onTextChange(e, "text")}
+      onChange={(e) => props.onChange(e, "text")}
     ></textarea> 
 }
 
