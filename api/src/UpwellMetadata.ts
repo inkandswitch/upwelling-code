@@ -1,4 +1,4 @@
-import * as Automerge from "automerge-wasm"
+import * as Automerge from "automerge-wasm-pack"
 import debug from "debug"
 
 const ROOT = "_root"
