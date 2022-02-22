@@ -63,7 +63,9 @@ export function DocumentView(props: {
       render(upwell);
     });
     render(upwell);
-  }, []); // THIS IS IMPORTANT LOL
+  },
+    //@ts-ignore
+  [id, upwell]); // THIS IS IMPORTANT LOL
 
   let onRootClick = () => {
     setVisible([]);
