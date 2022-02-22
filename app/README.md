@@ -1,6 +1,6 @@
 # Upwelling
 
-[Demo](https://upwelling.vercel.app/)
+[Demo](https://vigilant-dijkstra-055cb3.netlify.app/)
 
 ## Step 0: Get on Node v16, and yarn 
 
