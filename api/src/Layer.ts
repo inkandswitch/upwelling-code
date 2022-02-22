@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import init from 'automerge-wasm-pack'
-import * as Automerge from 'automerge-wasm-pack';
+import { TEXT, Automerge, loadDoc, create, Value }  from 'automerge-wasm-pack';
 import { Author } from './Upwell';
 import * as Diff from 'diff';
 
@@ -32,11 +32,11 @@ export type Subscriber = (doc: Layer, heads: Heads) => void
 export class Layer {
   id: string = nanoid()
   visible: boolean = false;
-  doc: Automerge.Automerge
+  doc: Automerge
   private heads?: Heads;
   private subscriber?: Subscriber 
 
-  constructor(doc: Automerge.Automerge) {
+  constructor(doc: Automerge) {
     this.doc = doc
   }
 
@@ -164,7 +164,7 @@ export class Layer {
     else throw new Error('Text field not properly initialized')
   }
 
-  mark(name: string, range: string, value: Automerge.Value, prop = 'text') {
+  mark(name: string, range: string, value: Value, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.mark(obj[1], range, name, value)
     else throw new Error('Text field not properly initialized')
@@ -231,20 +231,20 @@ export class Layer {
   }
 
   static load(id: string, binary: Uint8Array): Layer {
-    let doc = Automerge.loadDoc(binary)
+    let doc = loadDoc(binary)
     let layer = new Layer(doc)
     layer.id = id
     return layer
   }
 
   static create(message: string, author: Author): Layer {
-    let doc = Automerge.create()
+    let doc = create()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)
     doc.set(ROOT, 'archived', false)
-    doc.set(ROOT, 'title', Automerge.TEXT)
-    doc.set(ROOT, 'text', Automerge.TEXT)
+    doc.make(ROOT, 'title', TEXT)
+    doc.make(ROOT, 'text', TEXT)
     return new Layer(doc)
   }
 
