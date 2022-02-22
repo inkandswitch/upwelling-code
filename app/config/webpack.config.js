@@ -569,6 +569,9 @@ module.exports = function (webpackEnv) {
       ].filter(Boolean),
     },
     plugins: [
+      new webpack.EnvironmentPlugin({
+        'STORAGE_URL': 'http://localhost:5001'
+      }),
       // Generates an `index.html` file with the <script> injected.
       new webpack.ProvidePlugin({
         process: 'process/browser',

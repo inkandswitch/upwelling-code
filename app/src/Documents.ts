@@ -3,8 +3,9 @@ import FS from './storage/localStorage'
 import intoStream from 'into-stream';
 import HTTP from './storage/http';
 
-const STORAGE_URL = process.env.NODE_ENV === 'development' ?
-  'http://localhost:5001' : 'https://aquatic-quintessential-option.glitch.me'
+const STORAGE_URL = process.env.STORAGE_URL 
+
+console.log(STORAGE_URL)
 
 let noop = function () { }
 
