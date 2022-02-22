@@ -82,7 +82,7 @@
     "build:api": "cd ../api && npm i && npm run build && cd ../app",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js", 
-    "deploy": "rm -rf ../dist && npm run build && mv build ../dist"
+    "deploy": "rm -rf ../dist && npm run build && mv build/* ../"
   },
   "eslintConfig": {
     "extends": [
