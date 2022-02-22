@@ -1,0 +1,2 @@
+*,html{box-sizing:border-box}body{-ms-scroll-chaining:none;background:#d3d3d3;font-family:ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;margin:0;overscroll-behavior:none;padding:0}#toolbar{height:50px;justify-content:space-between;margin-top:10px}#container,#toolbar{display:flex}#app .text{height:300px}#app{display:flex;flex-direction:column;margin:auto;position:relative;width:600px}#list{list-style:none;margin:10px;max-width:100px;padding-left:0}
+/*# sourceMappingURL=main.44a8e236.css.map*/
