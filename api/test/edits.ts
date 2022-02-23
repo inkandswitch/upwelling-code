@@ -153,6 +153,11 @@ describe('edits', () => {
         assert.equal(merged123.marks.length, 20)
       })
 
+      it('has the correct text', () => {
+          let text = merged123.text
+        assert.equal(text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
+      })
+
       describe('previously created marks', () => {
         let marks;
 
@@ -162,11 +167,6 @@ describe('edits', () => {
 
         it('has the correct number of marks', () => {
           assert.equal(marks.length, 3)
-        })
-
-        it('has the correct text', () => {
-          let text = merged123.text
-          assert.equal(text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
         })
 
         it('correctly modifies existing marks', () => {
