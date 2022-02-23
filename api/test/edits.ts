@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 
 describe('edits', () => {
 
-  let doc1: Layer, doc2: Layer
+  let doc1: Layer, doc2: Layer, doc3: Layer
 
   beforeEach(async () => {
     let d = await Upwell.create({author: 'author'})
@@ -20,11 +20,19 @@ describe('edits', () => {
     doc2.insertAt(0, 'Hey Everybody - ');
     doc2.deleteAt(16, 6)
     doc2.commit('I hope you like my changes!')
+
+    doc3 = doc1.fork('Additional forked layer', 'editor 2')
+    await d.add(doc3)
+
+    doc3.insertAt(15, ' NEW LAYER');
+    doc3.insertAt(0, 'NEW LAYER ');
+    doc3.deleteAt(16, 3)
   })
 
   it('has the correct base documents', () => {
     assert.equal(doc1.text, 'Hello of course')
     assert.equal(doc2.text, 'Hey Everybody - World of course')
+    assert.equal(doc3.text, 'NEW LAYER Hello course NEW LAYER')
   })
 
   describe('getEdits', () => {
@@ -98,7 +106,7 @@ describe('edits', () => {
       merged = Layer.mergeWithEdits(doc1, doc2)
     })
 
-    describe('with a single layer', () => {
+    describe('with two layers', () => {
 
       it('has the correct number of marks', () => {
         assert.equal(merged.marks.length, 3)
@@ -128,8 +136,72 @@ describe('edits', () => {
       })
     })
 
-    describe.skip('with multiple layers', () => {
-      it('correctly modifies the marks', () => {
+    describe('with three layers', () => {
+      let merged123;
+
+      beforeEach(() => {
+        let merged12 = Layer.mergeWithEdits(doc1, doc2)
+        let merged13 = Layer.mergeWithEdits(doc1, doc3)
+        // merged (1 + 2) + 3
+        merged123 = Layer.mergeWithEdits(merged12, merged13)
+
+        // TODO test (1 + 3) + 2 for convergence with (1 + 2) + 3.
+        let merged132 = Layer.mergeWithEdits(merged13, doc2)
+      })
+
+      it('has the correct number of marks', () => {
+        assert.equal(merged123.marks.length, 20)
+      })
+
+      describe('previously created marks', () => {
+        let marks;
+
+        beforeEach(() => {
+          marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor')
+        })
+
+        it('has the correct number of marks', () => {
+          assert.equal(marks.length, 3)
+        })
+
+        it('correctly modifies existing marks', () => {
+          let mks = marks.map(({type, start, end}) => ({ type, start, end }))
+
+          assert.deepEqual([
+            { type: 'delete', start: 0, end: 0 },
+            { type: 'insert', start: 0, end: 3 },
+            { type: 'insert', start: 14, end: 32 }
+          ], mks)
+        })
+
+        it('modified marks cover the correct text', () => {
+          marks.forEach(mark => {
+            // deletions are zero-length; tested in the 'correctly modifies existing marks' test above
+            if (mark.type === 'delete') return
+
+            // this is a special case where an insertion mark is now
+            // zero-length because the inserted text has been deleted.
+            if (mark.start === mark.end) return
+            assert.equal(JSON.parse(mark.value).text, merged123.text.substring(mark.start, mark.end))
+          })
+        })
+
+        it('preserves existing mark metadata')
+      })
+
+      describe('new marks', () => {
+        let marks;
+
+        beforeEach(() => {
+          marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor 2')
+        })
+
+        it('has the correct number of new marks', () => {
+          assert.equal(marks.length, 17)
+        })
+
+        it('correctly adds new marks')
+        it('retains metadata for new marks')
       })
     })
   })

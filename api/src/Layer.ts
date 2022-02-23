@@ -127,7 +127,7 @@ export class Layer {
     let ours = this.text
     let theirs = other.text
 
-    let diffs = Diff.diffWords(ours, theirs)
+    let diffs = Diff.diffWordsWithSpace(ours, theirs)
 
     let idx = 0
     return diffs.map(d => {
@@ -218,7 +218,7 @@ export class Layer {
 
       newLayer.mark(
         edit.type,
-        `(${start}..${end})`,
+        `[${start}..${end}]`,
         JSON.stringify({ // I *really* don't want to do this, but as a quick hack it's not the worst thing I've ever done. Pending a better solution.
           author: theirs.author,
           text: edit.value
