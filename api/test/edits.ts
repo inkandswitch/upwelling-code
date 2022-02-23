@@ -164,12 +164,17 @@ describe('edits', () => {
           assert.equal(marks.length, 3)
         })
 
+        it('has the correct text', () => {
+          let text = merged123.text
+          assert.equal(text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
+        })
+
         it('correctly modifies existing marks', () => {
           let mks = marks.map(({type, start, end}) => ({ type, start, end }))
 
           assert.deepEqual([
             { type: 'delete', start: 0, end: 0 },
-            { type: 'insert', start: 0, end: 3 },
+            { type: 'insert', start: 10, end: 13 },
             { type: 'insert', start: 14, end: 32 }
           ], mks)
         })
