@@ -62,7 +62,7 @@ export async function open(id: string): Promise<Upwell> {
       }
     } 
     
-    resolve(await sync(id))
+    sync(id).then(resolve).catch(reject)
   })
 }
 
@@ -89,25 +89,34 @@ export function startSyncInterval (id: string, timeout: number) {
 export async function sync(id: string): Promise<Upwell> {
   let inMemory = upwells.get(id)
   let remoteBinary = await remote.getItem(id)
-  if (!inMemory) throw new Error('open or create the upwell first before syncing!')
-  if (remoteBinary) {
+  if (!inMemory) {
+    throw new Error('open or create the upwell first before syncing!')
+  }
+  if (!remoteBinary) {
+    let newFile = await inMemory.toFile()
+    remote.setItem(id, newFile).then(() => {
+      console.log('Shared for the first time!')
+    }).catch(err => {
+      console.error('Failed to share!')
+    })
+  } else {
+    // do sync
     let buf = Buffer.from(remoteBinary)
     let inMemoryBuf = await inMemory.toFile()
     if (buf.equals(inMemoryBuf)) {
       // the one we have in memory is up to date
       return inMemory
     }
-    console.log('external is new')
     let theirs = await toUpwell(buf)
     inMemory.merge(theirs)
     let newFile = await inMemory.toFile()
     storage.setItem(id, newFile)
     remote.setItem(id, newFile).then(() => {
-      console.log('Shared!')
+      console.log('Synced!')
     }).catch(err => {
-      console.error('Failed to share ')
+      console.error('Failed to share!')
     })
     subscriber(id, inMemory)
-  }
+  } 
   return inMemory
 }

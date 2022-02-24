@@ -47,6 +47,8 @@ export default function MaybeDocument(props: DocumentViewProps) {
     render(upwell)
     Documents.sync(props.id).then(upwell => {
       render(upwell)
+    }).catch(err => {
+      console.error('failed to sync', err)
     })
   }
 
