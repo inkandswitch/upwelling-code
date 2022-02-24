@@ -139,74 +139,136 @@ describe('edits', () => {
     describe('with three layers', () => {
       let merged123;
 
-      beforeEach(() => {
-        let merged12 = Layer.mergeWithEdits(doc1, doc2)
-        let merged13 = Layer.mergeWithEdits(doc1, doc3)
-        // merged (1 + 2) + 3
-        merged123 = Layer.mergeWithEdits(merged12, merged13)
+      describe('linear merge', () => {
 
-        // TODO test (1 + 3) + 2 for convergence with (1 + 2) + 3.
-        let merged132 = Layer.mergeWithEdits(merged13, doc2)
-      })
-
-      it('has the correct number of marks', () => {
-        assert.equal(merged123.marks.length, 20)
-      })
-
-      it('has the correct text', () => {
-          let text = merged123.text
-        assert.equal(text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
-      })
-
-      describe('previously created marks', () => {
-        let marks;
+        // this is a contrived example because this approach would only allow
+        // us to merge together layers that have *not* been updated to the most
+        // recent root. See parallel merge below for the more realistic scenario.
 
         beforeEach(() => {
-          marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor')
+          let merged12 = Layer.mergeWithEdits(doc1, doc2)
+          merged123 = Layer.mergeWithEdits(merged12, doc3)
         })
 
         it('has the correct number of marks', () => {
-          assert.equal(marks.length, 3)
+          assert.equal(merged123.marks.length, 15)
         })
 
-        it('correctly modifies existing marks', () => {
-          let mks = marks.map(({type, start, end}) => ({ type, start, end }))
-
-          assert.deepEqual([
-            { type: 'delete', start: 0, end: 0 },
-            { type: 'insert', start: 10, end: 13 },
-            { type: 'insert', start: 14, end: 32 }
-          ], mks)
+        it('has the correct text', () => {
+          assert.equal(merged123.text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
         })
 
-        it('modified marks cover the correct text', () => {
-          marks.forEach(mark => {
-            // deletions are zero-length; tested in the 'correctly modifies existing marks' test above
-            if (mark.type === 'delete') return
+        describe('previously created marks', () => {
+          let marks;
 
-            // this is a special case where an insertion mark is now
-            // zero-length because the inserted text has been deleted.
-            if (mark.start === mark.end) return
-            assert.equal(JSON.parse(mark.value).text, merged123.text.substring(mark.start, mark.end))
+          beforeEach(() => {
+            marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor')
           })
-        })
 
-        it('preserves existing mark metadata')
+          it('has the correct number of marks', () => {
+            assert.equal(marks.length, 3)
+          })
+
+          it('correctly modifies existing marks', () => {
+            let mks = marks.map(({type, start, end}) => ({ type, start, end }))
+
+            assert.deepEqual([
+              { type: 'delete', start: 0, end: 0 },
+              { type: 'insert', start: 10, end: 13 },
+              { type: 'insert', start: 14, end: 32 }
+            ], mks)
+          })
+
+          it('modified marks cover the correct text', () => {
+            marks.forEach(mark => {
+              // deletions are zero-length; tested in the 'correctly modifies existing marks' test above
+              if (mark.type === 'delete') return
+
+              // this is a special case where an insertion mark is now
+              // zero-length because the inserted text has been deleted.
+              if (mark.start === mark.end) return
+              assert.equal(JSON.parse(mark.value).text, merged123.text.substring(mark.start, mark.end))
+            })
+          })
+
+          it('preserves existing mark metadata')
+        })
       })
 
-      describe('new marks', () => {
-        let marks;
+      describe('parallel merge', () => {
+
+        // this scenario is what our current working model assumes; layers are
+        // kept up-to-date with root separately, and then merged together
 
         beforeEach(() => {
-          marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor 2')
+          let merged12 = Layer.mergeWithEdits(doc1, doc2)
+          let merged13 = Layer.mergeWithEdits(doc1, doc3)
+          // merged (1 + 2) + 3
+          merged123 = Layer.mergeWithEdits(merged12, merged13)
+
+          // TODO test (1 + 3) + 2 for convergence with (1 + 2) + 3.
+          let merged132 = Layer.mergeWithEdits(merged13, doc2)
         })
 
-        it('has the correct number of new marks', () => {
-          assert.equal(marks.length, 17)
+        it('has the correct number of marks', () => {
+          assert.equal(merged123.marks.length, 15)
         })
 
-        it('correctly adds new marks')
-        it('retains metadata for new marks')
+        it('has the correct text', () => {
+            let text = merged123.text
+          assert.equal(text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
+        })
+
+        describe('previously created marks', () => {
+          let marks;
+
+          beforeEach(() => {
+            marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor')
+          })
+
+          it('has the correct number of marks', () => {
+            assert.equal(marks.length, 3)
+          })
+
+          it('correctly modifies existing marks', () => {
+            let mks = marks.map(({type, start, end}) => ({ type, start, end }))
+
+            assert.deepEqual([
+              { type: 'delete', start: 0, end: 0 },
+              { type: 'insert', start: 10, end: 13 },
+              { type: 'insert', start: 14, end: 32 }
+            ], mks)
+          })
+
+          it('modified marks cover the correct text', () => {
+            marks.forEach(mark => {
+              // deletions are zero-length; tested in the 'correctly modifies existing marks' test above
+              if (mark.type === 'delete') return
+
+              // this is a special case where an insertion mark is now
+              // zero-length because the inserted text has been deleted.
+              if (mark.start === mark.end) return
+              assert.equal(JSON.parse(mark.value).text, merged123.text.substring(mark.start, mark.end))
+            })
+          })
+
+          it('preserves existing mark metadata')
+        })
+
+        describe('new marks', () => {
+          let marks;
+
+          beforeEach(() => {
+            marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'editor 2')
+          })
+
+          it('has the correct number of new marks', () => {
+            assert.equal(marks.length, 17)
+          })
+
+          it('correctly adds new marks')
+          it('retains metadata for new marks')
+        })
       })
     })
   })
