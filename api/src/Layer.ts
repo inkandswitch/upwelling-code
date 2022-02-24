@@ -31,7 +31,6 @@ export type Subscriber = (doc: Layer, heads: Heads) => void
 
 export class Layer {
   id: string = nanoid()
-  visible: boolean = false;
   doc: Automerge
   private heads?: Heads;
   private subscriber?: Subscriber 

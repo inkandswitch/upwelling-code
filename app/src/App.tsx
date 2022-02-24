@@ -20,8 +20,7 @@ export default function App() {
 
   async function newUpwell() {
     let doc = await Documents.create()
-    let meta = await (doc.metadata())
-    setLocation('/document/' + meta.id)
+    setLocation('/document/' + doc.id)
   }
 
   return (

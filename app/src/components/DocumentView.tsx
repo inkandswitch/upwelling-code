@@ -14,58 +14,64 @@ import { EditReviewView } from "./EditReview";
 import debounce from "lodash.debounce";
 
 type DocumentViewProps = {
-  id: string;
-  author: Author;
+  id: string,
+  author: Author
 };
 
 const AUTOSAVE_INTERVAL = 300; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
-  let [upwell, setUpwell] = React.useState<Upwell>();
-
-  useEffect(() => {
-    Documents.open(props.id).then((upwell: Upwell) => {
-      if (!upwell)
-        return console.error("could not find upwell with id", props.id);
-      setUpwell(upwell);
-    });
-  }, [props.id]);
-  if (!upwell) return <div>Loading..</div>;
-  return <DocumentView id={props.id} upwell={upwell} author={props.author} />;
-}
-
-async function broadcastChanges(upwell: Upwell, layer: Layer) {
-  await Documents.save(upwell);
-  await Documents.sync(await upwell.id());
-}
-
-export function DocumentView(props: {
-  id: string;
-  upwell: Upwell;
-  author: Author;
-}) {
-  const { id, upwell, author } = props;
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
-  let [visible, setVisible] = React.useState<Layer[]>([]);
 
   function render(upwell: Upwell) {
-    upwell.layers().then((layers: Layer[]) => {
-      setLayers(layers);
-    });
-    upwell.rootLayer().then((root: Layer) => {
-      setRoot(root);
-    });
+    let layers = upwell.layers()
+    setLayers(layers);
+    let root = upwell.rootLayer()
+    setRoot(root);
   }
 
   useEffect(() => {
-    Documents.sync(id).then((upwell) => {
-      render(upwell);
+    Documents.open(props.id).then((upwell: Upwell) => {
+      render(upwell)
+      Documents.sync(props.id).then(upwell => {
+        render(upwell)
+      });
     });
-    render(upwell);
-  },
-    //@ts-ignore
-  [id, upwell]); // THIS IS IMPORTANT LOL
+
+  }, [props.id]);
+
+  function onChangeMade () {
+    Documents.save(props.id);
+    let upwell = Documents.get(props.id)
+    render(upwell)
+    Documents.sync(props.id).then(upwell => {
+      render(upwell)
+    }).catch(err => {
+      console.error('failed to sync', err)
+    })
+  }
+
+  if (!root) return <div>Loading..</div>;
+  return <DocumentView
+    id={props.id}
+    layers={layers}
+    onChangeMade={onChangeMade}
+    root={root}
+    author={props.author}
+  />;
+}
+
+
+export function DocumentView(props: {
+  id: string,
+  layers: Layer[],
+  root?: Layer,
+  author: Author,
+  onChangeMade: Function
+}) {
+  const { id, root, layers, author, onChangeMade } = props;
+  let [visible, setVisible] = React.useState<Layer[]>([]);
 
   let onRootClick = () => {
     setVisible([]);
@@ -84,19 +90,25 @@ export function DocumentView(props: {
 
   let onTextChange = debounce(async (layer: Layer) => {
     // this is saving every time text changes, do we want this??????
-    await upwell.persist(layer);
-    await Documents.save(upwell);
+    onChangeMade()
   }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
     let message = "Very cool layer";
     // always forking from root layer (for now)
-    let root = await upwell.rootLayer();
+    let upwell = Documents.get(id)
+    let root = upwell.rootLayer();
     let newLayer = root.fork(message, author);
-    await upwell.add(newLayer);
-    await Documents.save(upwell);
-    setLayers(await upwell.layers());
+    upwell.add(newLayer);
+    onChangeMade()
   };
+
+  let handleShareClick = (l: Layer) => {
+    let upwell = Documents.get(id)
+    l.shared = true;
+    upwell.set(l.id, l)
+    onChangeMade()
+  }
 
   let getEditableLayer = () => {
     if (visible.length === 1) return visible[0];
@@ -105,16 +117,15 @@ export function DocumentView(props: {
 
   let mergeVisible = async () => {
     if (!root) return console.error("no root race condition");
+    let upwell = Documents.get(id)
     let merged = visible.reduce((prev: Layer, cur: Layer) => {
       if (cur.id !== root?.id) {
         upwell.archive(cur.id);
       }
       return Layer.merge(prev, cur);
     }, root);
-    await upwell.add(merged);
-    broadcastChanges(upwell, merged);
-    await Documents.save(upwell);
-    setLayers(await upwell.layers());
+    upwell.add(merged);
+    onChangeMade()
     setVisible([]);
   };
 
@@ -187,13 +198,7 @@ export function DocumentView(props: {
                     l.author === author
                 )}
                 visible={visible}
-                handleShareClick={(l: Layer) => {
-                  l.shared = true;
-                  upwell.persist(l).then(() => {
-                    broadcastChanges(upwell, l);
-                    Documents.save(upwell);
-                  });
-                }}
+                handleShareClick={handleShareClick}
                 editableLayer={getEditableLayer()}
               />
             )}
