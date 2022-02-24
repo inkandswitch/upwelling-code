@@ -24,20 +24,21 @@ export async function subscribe(_subscriber: Subscriber) {
   subscriber = _subscriber
 }
 
-export async function create () {
-  let upwell = await Upwell.create()
-  let id = await upwell.id()
-  await save(upwell)
+export async function create () : Promise<Upwell> {
+  let upwell = Upwell.create()
+  let id = upwell.id
   upwells.set(id, upwell)
-  return upwell
+  return save(id)
 }
 
 function toUpwell (binary: Buffer): Promise<Upwell> {
   return Upwell.deserialize(intoStream(binary))
 }
 
-export function get(id: string) {
-  return upwells.get(id)
+export function get(id: string): Upwell {
+  let upwell = upwells.get(id)
+  if (!upwell) throw new Error('open upwell before get')
+  return upwell
 }
 
 export async function open(id: string): Promise<Upwell> {
@@ -46,7 +47,7 @@ export async function open(id: string): Promise<Upwell> {
     if (upwell) return resolve(upwell)
     else {
       // local-first
-     let localBinary = await storage.getItem(id)
+     let localBinary = storage.getItem(id)
       if (localBinary) {
         let ours = await toUpwell(localBinary)
         upwells.set(id, ours)
@@ -65,11 +66,13 @@ export async function open(id: string): Promise<Upwell> {
   })
 }
 
-export async function save(upwell: Upwell): Promise<void> {
-  let id = await upwell.id()
+export async function save(id: string): Promise<Upwell> {
+  let upwell = upwells.get(id)
+  if (!upwell) throw new Error('upwell does not exist with id=' + id)
   let binary = await upwell.toFile()
-  await storage.setItem(id, binary)
-  return remote.setItem(id, binary)
+  storage.setItem(id, binary)
+  remote.setItem(id, binary)
+  return upwell
 }
 
 export function stopSyncInterval () {
@@ -98,10 +101,14 @@ export async function sync(id: string): Promise<Upwell> {
     }
     console.log('external is new')
     let theirs = await toUpwell(buf)
-    await inMemory.merge(theirs)
+    inMemory.merge(theirs)
     let newFile = await inMemory.toFile()
-    await storage.setItem(id, newFile)
-    await remote.setItem(id, newFile)
+    storage.setItem(id, newFile)
+    remote.setItem(id, newFile).then(() => {
+      console.log('Shared!')
+    }).catch(err => {
+      console.error('Failed to share ')
+    })
     subscriber(id, inMemory)
   }
   return inMemory
