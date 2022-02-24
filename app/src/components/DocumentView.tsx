@@ -43,9 +43,11 @@ export default function MaybeDocument(props: DocumentViewProps) {
 
   function onChangeMade () {
     Documents.save(props.id);
+    let upwell = Documents.get(props.id)
+    render(upwell)
     Documents.sync(props.id).then(upwell => {
       render(upwell)
-    });
+    })
   }
 
   if (!root) return <div>Loading..</div>;
