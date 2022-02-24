@@ -34,7 +34,11 @@ export default function MaybeDocument(props: DocumentViewProps) {
   useEffect(() => {
     Documents.open(props.id).then((upwell: Upwell) => {
       render(upwell)
+      Documents.sync(props.id).then(upwell => {
+        render(upwell)
+      });
     });
+
   }, [props.id]);
 
   function onChangeMade () {
