@@ -28,8 +28,14 @@ export function EditReviewView(props: Props) {
     } else {
       component = <React.Fragment>
         {reviewMode ? reviewView : textArea}
-        <button css={css`margin-bottom: 1ex`} onClick={() => setReviewMode(!reviewMode)}>toggle mode</button>
-        ({reviewMode ? 'review' : 'edit'})
+          <button
+            css={css`
+              margin-bottom: 1ex;
+            `}
+            onClick={() => setReviewMode(!reviewMode)}
+          >
+            {reviewMode ? "reviewing" : "editing"}
+          </button>
       </React.Fragment>
 
     }

@@ -88,13 +88,23 @@ export function DocumentView(props: {
     }
   };
 
+  const handleInputBlur = (
+    e: React.FocusEvent<HTMLInputElement, Element>,
+    l: Layer
+  ) => {
+    let upwell = Documents.get(id);
+    l.message = e.target.value;
+    upwell.set(l.id, l);
+    onChangeMade();
+  };
+
   let onTextChange = debounce(async (layer: Layer) => {
     // this is saving every time text changes, do we want this??????
     onChangeMade()
   }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
-    let message = "Very cool layer";
+    let message = "";
     // always forking from root layer (for now)
     let upwell = Documents.get(id)
     let root = upwell.rootLayer();
@@ -199,6 +209,7 @@ export function DocumentView(props: {
                 )}
                 visible={visible}
                 handleShareClick={handleShareClick}
+                onInputBlur={handleInputBlur}
                 editableLayer={getEditableLayer()}
               />
             )}
@@ -223,7 +234,7 @@ export function DocumentView(props: {
                   layers={layers.filter(
                     (l: Layer) => !l.archived && l.shared && l.id !== root?.id
                   )}
-                  handleShareClick={(l: Layer) => (l.shared = true)}
+                  onInputBlur={handleInputBlur}
                   editableLayer={getEditableLayer()}
                 />
                 <div css={sidewaysTabStyle}>
@@ -258,7 +269,7 @@ export function DocumentView(props: {
             right: 150px;
           `}
         >
-          <Button onClick={mergeVisible}>Flatten visible</Button>
+          <Button onClick={mergeVisible}>Merge visible</Button>
         </div>
       </div>
     </div>

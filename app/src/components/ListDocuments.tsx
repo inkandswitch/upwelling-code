@@ -9,8 +9,8 @@ const tabStyles = css`
   background: #eaeaea;
   border-left: 1px solid lightgray;
   border-top: 0;
-  margin-right: 8px;
-  padding: 12px 4px 12px 4px;
+  margin-right: 16px;
+  padding: 12px 10px 12px 10px;
   border-radius: 0 10px 10px 0; /* top rounded edges */
   box-sizing: content-box;
   line-height: 16px;
@@ -19,9 +19,10 @@ const tabVisibleStyles = css`
   background: white;
   border: 1px lightgray solid;
   border-radius: 0 10px 10px 0; /* top rounded edges */
-  padding-left: 12px;
+  padding-left: 24px;
   margin-right: 0;
   min-height: 60px;
+  max-height: 120px;
 `;
 
 const wiggleStyle = css`
@@ -94,7 +95,7 @@ type TabType = {
 const fileTabBottomStyles = css`
   border-radius: 0 10px 0 0; /* top rounded edge only */
   border-width: 1px 1px 0px 1px;
-  min-width: 19px;
+  min-width: 18px;
   margin-top: 0;
   margin-bottom: -6px;
 `;
@@ -111,9 +112,10 @@ export const FileTab = ({
       min-height: 40px;
       text-align: end;
       margin-top: -6px;
-      min-width: 20px;
+      min-width: 18px;
       border-radius: 0 0 10px 0; /* bottom rounded edge only */
       cursor: pointer;
+      max-height: 80px;
       z-index: ${isBottom ? 1000 + index : 1000 - index};
       ${isVisible ? tabVisibleStyles : ""}
       ${isBottom ? fileTabBottomStyles : ""}
@@ -145,10 +147,11 @@ const editableTabStyle = css`
 
 type Props = {
   onLayerClick: Function;
+  onInputBlur: Function;
   editableLayer?: Layer;
   layers: Layer[];
   visible: Layer[];
-  handleShareClick: any; // TODO
+  handleShareClick?: any; // TODO
   isBottom?: boolean;
 };
 
@@ -156,6 +159,7 @@ export default function ListDocuments({
   layers,
   onLayerClick,
   handleShareClick,
+  onInputBlur,
   editableLayer,
   visible,
   isBottom = false,
@@ -175,20 +179,41 @@ export default function ListDocuments({
             aria-pressed={visibleMaybe > -1}
             index={index}
             isBottom={isBottom}
-            onClick={() => onLayerClick(layer)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onLayerClick(layer);
+            }}
             title={`by ${layer.author}`}
             css={css`
               display: flex;
               flex-direction: row;
-              justify-content: space-between;
+              justify-content: flex-start;
+              align-items: flex-start;
               ${editableLayer?.id === layer.id ? editableTabStyle : ""}
             `}
           >
+            {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
+            <Input
+              defaultValue={layer.message}
+              placeholder="layer name"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+              onChange={(e) => {
+                e.stopPropagation();
+                console.log(e.target.value);
+              }}
+              onBlur={(e) => {
+                onInputBlur(e, layer);
+              }}
+            />
             {!layer.shared && (
               <EmojiButton
                 css={wiggleStyle}
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   if (
                     // eslint-disable-next-line no-restricted-globals
                     confirm(
@@ -201,17 +226,6 @@ export default function ListDocuments({
               >
                 →
               </EmojiButton>
-            )}
-            {editableLayer?.id === layer.id && (
-              <div
-                css={css`
-                  margin-right: 3px;
-                  margin-bottom: 3px;
-                  display: inline-block;
-                `}
-              >
-                ✏️
-              </div>
             )}
           </FileTab>
         );
@@ -250,3 +264,38 @@ function EmojiButton(props: ButtonType) {
     />
   );
 }
+
+type InputProps = React.ClassAttributes<HTMLInputElement> &
+  React.InputHTMLAttributes<HTMLInputElement>;
+
+const Input = (props: InputProps) => (
+  <input
+    css={css`
+      font-size: inherit;
+      display: inline-flex;
+      background: none;
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      color: black;
+      font-family: monospace;
+      padding: 0;
+      border-radius: 0; /* phone user agents like to add border radius */
+      height: 100%;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      &:hover {
+        border: 1px solid blue;
+      }
+      &:focus {
+        outline: 0;
+        border: 1px solid blue;
+        transition: 0.2s;
+      }
+      &::placeholder {
+        font-style: italic;
+      }
+    `}
+    type="text"
+    {...props}
+  />
+);
