@@ -18,7 +18,7 @@ type DocumentViewProps = {
   author: Author
 };
 
-const AUTOSAVE_INTERVAL = 3000; //ms
+const AUTOSAVE_INTERVAL = 300; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [layers, setLayers] = React.useState<Layer[]>([]);
@@ -38,10 +38,10 @@ export default function MaybeDocument(props: DocumentViewProps) {
   }, [props.id]);
 
   function onChangeMade () {
-    let upwell = Documents.get(props.id)
-    render(upwell)
     Documents.save(props.id);
-    Documents.sync(props.id);
+    Documents.sync(props.id).then(upwell => {
+      render(upwell)
+    });
   }
 
   if (!root) return <div>Loading..</div>;

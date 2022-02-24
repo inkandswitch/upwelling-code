@@ -72,6 +72,8 @@ describe('upwell', () => {
     doc.insertAt(4, 'o')
     assert.equal(doc.text, 'Hello')
 
+    assert.equal(d.layers()[0].text, 'Hello')
+
     let name = 'Started typing on the train'
     let author: Author = 'Theroux'
     let newLayer = doc.fork(name, author)

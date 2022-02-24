@@ -71,7 +71,6 @@ export async function save(id: string): Promise<Upwell> {
   if (!upwell) throw new Error('upwell does not exist with id=' + id)
   let binary = await upwell.toFile()
   storage.setItem(id, binary)
-  remote.setItem(id, binary)
   return upwell
 }
 
@@ -88,10 +87,9 @@ export function startSyncInterval (id: string, timeout: number) {
 }
 
 export async function sync(id: string): Promise<Upwell> {
-  console.log('syncing with external')
   let inMemory = upwells.get(id)
-  if (!inMemory) throw new Error('open or create the upwell first before syncing!')
   let remoteBinary = await remote.getItem(id)
+  if (!inMemory) throw new Error('open or create the upwell first before syncing!')
   if (remoteBinary) {
     let buf = Buffer.from(remoteBinary)
     let inMemoryBuf = await inMemory.toFile()
