@@ -66,10 +66,13 @@ export class Layer {
     this.doc.set(ROOT, 'version', value)
   }
 
-  get time(): Date {
-    return new Date(this._getValue('time') as number)
+  get time(): number {
+    return this._getValue('time') as number
   }
 
+  set time(value: number){
+    this.doc.set(ROOT, 'time', value) 
+  }
   get message (): string {
     return this._getValue('message') as string;
   }
@@ -188,6 +191,7 @@ export class Layer {
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)
+    doc.set(ROOT, 'time', Date.now())
     doc.set(ROOT, 'archived', false)
     doc.set(ROOT, 'parent_id', this.id)
     return new Layer(doc)
@@ -241,6 +245,7 @@ export class Layer {
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)
+    doc.set(ROOT, 'time', Date.now())
     doc.set(ROOT, 'archived', false)
     doc.make(ROOT, 'title', TEXT)
     doc.make(ROOT, 'text', TEXT)
