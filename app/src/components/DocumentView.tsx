@@ -5,7 +5,6 @@ import { Upwell, Author, Layer } from "api";
 import ListDocuments, {
   ButtonTab,
   InfoTab,
-  sidewaysTabStyle,
   FileTab,
 } from "./ListDocuments";
 import * as Documents from "../Documents";
@@ -13,7 +12,6 @@ import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
 //@ts-ignore
-import relativeDate from 'relative-date';
 
 type DocumentViewProps = {
   id: string,
@@ -28,9 +26,9 @@ export default function MaybeDocument(props: DocumentViewProps) {
 
   function render(upwell: Upwell) {
     let layers = upwell.layers()
-    setLayers(layers);
     let root = upwell.rootLayer()
     setRoot(root);
+    setLayers(layers.filter(l => l.id !== root.id));
   }
 
   useEffect(() => {
@@ -73,7 +71,7 @@ export function DocumentView(props: {
   onChangeMade: Function
 }) {
   const { id, root, layers, author, onChangeMade } = props;
-  let [visible, setVisible] = React.useState<Layer[]>([]);
+ let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
 
   let onRootClick = () => {
     setVisible([]);
@@ -85,7 +83,6 @@ export function DocumentView(props: {
     if (exists > -1) {
       setVisible(visible.filter((l) => l.id !== layer.id));
     } else {
-      console.log("before", visible);
       setVisible(visible.concat([layer]));
     }
   };
@@ -113,6 +110,7 @@ export function DocumentView(props: {
     let newLayer = root.fork(message, author);
     upwell.add(newLayer);
     onChangeMade()
+    setVisible([newLayer])
   };
 
   let handleShareClick = (l: Layer) => {
@@ -140,7 +138,9 @@ export function DocumentView(props: {
     onChangeMade()
     setVisible([]);
   };
-
+  let sharedLayers = layers.filter((l: Layer) => !l.archived && l.shared && l.id !== root?.id)
+                  
+  if (!root) return <div>Loading...</div>
   return (
     <div
       id="folio"
@@ -178,28 +178,17 @@ export function DocumentView(props: {
           css={css`
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             align-items: flex-start;
             margin-left: -1px;
           `}
         >
-          <div
-            id="top"
-            css={css`
-              margin-top: -17px;
-              display: flex;
-              flex-direction: column;
-              flex: 1 1 auto;
-              overflow: auto;
-            `}
-          >
+          <div id="private" css={css``}>
             <InfoTab css={css``} title="Layers area">
-              🌱
+              🌱 local
             </InfoTab>
             <ButtonTab onClick={onCreateLayer} title="new layer">
               ➕
             </ButtonTab>
-            {root && (
               <ListDocuments
                 onLayerClick={onLayerClick}
                 layers={layers.filter(
@@ -214,65 +203,51 @@ export function DocumentView(props: {
                 onInputBlur={handleInputBlur}
                 editableLayer={getEditableLayer()}
               />
-            )}
           </div>
-          <div
-            id="bottom"
-            css={css`
-              flex: 1 1 auto;
-              display: flex;
-              flex-direction: column;
-              justify-content: flex-end;
-              overflow: auto;
-              overflow-x: hidden;
-            `}
-          >
-            {root && (
-              <>
+          <div>
+
+          {sharedLayers.length > 0 && 
+          <>
+            <InfoTab title="shared layers">
+              🎂 shared
+            </InfoTab>
                 <ListDocuments
                   isBottom
                   onLayerClick={onLayerClick}
                   visible={visible}
-                  layers={layers.filter(
-                    (l: Layer) => !l.archived && l.shared && l.id !== root?.id
-                  )}
+                  layers={sharedLayers}
                   onInputBlur={handleInputBlur}
                   editableLayer={getEditableLayer()}
                 />
-                <div css={sidewaysTabStyle}>
-                  <FileTab
-                    css={css`
-                      z-index: 2000;
-                      margin-top: 0;
-                      border-radius: 0 10px 10px 0; /* top rounded edges */
-                    `}
-                    key={root.id}
-                    index={1}
-                    aria-pressed={true}
-                    title={`${relativeDate(new Date(root.time))}`}
-                    onClick={onRootClick}
-                  >
-                    root
-                    {/* TODO add author and time  */}
-                  </FileTab>
-                </div>
               </>
-            )}
-            <InfoTab css={css``} title="Published area">
-              🎂
+          }
+          </div>
+          <div>
+            <InfoTab css={css``} title="Archived area">
+              📁 merged
             </InfoTab>
+            <>
+                <ListDocuments
+                isBottom
+                visible={visible}
+                layers={layers.filter(
+                  (l: Layer) => l.archived && l.id !== root?.id
+                )}
+                onInputBlur={handleInputBlur}
+                />
+              </>
           </div>
         </div>
-        <div
-          id="bottom-bar"
-          css={css`
+      </div>
+      <div
+        id="bottom-bar"
+        css={css`
             position: absolute;
             bottom: 40px;
             right: 150px;
           `}
-        >
-          <Button onClick={mergeVisible}>Merge visible</Button>
-        </div>
+      >
+        <Button onClick={mergeVisible}>Merge visible</Button>
       </div>
     </div>
   );

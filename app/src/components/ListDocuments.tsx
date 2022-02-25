@@ -3,6 +3,8 @@ import { css, Interpolation, Theme } from "@emotion/react/macro";
 import React from "react";
 import { Layer } from "api";
 import { JSX } from "@emotion/react/jsx-runtime";
+//@ts-ignore
+import relativeDate from 'relative-date';
 
 const tabStyles = css`
   border: 1px #b9b9b9 solid;
@@ -146,7 +148,7 @@ const editableTabStyle = css`
 `;
 
 type Props = {
-  onLayerClick: Function;
+  onLayerClick?: Function;
   onInputBlur: Function;
   editableLayer?: Layer;
   layers: Layer[];
@@ -182,9 +184,9 @@ export default function ListDocuments({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onLayerClick(layer);
+              if (onLayerClick) onLayerClick(layer);
             }}
-            title={`by ${layer.author}`}
+            title={`by ${layer.author}, ${relativeDate(new Date(layer.time))}`}
             css={css`
               display: flex;
               flex-direction: row;
@@ -202,7 +204,6 @@ export default function ListDocuments({
               }}
               onChange={(e) => {
                 e.stopPropagation();
-                console.log(e.target.value);
               }}
               onBlur={(e) => {
                 onInputBlur(e, layer);
@@ -251,14 +252,6 @@ function EmojiButton(props: ButtonType) {
         background: transparent;
         color: black;
         padding: 0;
-        &:hover {
-          // background: red;
-        }
-        &:disabled {
-          opacity: 70%;
-          cursor: not-allowed;
-          filter: grayscale(40%) brightness(90%);
-        }
       `}
       {...props}
     />
