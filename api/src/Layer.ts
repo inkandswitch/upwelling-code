@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import init from 'automerge-wasm-pack'
-import { TEXT, Automerge, loadDoc, create, Value }  from 'automerge-wasm-pack';
+import { Automerge, loadDoc, create, Value }  from 'automerge-wasm-pack';
 import { Author } from './Upwell';
 import * as Diff from 'diff';
 
@@ -242,8 +242,8 @@ export class Layer {
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)
     doc.set(ROOT, 'archived', false)
-    doc.make(ROOT, 'title', TEXT)
-    doc.make(ROOT, 'text', TEXT)
+    doc.make(ROOT, 'title', 'Untitled Document')
+    doc.make(ROOT, 'text', '')
     return new Layer(doc)
   }
 
