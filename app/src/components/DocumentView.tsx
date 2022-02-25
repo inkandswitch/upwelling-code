@@ -12,6 +12,8 @@ import * as Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
+//@ts-ignore
+import relativeDate from 'relative-date';
 
 type DocumentViewProps = {
   id: string,
@@ -247,7 +249,7 @@ export function DocumentView(props: {
                     key={root.id}
                     index={1}
                     aria-pressed={true}
-                    title={`by ${root.author} at ${root.time.toDateString()}`}
+                    title={`${relativeDate(new Date(root.time))}`}
                     onClick={onRootClick}
                   >
                     root
