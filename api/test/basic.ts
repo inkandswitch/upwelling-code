@@ -62,8 +62,6 @@ describe('upwell', () => {
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
     let doc = layers[0]
-    assert.equal(d.authors.size, 1)
-    assert.isTrue(d.authors.has(first_author))
 
     doc.insertAt(0, 'H')
     doc.insertAt(1, 'e')
@@ -78,8 +76,6 @@ describe('upwell', () => {
     let author: Author = 'Theroux'
     let newLayer = doc.fork(name, author)
     d.add(newLayer)
-    assert.equal(d.authors.size, 2)
-    assert.sameMembers(Array.from(d.authors), [first_author, author])
 
     newLayer.insertAt(0, 'H')
     newLayer.deleteAt(1)
@@ -110,7 +106,6 @@ describe('upwell', () => {
     let author: Author = 'Theroux'
     let newLayer = doc.fork(name, author)
     d.add(newLayer)
-    assert.equal(d.authors.size, 2)
 
     let rootId = d.rootLayer().id
 

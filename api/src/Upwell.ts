@@ -4,6 +4,7 @@ import concat from 'concat-stream'
 import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
+import Debug from 'debug';
 
 export type Author = string 
 
@@ -12,13 +13,13 @@ export type UpwellOptions = {
   author?: Author,
 }
 
+const debug = Debug('Upwell')
 const LAYER_EXT = '.layer'
 const METADATA_KEY = 'metadata.automerge'
 
 // An Upwell is multiple layers
 export class Upwell {
   _layers: Map<string, Layer> = new Map();
-  authors: Set<Author> = new Set()
   metadata: UpwellMetadata
 
   get id() {
@@ -42,7 +43,6 @@ export class Upwell {
       let merged = Layer.merge(existing, layer)
       this.set(merged.id, merged)
     } else { 
-      this.authors.add(layer.author)
       this.set(layer.id, layer)
     }
   }
@@ -99,7 +99,11 @@ export class Upwell {
           unpackFileStream(stream, (buf) => {
             let filename = header.name
             let id = filename.split('.')[0]
-            let layer = Layer.load(id, buf)
+            var start = new Date()
+            let layer = Layer.lazyLoad(id, buf)
+            //@ts-ignore
+            var end = new Date() - start
+            debug('(loadDoc): execution time %dms', end)
             upwell.add(layer)
             next()
           })
@@ -118,7 +122,11 @@ export class Upwell {
     let pack = tar.pack()
     let layers = this.layers()
     layers.forEach(layer => {
+      let start = new Date()
       let binary = layer.save()
+      //@ts-ignore
+      var end = new Date() - start
+      debug('(save): execution time %dms', end)
       pack.entry({ name: `${layer.id}.${LAYER_EXT}`}, Buffer.from(binary))
     })
 
