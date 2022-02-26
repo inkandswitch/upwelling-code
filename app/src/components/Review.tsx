@@ -5,6 +5,7 @@ import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
 import UpwellSource from "./upwell-source"
 import { Layer } from "api";
+import { textCSS } from './TextArea';
 
 type ReviewState = {
   atjsonLayer?: UpwellSource;
@@ -55,23 +56,7 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   } else {
     return (
       <ReactRendererProvider value={components}>
-        <article css={css`
-        width: 100%;
-        height: 96%;
-        border: 1px solid lightgray;
-        border-width: 0 1px 1px 0;
-        padding: 34px;
-        resize: none;
-        font-size: 16px;
-        line-height: 20px;
-        border-radius: 3px;
-        background: white;
-        margin-top: 1px;
-
-        :focus-visible {
-          outline: 0;
-        }
-        `}>{ReactRenderer.render(state.atjsonLayer)}</article>
+        <article css={textCSS}>{ReactRenderer.render(state.atjsonLayer)}</article>
       </ReactRendererProvider>
     )
   }

@@ -3,9 +3,7 @@ import { css } from "@emotion/react/macro";
 import React from "react";
 import { Layer } from "api";
 
-export function TextArea(props: any) {
-  return <textarea
-      css={css`
+export const textCSS = css`
         width: 100%;
         height: 96%;
         border: 1px solid lightgray;
@@ -19,11 +17,15 @@ export function TextArea(props: any) {
         background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
         background-size: 20px 20px;
         background-attachment: local;
+        white-space: pre-line;
 
         :focus-visible {
           outline: 0;
         }
-      `}
+      `
+export function TextArea(props: any) {
+  return <textarea
+      css={textCSS}
       className="text"
       value={props.state}
       onChange={(e) => props.onChange(e, "text")}
