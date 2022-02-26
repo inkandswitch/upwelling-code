@@ -148,7 +148,7 @@ const editableTabStyle = css`
 `;
 
 type Props = {
-  onLayerClick?: Function;
+  onLayerClick: Function;
   onInputBlur: Function;
   editableLayer?: Layer;
   layers: Layer[];
@@ -184,7 +184,7 @@ export default function ListDocuments({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (onLayerClick) onLayerClick(layer);
+              onLayerClick(layer);
             }}
             title={`by ${layer.author}, ${relativeDate(new Date(layer.time))}`}
             css={css`

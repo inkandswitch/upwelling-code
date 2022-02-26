@@ -5,7 +5,6 @@ import { Upwell, Author, Layer } from "api";
 import ListDocuments, {
   ButtonTab,
   InfoTab,
-  FileTab,
 } from "./ListDocuments";
 import * as Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
@@ -73,7 +72,7 @@ export function DocumentView(props: {
   const { id, root, layers, author, onChangeMade } = props;
  let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
 
-  let onRootClick = () => {
+  let onArchiveClick = () => {
     setVisible([]);
     return; // reset visible layers
   };
@@ -229,6 +228,7 @@ export function DocumentView(props: {
             <>
                 <ListDocuments
                 isBottom
+                onLayerClick={onArchiveClick}
                 visible={visible}
                 layers={layers.filter(
                   (l: Layer) => l.archived && l.id !== root?.id
