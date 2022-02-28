@@ -10,6 +10,8 @@ import * as Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
+import { SYNC_STATE } from '../types';
+import { SyncIndicator } from "./SyncIndicator";
 
 type DocumentViewProps = {
   id: string,
@@ -82,6 +84,7 @@ export function DocumentView(props: {
 }) {
   const { id, root, layers, author, onChangeMade } = props;
  let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
+ let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.LOADING)
 
   let onArchiveClick = () => {
     setVisible([]);
@@ -107,9 +110,15 @@ export function DocumentView(props: {
     onChangeMade();
   };
 
-  let onTextChange = debounce(async (layer: Layer) => {
+  let onTextChange = () => {
+    setSyncState(SYNC_STATE.LOADING)
+    debouncedonTextChange()
+  }
+
+  let debouncedonTextChange = debounce(async () => {
     // this is saving every time text changes, do we want this??????
     onChangeMade()
+    setSyncState(SYNC_STATE.SYNCED)
   }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
@@ -157,6 +166,7 @@ export function DocumentView(props: {
       css={css`
         height: 100vh;
         display: flex;
+        color: white;
         flex-direction: row;
         padding: 30px;
         background: url("/wood.png");
@@ -171,7 +181,6 @@ export function DocumentView(props: {
           margin-right: auto;
           padding: 20px 40px 40px;
           padding-right: 20px;
-          background: #ccecc1;
           border-radius: 10px;
           display: flex;
           flex-direction: row;
@@ -258,6 +267,7 @@ export function DocumentView(props: {
             right: 150px;
           `}
       >
+        <SyncIndicator state={sync_state}></SyncIndicator>
         <Button onClick={mergeVisible}>Merge visible</Button>
       </div>
     </div>

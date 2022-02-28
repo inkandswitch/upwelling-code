@@ -1,3 +1,5 @@
+/** @jsxImportSource @emotion/react */
+import { css } from "@emotion/react/macro";
 import LoadingIcons from 'react-loading-icons'
 import { SYNC_STATE } from '../types';
 
@@ -5,7 +7,7 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
   let indicator
   switch(props.state) {
     case SYNC_STATE.SYNCED:
-      indicator = <LoadingIcons.BallTriangle speed="1" stroke="#98ff98" />
+      indicator = <div>✔️</div>
       break;
     case SYNC_STATE.ERROR:
       indicator = <LoadingIcons.Bars fill="red" speed="0" />
@@ -20,7 +22,11 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
       indicator = <LoadingIcons.Circles speed="1" stroke="yellow" />
       break;
   }
-  return <span id="sync-indicator">
+  return <span css={css`
+  svg {
+    width: 20px;
+  }
+  `} id = "sync-indicator" >
     {indicator}
 
   </span>
