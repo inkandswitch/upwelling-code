@@ -32,7 +32,8 @@ export async function create () : Promise<Upwell> {
 }
 
 function toUpwell (binary: Buffer): Promise<Upwell> {
-  return Upwell.deserialize(intoStream(binary))
+  let stream = intoStream(binary)
+  return Upwell.deserialize(stream)
 }
 
 export function get(id: string): Upwell {
