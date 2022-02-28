@@ -8,8 +8,10 @@ import ListDocuments, {
 } from "./ListDocuments";
 import * as Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
+import { SyncIndicator } from "./SyncIndicator";
 //@ts-ignore
 import debounce from "lodash.debounce";
+import { SYNC_STATE } from '../types';
 //@ts-ignore
 
 type DocumentViewProps = {

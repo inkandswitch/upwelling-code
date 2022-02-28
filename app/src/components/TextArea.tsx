@@ -13,10 +13,9 @@ export const textCSS = css`
         font-size: 16px;
         line-height: 20px;
         border-radius: 3px;
+        background-color: white;
+        overflow: auto;
 
-        background-image: radial-gradient(#dfdfe9 1px, #ffffff 1px);
-        background-size: 20px 20px;
-        background-attachment: local;
         white-space: pre-line;
 
         :focus-visible {
