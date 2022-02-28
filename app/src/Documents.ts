@@ -95,11 +95,8 @@ export async function sync(id: string): Promise<Upwell> {
   }
   if (!remoteBinary) {
     let newFile = await inMemory.toFile()
-    remote.setItem(id, newFile).then(() => {
-      console.log('Shared for the first time!')
-    }).catch(err => {
-      console.error('Failed to share!')
-    })
+    await remote.setItem(id, newFile)
+    return inMemory
   } else {
     // do sync
     let buf = Buffer.from(remoteBinary)

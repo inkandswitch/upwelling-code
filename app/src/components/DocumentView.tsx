@@ -26,7 +26,7 @@ export default function MaybeDocument(props: DocumentViewProps) {
   let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
 
   function render(upwell: Upwell) {
-    let layers = upwell.layers()
+    let layers = upwell.layers().reverse()
     let root = upwell.rootLayer()
     setRoot(root);
     setLayers(layers.filter(l => l.id !== root.id));
@@ -56,16 +56,17 @@ export default function MaybeDocument(props: DocumentViewProps) {
 
   function onChangeMade () {
     setSyncState(SYNC_STATE.LOADING)
-    Promise.all([
-      Documents.save(props.id),
-      Documents.sync(props.id)
-    ]).then(() => {
-      let upwell = Documents.get(props.id)
-      setSyncState(SYNC_STATE.SYNCED)
-      render(upwell)
-    }).catch(err => {
-      setSyncState(SYNC_STATE.OFFLINE)
-      console.error('failed to sync', err)
+    Documents.save(props.id).then((upwell) => {
+      Documents.sync(props.id).then(() => {
+        let upwell = Documents.get(props.id)
+        Documents.save(props.id)
+        setSyncState(SYNC_STATE.SYNCED)
+        render(upwell)
+      }).catch(err => {
+        setSyncState(SYNC_STATE.OFFLINE)
+        render(upwell)
+        console.error('failed to sync', err)
+      })
     })
   }
 
