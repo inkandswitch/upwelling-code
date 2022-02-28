@@ -222,7 +222,6 @@ export function DocumentView(props: {
               🎂 shared
             </InfoTab>
                 <ListDocuments
-                  isBottom
                   onLayerClick={onLayerClick}
                   visible={visible}
                   layers={sharedLayers}
@@ -238,7 +237,7 @@ export function DocumentView(props: {
             </InfoTab>
             <>
                 <ListDocuments
-                isBottom
+                isMerged
                 onLayerClick={onArchiveClick}
                 visible={visible}
                 layers={layers.filter(
