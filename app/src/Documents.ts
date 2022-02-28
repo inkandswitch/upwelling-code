@@ -24,8 +24,8 @@ export async function subscribe(_subscriber: Subscriber) {
   subscriber = _subscriber
 }
 
-export async function create () : Promise<Upwell> {
-  let upwell = Upwell.create()
+export async function create (_id?: string) : Promise<Upwell> {
+  let upwell = Upwell.create({ id: _id })
   let id = upwell.id
   upwells.set(id, upwell)
   return save(id)

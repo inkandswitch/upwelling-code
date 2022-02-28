@@ -17,7 +17,7 @@ type DocumentViewProps = {
   author: Author
 };
 
-const AUTOSAVE_INTERVAL = 300; //ms
+const AUTOSAVE_INTERVAL = 1000; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [layers, setLayers] = React.useState<Layer[]>([]);
@@ -31,12 +31,24 @@ export default function MaybeDocument(props: DocumentViewProps) {
   }
 
   useEffect(() => {
-    Documents.open(props.id).then((upwell: Upwell) => {
-      render(upwell)
-      Documents.sync(props.id).then(upwell => {
+    async function get () {
+      let upwell 
+      try {
+        upwell = await Documents.open(props.id) 
+      } catch (err) {
+        upwell = null
+      }
+
+      try {
+        if (!upwell) upwell = await Documents.sync(props.id)
         render(upwell)
-      });
-    });
+      } catch (err) {
+        let upwell = await Documents.create(props.id)
+        render(upwell)
+      }
+    }
+
+    get()
 
   }, [props.id]);
 
