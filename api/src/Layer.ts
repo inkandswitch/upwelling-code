@@ -285,6 +285,7 @@ export class Layer {
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
     doc.set_object(ROOT, 'title', '')
+    doc.set_object(ROOT, 'comments', {}) 
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, 'text', ' ')
     let initialParagraph = doc.insert_object(text, 0, { type: 'paragraph' })
