@@ -9,11 +9,7 @@ import ListDocuments, {
 import * as Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
-import { SyncIndicator } from "./SyncIndicator";
-//@ts-ignore
 import debounce from "lodash.debounce";
-//@ts-ignore
-import { SYNC_STATE } from '../types';
 
 type DocumentViewProps = {
   id: string,
