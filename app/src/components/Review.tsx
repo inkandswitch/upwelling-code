@@ -1,3 +1,4 @@
+/** @jsxImportSource @emotion/react */
 import React, { useCallback, useEffect } from "react";
 import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
