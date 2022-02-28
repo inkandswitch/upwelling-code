@@ -1,5 +1,3 @@
-/** @jsxImportSource @emotion/react */
-import { css } from "@emotion/react/macro";
 import React, { useCallback, useEffect } from "react";
 import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
