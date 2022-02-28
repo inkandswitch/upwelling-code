@@ -23,6 +23,7 @@ const AUTOSAVE_INTERVAL = 1000; //ms
 export default function MaybeDocument(props: DocumentViewProps) {
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
+  let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
 
   function render(upwell: Upwell) {
     let layers = upwell.layers()
@@ -54,12 +55,16 @@ export default function MaybeDocument(props: DocumentViewProps) {
   }, [props.id]);
 
   function onChangeMade () {
-    Documents.save(props.id);
-    let upwell = Documents.get(props.id)
-    render(upwell)
-    Documents.sync(props.id).then(upwell => {
+    setSyncState(SYNC_STATE.LOADING)
+    Promise.all([
+      Documents.save(props.id),
+      Documents.sync(props.id)
+    ]).then(() => {
+      let upwell = Documents.get(props.id)
+      setSyncState(SYNC_STATE.SYNCED)
       render(upwell)
     }).catch(err => {
+      setSyncState(SYNC_STATE.OFFLINE)
       console.error('failed to sync', err)
     })
   }
@@ -67,6 +72,7 @@ export default function MaybeDocument(props: DocumentViewProps) {
   if (!root) return <div>Loading..</div>;
   return <DocumentView
     id={props.id}
+    sync_state={sync_state}
     layers={layers}
     onChangeMade={onChangeMade}
     root={root}
@@ -80,11 +86,11 @@ export function DocumentView(props: {
   layers: Layer[],
   root?: Layer,
   author: Author,
+  sync_state: SYNC_STATE,
   onChangeMade: Function
 }) {
-  const { id, root, layers, author, onChangeMade } = props;
+  const { id, root, layers, author, sync_state, onChangeMade } = props;
  let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
- let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.LOADING)
 
   let onArchiveClick = () => {
     setVisible([]);
@@ -111,14 +117,12 @@ export function DocumentView(props: {
   };
 
   let onTextChange = () => {
-    setSyncState(SYNC_STATE.LOADING)
     debouncedonTextChange()
   }
 
   let debouncedonTextChange = debounce(async () => {
     // this is saving every time text changes, do we want this??????
     onChangeMade()
-    setSyncState(SYNC_STATE.SYNCED)
   }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
@@ -247,13 +251,13 @@ export function DocumentView(props: {
             </InfoTab>
             <>
                 <ListDocuments
-                isBottom
-                onLayerClick={onArchiveClick}
-                visible={visible}
-                layers={layers.filter(
-                  (l: Layer) => l.archived && l.id !== root?.id
-                )}
-                onInputBlur={handleInputBlur}
+                  isBottom
+                  onLayerClick={onArchiveClick}
+                  visible={visible}
+                  layers={layers.filter(
+                    (l: Layer) => l.archived && l.id !== root?.id
+                  )}
+                  onInputBlur={handleInputBlur}
                 />
               </>
           </div>
@@ -333,16 +337,5 @@ function Button(props: ButtonType) {
     );
     el.setAttribute("download", filename);
     el.click();
-  };
-
-  let onSyncClick = async () => {
-    try {
-      setStatus(SYNC_STATE.LOADING);
-      await upwell.syncWithServer(layer);
-      setState({ title: layer.title, text: layer.text });
-      setStatus(SYNC_STATE.SYNCED);
-    } catch (err) {
-      setStatus(SYNC_STATE.OFFLINE);
-    }
   };
   */

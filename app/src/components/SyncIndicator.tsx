@@ -13,16 +13,14 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
       indicator = <LoadingIcons.Bars fill="red" speed="0" />
       break;
     case SYNC_STATE.OFFLINE:
-      indicator = <LoadingIcons.Bars fill="grey" speed="0" />
-      break;
-    case SYNC_STATE.PREVIEW:
-      indicator = <LoadingIcons.Bars fill="blue" speed="0" />
+      indicator = <div>Offline</div>
       break;
     default:
-      indicator = <LoadingIcons.Circles speed="1" stroke="yellow" />
+      indicator = <div>Saving...</div>
       break;
   }
   return <span css={css`
+  font-size: .5em;
   svg {
     width: 20px;
   }
