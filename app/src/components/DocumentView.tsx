@@ -274,7 +274,7 @@ export function DocumentView(props: {
               color: white;
             `}
           >
-            This notebook belongs to{` `}
+            Your name is{` `}
             <Input
               readOnly
               css={css`
