@@ -139,9 +139,7 @@ describe('upwell', () => {
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
-
-    doc.shared = true
-
+    d.share(doc.id)
     assert.equal(doc.shared, true)
 
     let serialized = doc.save()
