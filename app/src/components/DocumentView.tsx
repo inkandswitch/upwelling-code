@@ -159,6 +159,7 @@ export function DocumentView(props: {
         height: 100vh;
         display: flex;
         flex-direction: row;
+        color: white;
         padding: 30px;
         background: url("/wood.png");
       `}
@@ -171,8 +172,6 @@ export function DocumentView(props: {
           margin-left: auto;
           margin-right: auto;
           padding: 20px 40px 40px;
-          padding-right: 20px;
-          background: #ccecc1;
           border-radius: 10px;
           display: flex;
           flex-direction: row;
@@ -262,7 +261,7 @@ export function DocumentView(props: {
         >
           <div
             css={css`
-              color: gray;
+              color: white;
             `}
           >
             This notebook belongs to{` `}
