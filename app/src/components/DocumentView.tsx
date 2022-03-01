@@ -18,7 +18,7 @@ type DocumentViewProps = {
   author: Author
 };
 
-const AUTOSAVE_INTERVAL = 1000; //ms
+const AUTOSAVE_INTERVAL = 3000; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [layers, setLayers] = React.useState<Layer[]>([]);
@@ -53,9 +53,7 @@ export default function MaybeDocument(props: DocumentViewProps) {
     get()
 
   }, [props.id]);
-
-  function onChangeMade () {
-    setSyncState(SYNC_STATE.LOADING)
+  let save = () => {
     Documents.save(props.id).then((upwell) => {
       Documents.sync(props.id).then(() => {
         let upwell = Documents.get(props.id)
@@ -68,6 +66,18 @@ export default function MaybeDocument(props: DocumentViewProps) {
         console.error('failed to sync', err)
       })
     })
+  }
+
+  let debouncedSave = debounce(async () => {
+    console.log('debounce')
+    save()
+  }, AUTOSAVE_INTERVAL);
+
+
+  function onChangeMade (debounce: boolean) {
+    setSyncState(SYNC_STATE.LOADING)
+    if (debounce) debouncedSave()
+    else save()
   }
 
   if (!root) return <div>Loading..</div>;
@@ -91,7 +101,8 @@ export function DocumentView(props: {
   onChangeMade: Function
 }) {
   const { id, root, layers, author, sync_state, onChangeMade } = props;
- let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
+  
+  let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
 
   let onArchiveClick = () => {
     setVisible([]);
@@ -118,13 +129,8 @@ export function DocumentView(props: {
   };
 
   let onTextChange = () => {
-    debouncedonTextChange()
+    onChangeMade(true)
   }
-
-  let debouncedonTextChange = debounce(async () => {
-    // this is saving every time text changes, do we want this??????
-    onChangeMade()
-  }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
     let message = "";
@@ -177,6 +183,7 @@ export function DocumentView(props: {
         background: url("/wood.png");
       `}
     >
+      <SyncIndicator state={sync_state}></SyncIndicator>
       <div
         id="writing-zone"
         css={css`
@@ -191,6 +198,7 @@ export function DocumentView(props: {
           flex-direction: row;
         `}
       >
+
         <EditReviewView
           onChange={onTextChange}
           visible={visible}
@@ -272,7 +280,6 @@ export function DocumentView(props: {
             right: 150px;
           `}
       >
-        <SyncIndicator state={sync_state}></SyncIndicator>
         <Button onClick={mergeVisible}>Merge visible</Button>
       </div>
     </div>

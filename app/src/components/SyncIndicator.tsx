@@ -20,6 +20,9 @@ export function SyncIndicator (props: { state: SYNC_STATE }) {
       break;
   }
   return <span css={css`
+  position: fixed;
+  top: 5px;
+  left: 5px;
   font-size: .5em;
   svg {
     width: 20px;
