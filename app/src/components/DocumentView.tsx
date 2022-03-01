@@ -1,13 +1,14 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";
-import React, { useEffect } from "react";
-import { Upwell, Author, Layer } from "api";
-import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
+import React, { useCallback, useEffect } from "react";
+import { Upwell, Author, Layer, UNKNOWN_AUTHOR } from "api";
+import ListDocuments, { ButtonTab, InfoTab, AuthorColorsType } from "./ListDocuments";
 import * as Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
 import Input from "./Input";
+import deterministicColor from "../color";
 
 type DocumentViewProps = {
   id: string;
@@ -19,13 +20,35 @@ const AUTOSAVE_INTERVAL = 1000; //ms
 export default function MaybeDocument(props: DocumentViewProps) {
   let [layers, setLayers] = React.useState<Layer[]>([]);
   let [root, setRoot] = React.useState<Layer>();
+  let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({});
 
-  function render(upwell: Upwell) {
-    let layers = upwell.layers();
-    let root = upwell.rootLayer();
-    setRoot(root);
-    setLayers(layers.filter((l) => l.id !== root.id));
-  }
+  const render = useCallback(
+    (upwell: Upwell) => {
+      let layers = upwell.layers();
+      let root = upwell.rootLayer();
+      setRoot(root);
+      setLayers(layers.filter((l) => l.id !== root.id));
+
+      // find the authors
+      const newAuthorColors = { ...authorColors };
+      let changed = false;
+      layers.forEach((l) => {
+        if (
+          l.author !== UNKNOWN_AUTHOR &&
+          authorColors[l.author] === undefined
+        ) {
+          newAuthorColors[l.author] = "";
+          changed = true;
+        }
+      });
+      if (changed) {
+        setAuthorColors((prevState) => {
+          return { ...prevState, ...newAuthorColors };
+        });
+      }
+    },
+    [setRoot, setLayers, authorColors, setAuthorColors]
+  );
 
   useEffect(() => {
     async function get() {
@@ -46,7 +69,28 @@ export default function MaybeDocument(props: DocumentViewProps) {
     }
 
     get();
-  }, [props.id]);
+  }, [render, props.id]);
+
+  useEffect(() => {
+    function assignColor() {
+      const newAuthorColors = { ...authorColors };
+      let changed = false;
+
+      for (const [authorID, authorColor] of Object.entries(authorColors)) {
+        if (!authorColor) {
+          newAuthorColors[authorID] = deterministicColor(authorID);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        setAuthorColors((prevState) => {
+          return { ...prevState, ...newAuthorColors };
+        });
+      }
+    }
+    assignColor()
+  }, [authorColors, setAuthorColors]);
 
   function onChangeMade() {
     Documents.save(props.id);
@@ -69,6 +113,7 @@ export default function MaybeDocument(props: DocumentViewProps) {
       onChangeMade={onChangeMade}
       root={root}
       author={props.author}
+      authorColors={authorColors}
     />
   );
 }
@@ -78,9 +123,10 @@ export function DocumentView(props: {
   layers: Layer[];
   root?: Layer;
   author: Author;
+  authorColors: AuthorColorsType;
   onChangeMade: Function;
 }) {
-  const { id, root, layers, author, onChangeMade } = props;
+  const { id, root, layers, author, onChangeMade, authorColors } = props;
   let [visible, setVisible] = React.useState<Layer[]>(
     layers.length ? layers.slice(0, 1) : []
   );
@@ -214,6 +260,7 @@ export function DocumentView(props: {
             </ButtonTab>
             <ListDocuments
               onLayerClick={onLayerClick}
+              colors={authorColors}
               layers={layers.filter(
                 (l: Layer) =>
                   !l.archived &&
@@ -234,6 +281,7 @@ export function DocumentView(props: {
                 <InfoTab title="shared layers">🎂 shared</InfoTab>
                 <ListDocuments
                   onLayerClick={onLayerClick}
+                  colors={authorColors}
                   visible={visible}
                   handleDeleteClick={handleDeleteClick}
                   layers={sharedLayers}
@@ -249,6 +297,7 @@ export function DocumentView(props: {
           <ListDocuments
             isMerged
             onLayerClick={onArchiveClick}
+            colors={authorColors}
             visible={visible}
             layers={layers.filter(
               (l: Layer) => l.archived && l.id !== root?.id
@@ -281,6 +330,7 @@ export function DocumentView(props: {
                 font-size: 16px;
                 cursor: not-allowed;
                 color: white;
+                box-shadow: 0px -9px 0px 0px ${authorColors[author] || "none"} inset;
               `}
               value={author}
             />

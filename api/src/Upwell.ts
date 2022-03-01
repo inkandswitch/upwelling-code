@@ -7,6 +7,7 @@ import { Readable }  from 'stream';
 import Debug from 'debug';
 
 export type Author = string 
+export const UNKNOWN_AUTHOR = "Unknown"
 
 export type UpwellOptions = {
   id?: string,
@@ -143,7 +144,7 @@ export class Upwell {
 
   static create(options?: UpwellOptions): Upwell {
     let upwell = new Upwell()
-    let layer = Layer.create('Document initialized', options?.author || 'Unknown')
+    let layer = Layer.create('Document initialized', options?.author || UNKNOWN_AUTHOR)
     let id = options?.id || nanoid()
     upwell.metadata = UpwellMetadata.create(id, layer.id)
     upwell.add(layer)

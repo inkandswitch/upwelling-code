@@ -7,6 +7,12 @@ import { JSX } from "@emotion/react/jsx-runtime";
 import relativeDate from "relative-date";
 import { TextareaInput } from "./Input";
 
+type ID = string;
+type htmlColor = string;
+export type AuthorColorsType = {
+  [key: ID]: htmlColor;
+};
+
 const tabStyles = css`
   border: 1px #b9b9b9 solid;
   background: #eaeaea;
@@ -177,6 +183,7 @@ type Props = {
   handleDeleteClick?: any; // TODO
   isBottom?: boolean;
   isMerged?: boolean;
+  colors?: AuthorColorsType;
 };
 
 export default function ListDocuments({
@@ -189,6 +196,7 @@ export default function ListDocuments({
   visible,
   isBottom = false,
   isMerged = false,
+  colors = {},
 }: Props) {
   return (
     <div
@@ -218,6 +226,8 @@ export default function ListDocuments({
               justify-content: flex-start;
               align-items: flex-start;
               ${editableLayer?.id === layer.id ? editableTabStyle : ""}
+              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||
+              "none"} inset;
             `}
           >
             {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
