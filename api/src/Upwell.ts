@@ -47,6 +47,12 @@ export class Upwell {
     }
   }
 
+  share(id: string): void{
+    let layer = this.get(id)
+    layer.shared = true
+    this.set(id, layer)
+  }
+
   archive(id: string): void {
     let layer = this.get(id)
     layer.archived = true

@@ -121,13 +121,11 @@ export function DocumentView(props: {
     let newLayer = root.fork(message, author);
     upwell.add(newLayer);
     onChangeMade()
-    setVisible([newLayer])
   };
 
   let handleShareClick = (l: Layer) => {
     let upwell = Documents.get(id)
-    l.shared = true;
-    upwell.set(l.id, l)
+    upwell.share(l.id)
     onChangeMade()
   }
 
@@ -142,6 +140,7 @@ export function DocumentView(props: {
     let merged = visible.reduce((prev: Layer, cur: Layer) => {
       if (cur.id !== root?.id) {
         upwell.archive(cur.id);
+        upwell.share(cur.id)
       }
       return Layer.merge(prev, cur);
     }, root);
