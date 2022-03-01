@@ -131,7 +131,7 @@ export const FileTab = ({
       &:hover {
         background: #d1eaff;
       }
-      &:first-child {
+      &:first-of-type{
         margin-top: 0px;
         border-radius: 0 10px 10px 0;
       }

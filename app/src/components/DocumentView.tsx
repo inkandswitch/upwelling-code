@@ -266,6 +266,7 @@ export function DocumentView(props: {
           >
             This notebook belongs to{` `}
             <Input
+            readOnly
               css={css`
                 font-size: 16px;
                 cursor: not-allowed;
