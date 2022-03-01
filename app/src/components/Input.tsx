@@ -15,6 +15,7 @@ const inputStyle = css`
   height: 100%;
   text-overflow: ellipsis;
   overflow: hidden;
+  cursor: text;
   &:hover {
     border: 1px solid blue;
   }
