@@ -174,23 +174,31 @@ describe('upwell', () => {
     assert.deepEqual(root.metadata, doc.metadata)
   })
 
-  it('maintains keys when multiple documents involved', () => {
+  it.only('maintains keys when multiple documents involved', () => {
     let first_author: Author =  'Susan'
     let d = Upwell.create({ author: first_author })
-    let len = 100
 
-    let last = d.layers()[0]
-    for (let i = 0; i<len; i ++) {
-      last = last.fork('beep boop', first_author)
-      d.add(last)
-    }
-    let layers = d.layers()
-    assert.equal(layers.length, len + 1)
-    d.share(layers[3].id)
-    assert.equal(d.layers()[3].shared, true)
+    let og = d.layers()[0]
+
+    let layer = og.fork('', first_author)
+    d.add(layer)
+    d.share(layer.id)
+
+    let boop = layer.fork('', first_author)
+    d.add(boop)
+
+    assert.equal(d.layers().filter(l => l.shared).length, 1)
+
+    boop = boop.fork('', first_author)
+    d.add(boop)
+    d.share(boop.id)
+
+
+    boop = boop.fork('', first_author)
+    d.add(boop)
 
     for (let i = 0; i < 100; i++) {
-      assert.equal(d.layers().filter(l => l.shared).length, 1)
+      assert.equal(d.layers().filter(l => l.shared).length, 2)
     }
   })
 })

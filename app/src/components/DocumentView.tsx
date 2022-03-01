@@ -121,7 +121,6 @@ export function DocumentView(props: {
     let newLayer = root.fork(message, author);
     upwell.add(newLayer);
     onChangeMade()
-    setVisible([newLayer])
   };
 
   let handleShareClick = (l: Layer) => {
