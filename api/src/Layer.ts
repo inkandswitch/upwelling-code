@@ -224,9 +224,9 @@ export class Layer {
     this.doc.applyChanges(changes)
   }
 
-  mergeWithEdits(theirs: Layer) {
-    let edits = this.getEdits(theirs)
-    let newLayer = Layer.create('Merge', this.author)
+  static mergeWithEdits(ours: Layer, theirs: Layer) {
+    let edits = ours.getEdits(theirs)
+    let newLayer = ours.fork('Merge', ours.author)
     newLayer.merge(theirs)
 
     edits.forEach((edit) => {

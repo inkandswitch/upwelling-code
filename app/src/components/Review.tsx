@@ -32,7 +32,7 @@ export function ReviewView(props: {id: string, visible: string[]}) {
       prev.merge(cur)
       return prev 
     }, layers[0])
-    let editsLayer = rootLayer.mergeWithEdits(mergedVisible)
+    let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
     let marks = editsLayer.marks.map((m: any) => {
       let attrs = JSON.parse(m.value)
       // I wonder if there's a (good) way to preserve identity of the mark
