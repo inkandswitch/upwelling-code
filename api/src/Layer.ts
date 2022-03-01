@@ -29,39 +29,36 @@ export type LayerMetadata = {
 }
 export type Subscriber = (doc: Layer, heads: Heads) => void 
 
-export class Layer {
-  id: string = nanoid()
-  binary?: Buffer
-  doc?: Automerge
-  private heads?: Heads;
-  private subscriber?: Subscriber 
-
-  constructor(doc?: Automerge) {
-    this.doc = doc
-  }
-
-  static lazyLoad (id: string, buf: Buffer): Layer {
-    let layer = new Layer()
-    layer.binary = buf
-    layer.id = id
-    return layer
+export class LazyLayer {
+  binary: Buffer
+  id: string
+  constructor(binary: Buffer, id: string) {
+    this.binary = binary
+    this.id = id 
   }
 
   hydrate() {
-    if (this.doc) return
-    if (!this.binary) throw new Error('can only hydrate from a binary!')
-    this.doc = loadDoc(this.binary)
+    return new Layer(loadDoc(this.binary))
+  }
+}
+
+export class Layer {
+  id: string = nanoid()
+  doc: Automerge
+  private heads?: Heads;
+  private subscriber?: Subscriber 
+
+  constructor(doc: Automerge) {
+    this.doc = doc
   }
 
   private _getAutomergeText(prop: string): string {
-    this.hydrate()
     let value = this.doc.value(ROOT, prop)
     if (value && value[0] === 'text') return this.doc.text(value[1])
     else return ''
   }
 
   private _getValue(prop: string) {
-    this.hydrate()
     let value = this.doc.value(ROOT, prop, this.heads)
     if (value && value[0]) return value[1]
   }
@@ -142,7 +139,6 @@ export class Layer {
   }
 
   getEdits(other: Layer) {
-    this.hydrate()
     let ours = this.text
     let theirs = other.text
 
@@ -172,28 +168,24 @@ export class Layer {
   }
 
   insertAt(position: number, value: string | Array<string>, prop = 'text') {
-    this.hydrate()
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 0, value)
     else throw new Error('Text field not properly initialized')
   }
 
   deleteAt(position: number, count: number = 1, prop = 'text') {
-    this.hydrate()
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, count, '')
     else throw new Error('Text field not properly initialized')
   }
 
   mark(name: string, range: string, value: Value, prop = 'text') {
-    this.hydrate()
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.mark(obj[1], range, name, value)
     else throw new Error('Text field not properly initialized')
   }
 
   getMarks(prop = 'text') {
-    this.hydrate()
     let obj = this.doc.value(ROOT, 'text')
     if (obj && obj[0] === 'text') return this.doc.raw_spans(obj[1])
     else throw new Error('Text field not properly initialized')
@@ -208,7 +200,6 @@ export class Layer {
   }
 
   fork(message: string, author: Author): Layer {
-    this.hydrate()
     let doc = this.doc.fork()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
@@ -220,16 +211,12 @@ export class Layer {
   }
 
   static merge(ours: Layer, theirs: Layer) {
-    ours.hydrate()
-    theirs.hydrate()
     let changes = theirs.doc.getChanges(ours.doc.getHeads())
     ours.doc.applyChanges(changes)
     return ours
   }
 
   static mergeWithEdits(ours: Layer, theirs: Layer) {
-    ours.hydrate()
-    theirs.hydrate()
     let edits = ours.getEdits(theirs)
     let newLayer = Layer.merge(ours.fork('Merge', ours.author), theirs)
 
@@ -243,6 +230,8 @@ export class Layer {
         end = edit.start
       } else if (edit.type === 'insert') {
         end = edit.start + edit.value.length
+      } else {
+        end = 0  
       }
 
       newLayer.mark(
@@ -279,7 +268,6 @@ export class Layer {
   }
 
   commit(message: string): Heads {
-    this.hydrate()
     let meta: ChangeMetadata = { author: this.author, message }
     let heads = this.doc.commit(JSON.stringify(meta))
     if (this.subscriber) this.subscriber(this, heads)

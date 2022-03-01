@@ -22,13 +22,21 @@ export class Upwell {
   _layers: Map<string, Layer> = new Map();
   metadata: UpwellMetadata
 
+  constructor(id: string, author: string) {
+    let layer = Layer.create('Document initialized', author)
+    this.metadata = UpwellMetadata.create(id, layer.id)
+    this.add(layer)
+  }
+
   get id() {
     return this.metadata.id
   }
 
   rootLayer() {
     let rootId = this.metadata.main
-    return this.layers().find(l => l.id === rootId)
+    let root = this.layers().find(l => l.id === rootId)
+    if (!root) throw new Error('No root?')
+    return root
   }
 
   layers(): Layer[] {
@@ -63,8 +71,10 @@ export class Upwell {
     return this._layers.set(id, layer)
   }
 
-  get(id: string): Layer | null { 
-    return this._layers.get(id)
+  get(id: string): Layer { 
+    let layer = this._layers.get(id)
+    if (!layer) throw new Error('No layer with id=' + id)
+    return layer
   }
 
   async toFile(): Promise<Buffer> {
@@ -81,13 +91,13 @@ export class Upwell {
 
   static deserialize(stream: Readable): Promise<Upwell> {
     return new Promise<Upwell>((resolve, reject) => {
-      let upwell = new Upwell()
+      let upwell = new Upwell('DUMMY', 'UNKNOWN')
 
-      let unpackFileStream = (stream, next) => {
-        let concatStream = concat((buf) => {
+      let unpackFileStream = (stream: any, next: Function) => {
+        let concatStream = concat((buf: Buffer) => {
           next(buf)
         })
-        stream.on('error', (err) => {
+        stream.on('error', (err: Error) => {
           console.error(err)
         })
         stream.pipe(concatStream)
@@ -97,16 +107,16 @@ export class Upwell {
       let extract = tar.extract()
       extract.on('entry', (header, stream, next) => {
         if (header.name === METADATA_KEY) {
-          unpackFileStream(stream, (buf) => {
+          unpackFileStream(stream, (buf: Buffer) => {
             upwell.metadata = UpwellMetadata.load(buf)
             next()
           })
         } else {
-          unpackFileStream(stream, (buf) => {
+          unpackFileStream(stream, (buf: Buffer) => {
             let filename = header.name
             let id = filename.split('.')[0]
             var start = new Date()
-            let layer = Layer.lazyLoad(id, buf)
+            let layer = Layer.load(id, buf)
             //@ts-ignore
             var end = new Date() - start
             debug('(loadDoc): execution time %dms', end)
@@ -142,11 +152,9 @@ export class Upwell {
   }
 
   static create(options?: UpwellOptions): Upwell {
-    let upwell = new Upwell()
-    let layer = Layer.create('Document initialized', options?.author || 'Unknown')
     let id = options?.id || nanoid()
-    upwell.metadata = UpwellMetadata.create(id, layer.id)
-    upwell.add(layer)
+    let author = options?.author || 'nknown'
+    let upwell = new Upwell(id, author)
     return upwell
   }
 
