@@ -208,15 +208,15 @@ export class Layer {
   }
 
   fork(message: string, author: Author): Layer {
-    let id = nanoid()
-    let doc = this.doc.fork()
-    doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'author', author)
-    doc.set(ROOT, 'shared', false)
-    doc.set(ROOT, 'time', Date.now())
-    doc.set(ROOT, 'archived', false)
-    doc.set(ROOT, 'parent_id', this.id)
-    return new Layer(id, doc)
+    let layer = Layer.create(message, author)
+    layer.doc.applyChanges(this.doc.getChanges([]))
+    layer.doc.set(ROOT, 'message', message)
+    layer.doc.set(ROOT, 'author', author)
+    layer.doc.set(ROOT, 'shared', false)
+    layer.doc.set(ROOT, 'time', Date.now())
+    layer.doc.set(ROOT, 'archived', false)
+    layer.doc.set(ROOT, 'parent_id', this.id)
+    return layer
   }
 
   merge(theirs: Layer) {
