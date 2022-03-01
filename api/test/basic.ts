@@ -139,9 +139,7 @@ describe('upwell', () => {
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
-
-    doc.shared = true
-
+    d.share(doc.id)
     assert.equal(doc.shared, true)
 
     let serialized = doc.save()
@@ -174,6 +172,33 @@ describe('upwell', () => {
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
     assert.deepEqual(root.metadata, doc.metadata)
+  })
 
+  it('maintains keys when multiple documents involved', () => {
+    let first_author: Author =  'Susan'
+    let d = Upwell.create({ author: first_author })
+
+    let og = d.layers()[0]
+
+    let layer = og.fork('', first_author)
+    d.add(layer)
+    d.share(layer.id)
+
+    let boop = layer.fork('', first_author)
+    d.add(boop)
+
+    assert.equal(d.layers().filter(l => l.shared).length, 1)
+
+    boop = boop.fork('', first_author)
+    d.add(boop)
+    d.share(boop.id)
+
+
+    boop = boop.fork('', first_author)
+    d.add(boop)
+
+    for (let i = 0; i < 100; i++) {
+      assert.equal(d.layers().filter(l => l.shared).length, 2)
+    }
   })
 })

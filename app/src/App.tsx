@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import DocumentView from "./components/DocumentView";
 import { Route, useLocation } from "wouter";
-import * as Documents from './Documents'
+import Documents from './Documents'
 import catnames from "cat-names";
 require("setimmediate"); 
+
+let documents = Documents()
 
 export default function App() {
   let [author, setAuthor] = useState<string>("");
@@ -19,7 +21,7 @@ export default function App() {
   }, [author]);
 
   async function newUpwell() {
-    let doc = await Documents.create()
+    let doc = await documents.create()
     setLocation('/document/' + doc.id)
   }
 

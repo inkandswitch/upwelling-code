@@ -1,31 +1,34 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";        
 import React  from "react";
-import { Author, Layer } from "api";
+import { Author } from "api";
 import { ReviewView } from "./Review";
 import { TextAreaView } from "./TextArea";
+import Documents from '../Documents'
+
+let documents = Documents()
 
 
 // visible 0 or more layers NOT including root
 // root
 
-type Props = { visible: Layer[], root: Layer | undefined, onChange: any, author: Author}
+type Props = { id: string, visible: string[], onChange: any, author: Author}
 
 export function EditReviewView(props: Props) {
-
-  const { author, root, visible, onChange } = props;
+  const { author, id, visible, onChange } = props;
+  let upwell = documents.get(id)
+  let root = upwell.rootLayer()
 
   let [reviewMode, setReviewMode] = React.useState<Boolean>(false);
   if (!root) return <div></div>
 
   // visible.length === 0 or visible.length > 1
-  let reviewView = <ReviewView visible={visible} rootLayer={root}></ReviewView>
-  let textArea = <TextAreaView onChange={onChange} editableLayer={visible[0]}></TextAreaView>
+  let reviewView = <ReviewView id={id} visible={visible}></ReviewView>
   let component = reviewView 
   if (visible.length === 1) {
-    if (author !== visible[0].author) {
-      component = <ReviewView visible={visible} rootLayer={root}></ReviewView>
-    } else {
+    let layer = upwell.get(visible[0])
+    if (author === layer.author) {
+      let textArea = <TextAreaView onChange={onChange} editableLayer={layer}></TextAreaView>
       component = <React.Fragment>
         {reviewMode ? reviewView : textArea}
           <button

@@ -1,10 +1,11 @@
-import { Layer } from './Layer';
+import { LazyLayer, Layer, Subscriber } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import Debug from 'debug';
+import { loadDoc } from 'automerge-wasm-pack';
 
 export type Author = string 
 
@@ -13,7 +14,7 @@ export type UpwellOptions = {
   author?: Author,
 }
 
-const debug = Debug('Upwell')
+const debug = Debug('upwell')
 const LAYER_EXT = '.layer'
 const METADATA_KEY = 'metadata.automerge'
 
@@ -21,6 +22,11 @@ const METADATA_KEY = 'metadata.automerge'
 export class Upwell {
   _layers: Map<string, Layer> = new Map();
   metadata: UpwellMetadata
+  subscriber: Function = function noop () {}
+
+  constructor(metadata: UpwellMetadata) {
+    this.metadata = metadata
+  }
 
   get id() {
     return this.metadata.id
@@ -28,7 +34,17 @@ export class Upwell {
 
   rootLayer() {
     let rootId = this.metadata.main
-    return this.layers().find(l => l.id === rootId)
+    let root = this.layers().find(l => l.id === rootId)
+    if (!root) throw new Error('No root?')
+    return root
+  }
+
+  subscribe(subscriber: Function) {
+    this.subscriber = subscriber
+  }
+
+  unsubscribe() {
+    this.subscriber  = function noop () {}
   }
 
   layers(): Layer[] {
@@ -36,29 +52,40 @@ export class Upwell {
   }
 
   add(layer: Layer): void {
-    let existing = this.get(layer.id)
-    if (existing) {
+    try {
+      let existing = this.get(layer.id)
       // we know about this layer already.
       // merge this layer with our existing layer 
-      let merged = Layer.merge(existing, layer)
-      this.set(merged.id, merged)
-    } else { 
+      existing.merge(layer)
+      this.set(existing.id, existing)
+    } catch (err) { 
       this.set(layer.id, layer)
     }
+    this.subscriber()
+  }
+
+  share(id: string): void{
+    let layer = this.get(id)
+    layer.shared = true
+    this.set(id, layer)
+    this.subscriber()
   }
 
   archive(id: string): void {
     let layer = this.get(id)
     layer.archived = true
     this.set(id, layer)
+    this.subscriber()
   }
 
   set(id: string, layer: Layer) {
     return this._layers.set(id, layer)
   }
 
-  get(id: string): Layer | null { 
-    return this._layers.get(id)
+  get(id: string): Layer { 
+    let layer = this._layers.get(id)
+    if (!layer) throw new Error('No layer with id=' + id)
+    return layer
   }
 
   async toFile(): Promise<Buffer> {
@@ -75,13 +102,13 @@ export class Upwell {
 
   static deserialize(stream: Readable): Promise<Upwell> {
     return new Promise<Upwell>((resolve, reject) => {
-      let upwell = new Upwell()
+      let upwell = new Upwell(UpwellMetadata.create(nanoid(), 'Unknown'))
 
-      let unpackFileStream = (stream, next) => {
-        let concatStream = concat((buf) => {
+      let unpackFileStream = (stream: any, next: Function) => {
+        let concatStream = concat((buf: Buffer) => {
           next(buf)
         })
-        stream.on('error', (err) => {
+        stream.on('error', (err: Error) => {
           console.error(err)
         })
         stream.pipe(concatStream)
@@ -91,16 +118,16 @@ export class Upwell {
       let extract = tar.extract()
       extract.on('entry', (header, stream, next) => {
         if (header.name === METADATA_KEY) {
-          unpackFileStream(stream, (buf) => {
+          unpackFileStream(stream, (buf: Buffer) => {
             upwell.metadata = UpwellMetadata.load(buf)
             next()
           })
         } else {
-          unpackFileStream(stream, (buf) => {
+          unpackFileStream(stream, (buf: Buffer) => {
             let filename = header.name
             let id = filename.split('.')[0]
             var start = new Date()
-            let layer = Layer.lazyLoad(id, buf)
+            let layer = Layer.load(id, buf)
             //@ts-ignore
             var end = new Date() - start
             debug('(loadDoc): execution time %dms', end)
@@ -136,11 +163,13 @@ export class Upwell {
   }
 
   static create(options?: UpwellOptions): Upwell {
-    let upwell = new Upwell()
-    let layer = Layer.create('Document initialized', options?.author || 'Unknown')
     let id = options?.id || nanoid()
-    upwell.metadata = UpwellMetadata.create(id, layer.id)
+    let author = options?.author || 'nknown'
+    let layer = Layer.create('Document initialized', author)
+    let metadata = UpwellMetadata.create(id, layer.id)
+    let upwell = new Upwell(metadata)
     upwell.add(layer)
+
     return upwell
   }
 
@@ -157,6 +186,7 @@ export class Upwell {
     let ours = this.metadata
     ours.doc.merge(theirs.doc)
     this.metadata = ours
+    this.subscriber()
   }
 }
 

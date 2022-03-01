@@ -1,15 +1,18 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from "@emotion/react/macro";
-import React from "react";
+import React,{useEffect, useState} from "react";
 import { Layer } from "api";
 import { JSX } from "@emotion/react/jsx-runtime";
 //@ts-ignore
 import relativeDate from "relative-date";
-import {TextareaInput} from "./Input";
+import { TextareaInput } from "./Input";
+import Documents from '../Documents'
+
+let documents = Documents()
 
 const tabStyles = css`
   border: 1px #b9b9b9 solid;
-  background: white;
+  background: #eaeaea;
   border-left: 1px solid lightgray;
   margin-right: 16px;
   padding: 12px 10px 12px 10px;
@@ -17,12 +20,17 @@ const tabStyles = css`
   box-sizing: content-box;
   line-height: 16px;
 `;
-const tabVisibleStyles = css`
-  background: white;
+
+const extendedTabStyles = css`
   border: 1px lightgray solid;
-  border-radius: 0 10px 10px 0; /* top rounded edges */
   padding-left: 27px;
   margin-right: 0;
+  border-radius: 0 10px 10px 0; /* top rounded edges */
+`;
+
+const tabVisibleStyles = css`
+  ${extendedTabStyles}
+  background: white;
   min-height: 60px;
   max-height: 120px;
 `;
@@ -63,6 +71,7 @@ export const InfoTab = (
       ${tabStyles};
       background: none;
       border: none;
+      color: white;
     `}
     {...props}
   />
@@ -103,7 +112,14 @@ const fileTabBottomStyles = css`
   margin-bottom: -6px;
 `;
 const fileTabMergedStyles = css`
-  background: #eaeaea;
+  ${extendedTabStyles}
+  background: gray;
+  border-color: #4d4d4d;
+  cursor: not-allowed;
+  border-left-color: transparent;
+  &:hover {
+    background: gray;
+  }
 `;
 
 export const FileTab = ({
@@ -124,17 +140,16 @@ export const FileTab = ({
       cursor: pointer;
       max-height: 80px;
       z-index: ${isBottom ? 1000 + index : 1000 - index};
-      ${isVisible ? tabVisibleStyles : ""}
-      ${isBottom ? fileTabBottomStyles : ""}
-      ${isMerged ? fileTabMergedStyles : ""}
-
       &:hover {
         background: #d1eaff;
       }
-      &:first-child {
+      &:first-of-type {
         margin-top: 0px;
         border-radius: 0 10px 10px 0;
       }
+      ${isVisible ? tabVisibleStyles : ""}
+      ${isBottom ? fileTabBottomStyles : ""}
+      ${isMerged ? fileTabMergedStyles : ""}
     `}
     role="button"
     onClick={props.onClick}
@@ -144,7 +159,7 @@ export const FileTab = ({
 
 export const sidewaysTabStyle = css`
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: flex-end;
   overflow: auto; /* scroll tabs when they collide */
 `;
@@ -158,25 +173,37 @@ const editableTabStyle = css`
 type Props = {
   onLayerClick: Function;
   onInputBlur: Function;
-  editableLayer?: Layer;
-  layers: Layer[];
-  visible: Layer[];
+  editableLayer?: string;
+  id: string,
+  visible: string[];
   handleShareClick?: any; // TODO
+  handleDeleteClick?: any; // TODO
   isBottom?: boolean;
   isMerged?: boolean;
 };
 
 export default function ListDocuments({
-  layers,
   onLayerClick,
   handleShareClick,
+  handleDeleteClick,
   onInputBlur,
   editableLayer,
   visible,
+  id,
   isBottom = false,
   isMerged = false,
 }: Props) {
-  return (
+  let [layers, setLayers] = useState<Layer[]>([])
+
+  useEffect(() => {
+    let upwell = documents.get(id)
+    setLayers(upwell.layers())
+    upwell.subscribe(() => {
+      setLayers(upwell.layers())
+    })
+
+  }, [id])
+ return (
     <div
       css={css`
         ${sidewaysTabStyle}
@@ -184,7 +211,7 @@ export default function ListDocuments({
       `}
     >
       {layers.map((layer: Layer, index) => {
-        let visibleMaybe = visible.findIndex((l) => l.id === layer.id);
+        let visibleMaybe = visible.findIndex((id) => id === layer.id);
         return (
           <FileTab
             key={layer.id}
@@ -203,7 +230,7 @@ export default function ListDocuments({
               flex-direction: row;
               justify-content: flex-start;
               align-items: flex-start;
-              ${editableLayer?.id === layer.id ? editableTabStyle : ""}
+              ${editableLayer === layer.id ? editableTabStyle : ""}
             `}
           >
             {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
@@ -220,25 +247,46 @@ export default function ListDocuments({
                 onInputBlur(e, layer);
               }}
             />
-            {!layer.shared && (
-              <EmojiButton
-                css={wiggleStyle}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (
-                    // eslint-disable-next-line no-restricted-globals
-                    confirm(
-                      "Do you want to share your layer? it can't be unshared."
-                    )
-                  ) {
-                    handleShareClick(layer);
-                  }
-                }}
-              >
-                ↓
-              </EmojiButton>
-            )}
+            <div>
+              {!layer.shared && (
+                <EmojiButton
+                  css={wiggleStyle}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (
+                      // eslint-disable-next-line no-restricted-globals
+                      confirm(
+                        "Do you want to share your layer? it can't be unshared."
+                      )
+                    ) {
+                      handleShareClick(layer);
+                    }
+                  }}
+                >
+                  ↓
+                </EmojiButton>
+              )}
+              {!isMerged && (
+                <EmojiButton
+                  css={wiggleStyle}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (
+                      // eslint-disable-next-line no-restricted-globals
+                      confirm(
+                        "Do you want to delete this layer? you can't get it back as of yet."
+                      )
+                    ) {
+                      handleDeleteClick(layer);
+                    }
+                  }}
+                >
+                  🗑
+                </EmojiButton>
+              )}
+            </div>
           </FileTab>
         );
       })}

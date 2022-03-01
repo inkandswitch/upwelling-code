@@ -2,11 +2,8 @@
 import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
 import { Upwell, Author, Layer } from "api";
-import ListDocuments, {
-  ButtonTab,
-  InfoTab,
-} from "./ListDocuments";
-import * as Documents from "../Documents";
+import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
+import Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
@@ -14,96 +11,86 @@ import { SYNC_STATE } from '../types';
 import { SyncIndicator } from "./SyncIndicator";
 import Input from "./Input";
 
+let documents = Documents()
+
 type DocumentViewProps = {
-  id: string,
-  author: Author
+  id: string;
+  author: Author;
 };
 
 const AUTOSAVE_INTERVAL = 3000; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
-  let [layers, setLayers] = React.useState<Layer[]>([]);
-  let [root, setRoot] = React.useState<Layer>();
-  let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
+  let [rootId, setRootId] = React.useState<string>();
 
   function render(upwell: Upwell) {
-    let layers = upwell.layers().reverse()
-    let root = upwell.rootLayer()
-    setRoot(root);
-    setLayers(layers.filter(l => l.id !== root.id));
+    console.log('rendering', upwell.id)
+    let root = upwell.rootLayer();
+    setRootId(root.id);
   }
 
   useEffect(() => {
-    async function get () {
-      let upwell 
+    async function get() {
+      let upwell;
       try {
-        upwell = await Documents.open(props.id) 
+        upwell = await documents.open(props.id);
       } catch (err) {
-        upwell = null
+        upwell = null;
       }
 
       try {
-        if (!upwell) upwell = await Documents.sync(props.id)
-        render(upwell)
+        if (!upwell) upwell = await documents.sync(props.id);
+        render(upwell);
       } catch (err) {
-        let upwell = await Documents.create(props.id)
-        render(upwell)
+        let upwell = await documents.create(props.id);
+        render(upwell);
       }
     }
 
-    get()
-
+    get();
   }, [props.id]);
-  let save = () => {
-    Documents.save(props.id).then((upwell) => {
-      Documents.sync(props.id).then(() => {
-        let upwell = Documents.get(props.id)
-        Documents.save(props.id)
-        setSyncState(SYNC_STATE.SYNCED)
-        render(upwell)
-      }).catch(err => {
-        setSyncState(SYNC_STATE.OFFLINE)
-        render(upwell)
-        console.error('failed to sync', err)
-      })
-    })
-  }
 
-  let debouncedSave = debounce(async () => {
-    console.log('debounce')
-    save()
-  }, AUTOSAVE_INTERVAL);
-
-
-  function onChangeMade (debounce: boolean) {
-    setSyncState(SYNC_STATE.LOADING)
-    if (debounce) debouncedSave()
-    else save()
-  }
-
-  if (!root) return <div>Loading..</div>;
-  return <DocumentView
-    id={props.id}
-    sync_state={sync_state}
-    layers={layers}
-    onChangeMade={onChangeMade}
-    root={root}
-    author={props.author}
-  />;
+  if (!rootId) return <div>Loading..</div>;
+  return (
+    <DocumentView
+      id={props.id}
+      rootId={rootId}
+      author={props.author}
+    />
+  );
 }
 
-
 export function DocumentView(props: {
-  id: string,
-  layers: Layer[],
-  root?: Layer,
-  author: Author,
-  sync_state: SYNC_STATE,
-  onChangeMade: Function
+  id: string;
+  rootId: string;
+  author: Author;
 }) {
-  const { id, root, layers, author, sync_state, onChangeMade } = props;
-  
-  let [visible, setVisible] = React.useState<Layer[]>(layers.length ? layers.slice(0, 1) : []);
+  const { id, author, } = props;
+  let [visible, setVisible] = React.useState<string[]>([]);
+  let [rootId, setRootId] = React.useState<string>(props.rootId);
+  let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
+
+  function render(upwell: Upwell) {
+    console.log('rendering', upwell.id)
+    let root = upwell.rootLayer();
+    setRootId(root.id);
+  }
+
+  function onChangeMade() {
+    setSyncState(SYNC_STATE.LOADING)
+    documents.save(props.id);
+    let upwell = documents.get(props.id);
+    render(upwell);
+    documents.sync(props.id)
+      .then((upwell) => {
+        setSyncState(SYNC_STATE.SYNCED)
+        render(upwell);
+      })
+      .catch((err) => {
+        setSyncState(SYNC_STATE.OFFLINE)
+        console.error("failed to sync", err);
+      });
+  }
 
   let onArchiveClick = () => {
     setVisible([]);
@@ -111,11 +98,11 @@ export function DocumentView(props: {
   };
 
   let onLayerClick = (layer: Layer) => {
-    let exists = visible.findIndex((l) => l.id === layer.id);
+    let exists = visible.findIndex((id) => id === layer.id);
     if (exists > -1) {
-      setVisible(visible.filter((l) => l.id !== layer.id));
+      setVisible(visible.filter((id) => id !== layer.id));
     } else {
-      setVisible(visible.concat([layer]));
+      setVisible(visible.concat([layer.id]));
     }
   };
 
@@ -123,33 +110,43 @@ export function DocumentView(props: {
     e: React.FocusEvent<HTMLInputElement, Element>,
     l: Layer
   ) => {
-    let upwell = Documents.get(id);
+    let upwell = documents.get(id);
     l.message = e.target.value;
     upwell.set(l.id, l);
     onChangeMade();
   };
 
-  let onTextChange = () => {
-    onChangeMade(true)
-  }
+  let onTextChange = debounce(async (layer: Layer) => {
+    // this is saving every time text changes, do we want this??????
+    onChangeMade();
+  }, AUTOSAVE_INTERVAL);
 
   let onCreateLayer = async () => {
     let message = "";
     // always forking from root layer (for now)
-    let upwell = Documents.get(id)
+    let upwell = documents.get(id);
     let root = upwell.rootLayer();
     let newLayer = root.fork(message, author);
     upwell.add(newLayer);
-    onChangeMade()
-    setVisible([newLayer])
+    onChangeMade();
   };
 
   let handleShareClick = (l: Layer) => {
-    let upwell = Documents.get(id)
-    l.shared = true;
-    upwell.set(l.id, l)
-    onChangeMade()
-  }
+    let upwell = documents.get(id);
+    upwell.share(l.id);
+    onChangeMade();
+  };
+
+  const handleDeleteClick = (l: Layer) => {
+    let upwell = documents.get(id);
+    upwell.archive(l.id);
+
+    // also remove from visible list
+    const newVisible = visible.filter((id: string) => l.id !== id);
+    setVisible(newVisible);
+
+    onChangeMade();
+  };
 
   let getEditableLayer = () => {
     if (visible.length === 1) return visible[0];
@@ -157,21 +154,24 @@ export function DocumentView(props: {
   };
 
   let mergeVisible = async () => {
-    if (!root) return console.error("no root race condition");
-    let upwell = Documents.get(id)
-    let merged = visible.reduce((prev: Layer, cur: Layer) => {
-      if (cur.id !== root?.id) {
-        upwell.archive(cur.id);
+    if (!rootId) return console.error("no root race condition");
+    let upwell = documents.get(id);
+    let merged = visible.reduce((prev: Layer, cur: string) => {
+
+      if (cur !== rootId) {
+        upwell.archive(cur);
+        upwell.share(cur);
       }
-      return Layer.merge(prev, cur);
-    }, root);
+      let cur_layer = upwell.get(cur)
+      prev.merge(cur_layer);
+      return prev
+    }, upwell.rootLayer());
     upwell.add(merged);
-    onChangeMade()
+    onChangeMade();
     setVisible([]);
   };
-  let sharedLayers = layers.filter((l: Layer) => !l.archived && l.shared && l.id !== root?.id)
-                  
-  if (!root) return <div>Loading...</div>
+
+
   return (
     <div
       id="folio"
@@ -192,8 +192,6 @@ export function DocumentView(props: {
           margin-left: auto;
           margin-right: auto;
           padding: 20px 40px 40px;
-          padding-right: 20px;
-          background: #ccecc1;
           border-radius: 10px;
           display: flex;
           flex-direction: row;
@@ -202,10 +200,10 @@ export function DocumentView(props: {
       >
 
         <EditReviewView
+          id={id}
           onChange={onTextChange}
           visible={visible}
           author={author}
-          root={root}
         ></EditReviewView>
         <div
           id="right-side"
@@ -216,64 +214,24 @@ export function DocumentView(props: {
             margin-left: -1px;
           `}
         >
-          <div id="private" css={css``}>
-            <InfoTab css={css``} title="Layers area">
-              🌱 local
-            </InfoTab>
-            <ButtonTab onClick={onCreateLayer} title="new layer">
-              ➕
-            </ButtonTab>
+          <ButtonTab onClick={onCreateLayer} title="new layer">
+            ➕
+          </ButtonTab>
             <ListDocuments
-              onLayerClick={onLayerClick}
-              layers={layers.filter(
-                (l: Layer) =>
-                  !l.archived &&
-                  !l.shared &&
-                  l.id !== root?.id &&
-                  l.author === author
-              )}
-              visible={visible}
-              handleShareClick={handleShareClick}
-              onInputBlur={handleFileNameInputBlur}
-              editableLayer={getEditableLayer()}
+            id={id}
+            onLayerClick={onLayerClick}
+            visible={visible}
+            handleShareClick={handleShareClick}
+            handleDeleteClick={handleDeleteClick}
+            onInputBlur={handleFileNameInputBlur}
+            editableLayer={getEditableLayer()}
             />
-          </div>
-          <div>
-            {sharedLayers.length > 0 && (
-              <>
-                <InfoTab title="shared layers">🎂 shared</InfoTab>
-                <ListDocuments
-                  onLayerClick={onLayerClick}
-                  visible={visible}
-                  layers={sharedLayers}
-                  onInputBlur={handleFileNameInputBlur}
-                  editableLayer={getEditableLayer()}
-                />
-              </>
-            )}
-          </div>
-          <div>
-            <InfoTab css={css``} title="Archived area">
-              📁 merged
-            </InfoTab>
-            <>
-              <ListDocuments
-                isMerged
-                onLayerClick={onArchiveClick}
-                visible={visible}
-                layers={layers.filter(
-                  (l: Layer) => l.archived && l.id !== root?.id
-                )}
-                onInputBlur={handleFileNameInputBlur}
-              />
-            </>
-          </div>
         </div>
         <div
           id="bottom-bar"
           css={css`
             position: absolute;
-            bottom: 0;
+            bottom: -14px;
             left: 0;
             width: 100%;
             display: flex;
@@ -284,14 +242,16 @@ export function DocumentView(props: {
         >
           <div
             css={css`
-              color: gray;
+              color: white;
             `}
           >
-            This notebook belongs to{` `}
+            Your name is{` `}
             <Input
+              readOnly
               css={css`
                 font-size: 16px;
                 cursor: not-allowed;
+                color: white;
               `}
               value={author}
             />

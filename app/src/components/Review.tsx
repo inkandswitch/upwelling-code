@@ -1,26 +1,38 @@
 /** @jsxImportSource @emotion/react */
 import React, { useCallback, useEffect } from "react";
+import { css } from "@emotion/react/macro";
 import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
 import UpwellSource from "./upwell-source"
 import { Layer } from "api";
 import { textCSS } from './TextArea';
+import Documents from '../Documents';
+
+let documents = Documents()
+
 
 type ReviewState = {
   atjsonLayer?: UpwellSource;
 };
 
-export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
-  const { rootLayer, visible } = props;
+export function ReviewView(props: {id: string, visible: string[]}) {
+  const { visible, id } = props;
+
 
   let updateAtjsonState = useCallback(async function () {
+    let upwell = documents.get(id)
+    let rootLayer = upwell.rootLayer()
     if (!visible.length) {
-      let atjsonLayer = new UpwellSource({ content: rootLayer.text, annotations: []})
-      setState({atjsonLayer })
+      let atjsonLayer = new UpwellSource({ content: rootLayer.text, annotations: [] })
+      setState({ atjsonLayer })
       return
     }
-    let mergedVisible = visible.slice(1).reduce(Layer.merge, visible[0])
-    let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
+    let layers = visible.map(id => upwell.get(id))
+    let mergedVisible = layers.slice(1).reduce((prev: Layer, cur: Layer) => {
+      prev.merge(cur)
+      return prev 
+    }, layers[0])
+    let editsLayer = rootLayer.mergeWithEdits(mergedVisible)
     let marks = editsLayer.marks.map((m: any) => {
       let attrs = JSON.parse(m.value)
       // I wonder if there's a (good) way to preserve identity of the mark
@@ -41,7 +53,7 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
 
     let atjsonLayer = new UpwellSource({content: editsLayer.text, annotations: marks});
     setState({ atjsonLayer: atjsonLayer });
-  }, [visible, rootLayer])
+  }, [id, visible])
 
   useEffect(() => {
     updateAtjsonState()
@@ -55,7 +67,14 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   } else {
     return (
       <ReactRendererProvider value={components}>
-        <article css={textCSS}>{ReactRenderer.render(state.atjsonLayer)}</article>
+        <article
+          css={css`
+            ${textCSS}
+            cursor: not-allowed;
+          `}
+        >
+          {ReactRenderer.render(state.atjsonLayer)}
+        </article>
       </ReactRendererProvider>
     )
   }
