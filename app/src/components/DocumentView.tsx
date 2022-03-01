@@ -12,6 +12,7 @@ import { EditReviewView } from "./EditReview";
 import debounce from "lodash.debounce";
 import { SYNC_STATE } from '../types';
 import { SyncIndicator } from "./SyncIndicator";
+import Input from "./Input";
 
 type DocumentViewProps = {
   id: string,
@@ -118,7 +119,7 @@ export function DocumentView(props: {
     }
   };
 
-  const handleInputBlur = (
+  const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>,
     l: Layer
   ) => {
@@ -196,6 +197,7 @@ export function DocumentView(props: {
           border-radius: 10px;
           display: flex;
           flex-direction: row;
+          position: relative;
         `}
       >
 
@@ -221,66 +223,81 @@ export function DocumentView(props: {
             <ButtonTab onClick={onCreateLayer} title="new layer">
               ➕
             </ButtonTab>
-              <ListDocuments
-                onLayerClick={onLayerClick}
-                layers={layers.filter(
-                  (l: Layer) =>
-                    !l.archived &&
-                    !l.shared &&
-                    l.id !== root?.id &&
-                    l.author === author
-                )}
-                visible={visible}
-                handleShareClick={handleShareClick}
-                onInputBlur={handleInputBlur}
-                editableLayer={getEditableLayer()}
-              />
+            <ListDocuments
+              onLayerClick={onLayerClick}
+              layers={layers.filter(
+                (l: Layer) =>
+                  !l.archived &&
+                  !l.shared &&
+                  l.id !== root?.id &&
+                  l.author === author
+              )}
+              visible={visible}
+              handleShareClick={handleShareClick}
+              onInputBlur={handleFileNameInputBlur}
+              editableLayer={getEditableLayer()}
+            />
           </div>
           <div>
-
-          {sharedLayers.length > 0 && 
-          <>
-            <InfoTab title="shared layers">
-              🎂 shared
-            </InfoTab>
+            {sharedLayers.length > 0 && (
+              <>
+                <InfoTab title="shared layers">🎂 shared</InfoTab>
                 <ListDocuments
-                  isBottom
                   onLayerClick={onLayerClick}
                   visible={visible}
                   layers={sharedLayers}
-                  onInputBlur={handleInputBlur}
+                  onInputBlur={handleFileNameInputBlur}
                   editableLayer={getEditableLayer()}
                 />
               </>
-          }
+            )}
           </div>
           <div>
             <InfoTab css={css``} title="Archived area">
               📁 merged
             </InfoTab>
             <>
-                <ListDocuments
-                  isBottom
-                  onLayerClick={onArchiveClick}
-                  visible={visible}
-                  layers={layers.filter(
-                    (l: Layer) => l.archived && l.id !== root?.id
-                  )}
-                  onInputBlur={handleInputBlur}
-                />
-              </>
+              <ListDocuments
+                isMerged
+                onLayerClick={onArchiveClick}
+                visible={visible}
+                layers={layers.filter(
+                  (l: Layer) => l.archived && l.id !== root?.id
+                )}
+                onInputBlur={handleFileNameInputBlur}
+              />
+            </>
           </div>
         </div>
-      </div>
-      <div
-        id="bottom-bar"
-        css={css`
+        <div
+          id="bottom-bar"
+          css={css`
             position: absolute;
-            bottom: 40px;
-            right: 150px;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 4px 38px;
           `}
-      >
-        <Button onClick={mergeVisible}>Merge visible</Button>
+        >
+          <div
+            css={css`
+              color: gray;
+            `}
+          >
+            This notebook belongs to{` `}
+            <Input
+              css={css`
+                font-size: 16px;
+                cursor: not-allowed;
+              `}
+              value={author}
+            />
+          </div>
+          <Button onClick={mergeVisible}>Merge visible</Button>
+        </div>
       </div>
     </div>
   );
