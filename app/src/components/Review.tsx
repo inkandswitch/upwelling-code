@@ -1,5 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import React, { useCallback, useEffect } from "react";
+import { css } from "@emotion/react/macro";
 import ReactRenderer, { ReactRendererProvider } from "@atjson/renderer-react";
 import * as components from "./review-components"
 import UpwellSource from "./upwell-source"
@@ -55,7 +56,14 @@ export function ReviewView(props: {visible: Layer[], rootLayer: Layer}) {
   } else {
     return (
       <ReactRendererProvider value={components}>
-        <article css={textCSS}>{ReactRenderer.render(state.atjsonLayer)}</article>
+        <article
+          css={css`
+            ${textCSS}
+            cursor: not-allowed;
+          `}
+        >
+          {ReactRenderer.render(state.atjsonLayer)}
+        </article>
       </ReactRendererProvider>
     )
   }
