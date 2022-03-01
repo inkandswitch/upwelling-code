@@ -172,6 +172,25 @@ describe('upwell', () => {
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
     assert.deepEqual(root.metadata, doc.metadata)
+  })
 
+  it('maintains keys when multiple documents involved', () => {
+    let first_author: Author =  'Susan'
+    let d = Upwell.create({ author: first_author })
+    let len = 100
+
+    let last = d.layers()[0]
+    for (let i = 0; i<len; i ++) {
+      last = last.fork('beep boop', first_author)
+      d.add(last)
+    }
+    let layers = d.layers()
+    assert.equal(layers.length, len + 1)
+    d.share(layers[3].id)
+    assert.equal(d.layers()[3].shared, true)
+
+    for (let i = 0; i < 100; i++) {
+      assert.equal(d.layers().filter(l => l.shared).length, 1)
+    }
   })
 })
