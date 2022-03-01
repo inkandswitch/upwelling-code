@@ -178,7 +178,6 @@ export function DocumentView(props: {
       css={css`
         height: 100vh;
         display: flex;
-        color: white;
         flex-direction: row;
         padding: 30px;
         background: url("/wood.png");
@@ -194,6 +193,7 @@ export function DocumentView(props: {
           margin-right: auto;
           padding: 20px 40px 40px;
           padding-right: 20px;
+          background: #ccecc1;
           border-radius: 10px;
           display: flex;
           flex-direction: row;
