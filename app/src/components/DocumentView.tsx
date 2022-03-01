@@ -3,11 +3,13 @@ import { css } from "@emotion/react/macro";
 import React, { useEffect } from "react";
 import { Upwell, Author, Layer } from "api";
 import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
-import * as Documents from "../Documents";
+import Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
 import Input from "./Input";
+
+let documents = Documents()
 
 type DocumentViewProps = {
   id: string;
