@@ -18,6 +18,7 @@ export type ChangeMetadata = {
   message: string,
   author: Author
 }
+
 export type Heads = string[];
 export type LayerMetadata = {
   id: string,
@@ -27,6 +28,7 @@ export type LayerMetadata = {
   message: string,
   archived: boolean
 }
+
 export type Edit = {
   type: 'insert' | 'delete' | 'retain',
   start: number,
@@ -217,15 +219,15 @@ export class Layer {
     return new Layer(id, doc)
   }
 
-  static merge(ours: Layer, theirs: Layer) {
-    let changes = theirs.doc.getChanges(ours.doc.getHeads())
-    ours.doc.applyChanges(changes)
-    return ours
+  merge(theirs: Layer) {
+    let changes = theirs.doc.getChanges(this.doc.getHeads())
+    this.doc.applyChanges(changes)
   }
 
-  static mergeWithEdits(ours: Layer, theirs: Layer) {
-    let edits = ours.getEdits(theirs)
-    let newLayer = Layer.merge(ours.fork('Merge', ours.author), theirs)
+  mergeWithEdits(theirs: Layer) {
+    let edits = this.getEdits(theirs)
+    let newLayer = Layer.create('Merge', this.author)
+    newLayer.merge(theirs)
 
     edits.forEach((edit) => {
       if (edit.type === 'retain') return

@@ -1,4 +1,4 @@
-import { LazyLayer, Layer } from './Layer';
+import { LazyLayer, Layer, Subscriber } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
@@ -22,6 +22,7 @@ const METADATA_KEY = 'metadata.automerge'
 export class Upwell {
   _layers: Map<string, Layer> = new Map();
   metadata: UpwellMetadata
+  subscriber: Function = function noop () {}
 
   constructor(metadata: UpwellMetadata) {
     this.metadata = metadata
@@ -38,6 +39,14 @@ export class Upwell {
     return root
   }
 
+  subscribe(subscriber: Function) {
+    this.subscriber = subscriber
+  }
+
+  unsubscribe() {
+    this.subscriber  = function noop () {}
+  }
+
   layers(): Layer[] {
     return Array.from(this._layers.values())
   }
@@ -47,23 +56,26 @@ export class Upwell {
       let existing = this.get(layer.id)
       // we know about this layer already.
       // merge this layer with our existing layer 
-      let merged = Layer.merge(existing, layer)
-      this.set(merged.id, merged)
+      existing.merge(layer)
+      this.set(existing.id, existing)
     } catch (err) { 
       this.set(layer.id, layer)
     }
+    this.subscriber()
   }
 
   share(id: string): void{
     let layer = this.get(id)
     layer.shared = true
     this.set(id, layer)
+    this.subscriber()
   }
 
   archive(id: string): void {
     let layer = this.get(id)
     layer.archived = true
     this.set(id, layer)
+    this.subscriber()
   }
 
   set(id: string, layer: Layer) {
@@ -174,6 +186,7 @@ export class Upwell {
     let ours = this.metadata
     ours.doc.merge(theirs.doc)
     this.metadata = ours
+    this.subscriber()
   }
 }
 
