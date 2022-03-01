@@ -76,7 +76,7 @@ export default function MaybeDocument(props: DocumentViewProps) {
 export function DocumentView(props: {
   id: string;
   layers: Layer[];
-  root?: Layer;
+  root: Layer;
   author: Author;
   onChangeMade: Function;
 }) {

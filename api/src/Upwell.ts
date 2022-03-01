@@ -1,10 +1,11 @@
-import { Layer } from './Layer';
+import { LazyLayer, Layer } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import Debug from 'debug';
+import { loadDoc } from 'automerge-wasm-pack';
 
 export type Author = string 
 
@@ -13,7 +14,7 @@ export type UpwellOptions = {
   author?: Author,
 }
 
-const debug = Debug('Upwell')
+const debug = Debug('upwell')
 const LAYER_EXT = '.layer'
 const METADATA_KEY = 'metadata.automerge'
 
@@ -22,10 +23,8 @@ export class Upwell {
   _layers: Map<string, Layer> = new Map();
   metadata: UpwellMetadata
 
-  constructor(id: string, author: string) {
-    let layer = Layer.create('Document initialized', author)
-    this.metadata = UpwellMetadata.create(id, layer.id)
-    this.add(layer)
+  constructor(metadata: UpwellMetadata) {
+    this.metadata = metadata
   }
 
   get id() {
@@ -44,13 +43,13 @@ export class Upwell {
   }
 
   add(layer: Layer): void {
-    let existing = this.get(layer.id)
-    if (existing) {
+    try {
+      let existing = this.get(layer.id)
       // we know about this layer already.
       // merge this layer with our existing layer 
       let merged = Layer.merge(existing, layer)
       this.set(merged.id, merged)
-    } else { 
+    } catch (err) { 
       this.set(layer.id, layer)
     }
   }
@@ -91,7 +90,7 @@ export class Upwell {
 
   static deserialize(stream: Readable): Promise<Upwell> {
     return new Promise<Upwell>((resolve, reject) => {
-      let upwell = new Upwell('DUMMY', 'UNKNOWN')
+      let upwell = new Upwell(UpwellMetadata.create(nanoid(), 'Unknown'))
 
       let unpackFileStream = (stream: any, next: Function) => {
         let concatStream = concat((buf: Buffer) => {
@@ -154,7 +153,11 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || 'nknown'
-    let upwell = new Upwell(id, author)
+    let layer = Layer.create('Document initialized', author)
+    let metadata = UpwellMetadata.create(id, layer.id)
+    let upwell = new Upwell(metadata)
+    upwell.add(layer)
+
     return upwell
   }
 

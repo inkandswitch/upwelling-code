@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import init from 'automerge-wasm-pack'
-import { TEXT, Automerge, loadDoc, create, Value }  from 'automerge-wasm-pack';
+import { Automerge, loadDoc, create, Value }  from 'automerge-wasm-pack';
 import { Author } from './Upwell';
 import * as Diff from 'diff';
 
@@ -27,28 +27,34 @@ export type LayerMetadata = {
   message: string,
   archived: boolean
 }
+export type Edit = {
+  type: 'insert' | 'delete' | 'retain',
+  start: number,
+  value: string
+}
 export type Subscriber = (doc: Layer, heads: Heads) => void 
 
 export class LazyLayer {
   binary: Buffer
   id: string
-  constructor(binary: Buffer, id: string) {
+  constructor(id: string, binary: Buffer) {
     this.binary = binary
     this.id = id 
   }
 
   hydrate() {
-    return new Layer(loadDoc(this.binary))
+    return new Layer(this.id, loadDoc(this.binary))
   }
 }
 
 export class Layer {
-  id: string = nanoid()
+  id: string
   doc: Automerge
   private heads?: Heads;
   private subscriber?: Subscriber 
 
-  constructor(doc: Automerge) {
+  constructor(id: string, doc: Automerge) {
+    this.id = id
     this.doc = doc
   }
 
@@ -138,7 +144,7 @@ export class Layer {
     this.subscriber = subscriber  
   }
 
-  getEdits(other: Layer) {
+  getEdits(other: Layer): Edit[] {
     let ours = this.text
     let theirs = other.text
 
@@ -146,7 +152,7 @@ export class Layer {
 
     let idx = 0
     return diffs.map(d => {
-      let type: string
+      let type
 
       if (d.added) {
         type = 'insert'
@@ -200,6 +206,7 @@ export class Layer {
   }
 
   fork(message: string, author: Author): Layer {
+    let id = nanoid()
     let doc = this.doc.fork()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
@@ -207,7 +214,7 @@ export class Layer {
     doc.set(ROOT, 'time', Date.now())
     doc.set(ROOT, 'archived', false)
     doc.set(ROOT, 'parent_id', this.id)
-    return new Layer(doc)
+    return new Layer(id, doc)
   }
 
   static merge(ours: Layer, theirs: Layer) {
@@ -250,21 +257,21 @@ export class Layer {
 
   static load(id: string, binary: Uint8Array): Layer {
     let doc = loadDoc(binary)
-    let layer = new Layer(doc)
-    layer.id = id
+    let layer = new Layer(id, doc)
     return layer
   }
 
   static create(message: string, author: Author): Layer {
     let doc = create()
+    let id = nanoid()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
     doc.set(ROOT, 'shared', false)
     doc.set(ROOT, 'time', Date.now())
     doc.set(ROOT, 'archived', false)
-    doc.make(ROOT, 'title', TEXT)
-    doc.make(ROOT, 'text', TEXT)
-    return new Layer(doc)
+    doc.make(ROOT, 'title', '', 'text')
+    doc.make(ROOT, 'text', '', 'text')
+    return new Layer(id, doc)
   }
 
   commit(message: string): Heads {
