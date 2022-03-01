@@ -2,9 +2,9 @@
 
 [Demo](https://upwelling.vercel.app/)
 
-## Step 0: Get on Node v16, and yarn
+## Setup 
 
-We recommend you use nvm. To install:
+Get on Node v16. We recommend you use nvm. To install:
 
 ```
 wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
@@ -21,4 +21,24 @@ To set 16 as the default, do
 
 ```
 nvm alias default 16
+```
+
+## Development
+
+```
+npm run build
+```
+
+or, to watch as you edit the files:
+
+```
+npm run watch
+```
+
+## Release
+
+To package it up into a js bundle for release:
+
+```
+npm run release
 ```
