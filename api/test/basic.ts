@@ -174,7 +174,7 @@ describe('upwell', () => {
     assert.deepEqual(root.metadata, doc.metadata)
   })
 
-  it.only('maintains keys when multiple documents involved', () => {
+  it('maintains keys when multiple documents involved', () => {
     let first_author: Author =  'Susan'
     let d = Upwell.create({ author: first_author })
 
