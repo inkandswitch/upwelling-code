@@ -33,7 +33,6 @@
     "d3-color": "^3.0.1",
     "dotenv": "^10.0.0",
     "dotenv-expand": "^5.1.0",
-    "eslint": "^8.3.0",
     "eslint-config-react-app": "^7.0.0",
     "eslint-webpack-plugin": "^3.1.1",
     "file-loader": "^6.2.0",
@@ -83,7 +82,8 @@
     "start": "node scripts/start.js",
     "build:api": "cd ../api && npm i && npm run build && cd ../app",
     "build": "node scripts/build.js",
-    "test": "node scripts/test.js"
+    "test": "node scripts/test.js",
+    "lint": "prettier -w src && eslint --ext .ts,.tsx src/"
   },
   "eslintConfig": {
     "extends": [
@@ -115,6 +115,7 @@
     "crypto-browserify": "^3.12.0",
     "fake-indexeddb": "^3.1.7",
     "path-browserify": "^1.0.1",
+    "prettier": "^2.5.1",
     "stream-browserify": "^3.0.0",
     "web-encoding": "^1.1.5"
   },
@@ -173,5 +174,9 @@
     "presets": [
       "react-app"
     ]
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true
   }
 }

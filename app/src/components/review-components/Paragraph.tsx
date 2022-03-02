@@ -1,9 +1,7 @@
-import { AttributesOf } from "@atjson/document";
-import * as React from "react";
-import { Paragraph as Annotation } from "../upwell-source";
+import { AttributesOf } from '@atjson/document'
+import * as React from 'react'
+import { Paragraph as Annotation } from '../upwell-source'
 
 export const Paragraph: React.FC<AttributesOf<Annotation>> = (props) => {
-  return (
-    <p>{props.children}</p>
-  );
-};
+  return <p>{props.children}</p>
+}
