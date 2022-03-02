@@ -259,51 +259,16 @@ export function DocumentView(props: {
               ➕
             </ButtonTab>
             <ListDocuments
+              isBottom
+              id={id}
               onLayerClick={onLayerClick}
-              colors={authorColors}
-              layers={layers.filter(
-                (l: Layer) =>
-                  !l.archived &&
-                  !l.shared &&
-                  l.id !== root?.id &&
-                  l.author === author
-              )}
               visible={visible}
-              handleShareClick={handleShareClick}
-              handleDeleteClick={handleDeleteClick}
+              layers={layers.filter(
+                (l: Layer) => l.archived && l.id !== root?.id
+              )}
               onInputBlur={handleFileNameInputBlur}
-              editableLayer={getEditableLayer()}
             />
           </div>
-          <div>
-            {sharedLayers.length > 0 && (
-              <>
-                <InfoTab title="shared layers">🎂 shared</InfoTab>
-                <ListDocuments
-                  onLayerClick={onLayerClick}
-                  colors={authorColors}
-                  visible={visible}
-                  handleDeleteClick={handleDeleteClick}
-                  layers={sharedLayers}
-                  onInputBlur={handleFileNameInputBlur}
-                  editableLayer={getEditableLayer()}
-                />
-              </>
-            )}
-          </div>
-          <InfoTab css={css``} title="Archived area">
-            📁 merged
-          </InfoTab>
-          <ListDocuments
-            isMerged
-            onLayerClick={onArchiveClick}
-            colors={authorColors}
-            visible={visible}
-            layers={layers.filter(
-              (l: Layer) => l.archived && l.id !== root?.id
-            )}
-            onInputBlur={handleFileNameInputBlur}
-          />
         </div>
         <div
           id="bottom-bar"
