@@ -215,7 +215,6 @@ export class Layer {
   }
 
   merge(theirs: Layer) {
-    console.log('merging')
     this.doc.merge(theirs.doc)
   }
 
@@ -263,11 +262,11 @@ export class Layer {
     let id = nanoid()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
-    doc.set(ROOT, 'shared', false)
-    doc.set(ROOT, 'time', Date.now())
-    doc.set(ROOT, 'archived', false)
-    doc.make(ROOT, 'title', '', 'text')
-    doc.make(ROOT, 'text', '', 'text')
+    doc.set(ROOT, 'shared', false, 'boolean')
+    doc.set(ROOT, 'time', Date.now(), 'timestamp')
+    doc.set(ROOT, 'archived', false, 'boolean')
+    doc.make(ROOT, 'title', '')
+    doc.make(ROOT, 'text', '')
     return new Layer(id, doc)
   }
 
