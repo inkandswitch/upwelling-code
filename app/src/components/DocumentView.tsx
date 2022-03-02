@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useCallback, useEffect } from 'react'
-import { Upwell, Author, Layer, UNKNOWN_AUTHOR } from 'api'
+import { Upwell, Author, Layer } from 'api'
 import ListDocuments, { ButtonTab, AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
