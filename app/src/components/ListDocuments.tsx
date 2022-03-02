@@ -1,19 +1,19 @@
 /** @jsxImportSource @emotion/react */
-import { css, Interpolation, Theme } from "@emotion/react/macro";
-import React,{useEffect, useState} from "react";
-import { Layer } from "api";
-import { JSX } from "@emotion/react/jsx-runtime";
+import { css, Interpolation, Theme } from '@emotion/react/macro'
+import React, { useEffect, useState } from 'react'
+import { Layer } from 'api'
+import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
-import relativeDate from "relative-date";
-import { TextareaInput } from "./Input";
+import relativeDate from 'relative-date'
+import { TextareaInput } from './Input'
 import Documents from '../Documents'
 
 let documents = Documents()
-type ID = string;
-type htmlColor = string;
+type ID = string
+type htmlColor = string
 export type AuthorColorsType = {
-  [key: ID]: htmlColor;
-};
+  [key: ID]: htmlColor
+}
 
 const tabStyles = css`
   border: 1px #b9b9b9 solid;
@@ -24,20 +24,20 @@ const tabStyles = css`
   border-radius: 0 10px 10px 0; /* top rounded edges */
   box-sizing: content-box;
   line-height: 16px;
-`;
+`
 
 const extendedTabStyles = css`
   border: 1px lightgray solid;
   padding-left: 27px;
   margin-right: 0;
-`;
+`
 
 const tabVisibleStyles = css`
   ${extendedTabStyles}
   background: white;
   min-height: 60px;
   max-height: 120px;
-`;
+`
 
 const wiggleStyle = css`
   @keyframes wiggle {
@@ -62,11 +62,11 @@ const wiggleStyle = css`
     display: inline-block;
     animation: wiggle 2.5s infinite;
   }
-`;
+`
 
 export const InfoTab = (
   props: JSX.IntrinsicAttributes & {
-    css?: Interpolation<Theme>;
+    css?: Interpolation<Theme>
   } & React.ClassAttributes<HTMLDivElement> &
     React.HTMLAttributes<HTMLDivElement> & { css?: Interpolation<Theme> }
 ) => (
@@ -79,11 +79,11 @@ export const InfoTab = (
     `}
     {...props}
   />
-);
+)
 
 export const ButtonTab = (
   props: JSX.IntrinsicAttributes & {
-    css?: Interpolation<Theme>;
+    css?: Interpolation<Theme>
   } & React.ClassAttributes<HTMLDivElement> &
     React.HTMLAttributes<HTMLDivElement> & { css?: Interpolation<Theme> }
 ) => (
@@ -99,21 +99,21 @@ export const ButtonTab = (
     role="button"
     {...props}
   />
-);
+)
 
 type TabType = {
-  index: number;
-  isBottom?: boolean;
-  isMerged?: boolean;
-  "aria-pressed": boolean;
+  index: number
+  isBottom?: boolean
+  isMerged?: boolean
+  'aria-pressed': boolean
 } & React.ClassAttributes<HTMLDivElement> &
-  React.ButtonHTMLAttributes<HTMLDivElement>;
+  React.ButtonHTMLAttributes<HTMLDivElement>
 
 const fileTabBottomStyles = css`
   border-width: 1px 1px 0px 1px;
   margin-top: 0;
   margin-bottom: -6px;
-`;
+`
 const fileTabMergedStyles = css`
   background: gray;
   border-color: #4d4d4d;
@@ -121,13 +121,13 @@ const fileTabMergedStyles = css`
   &:hover {
     background: gray;
   }
-`;
+`
 
 export const FileTab = ({
   index,
   isBottom = false,
   isMerged = false,
-  "aria-pressed": isVisible,
+  'aria-pressed': isVisible,
   ...props
 }: TabType) => (
   <div
@@ -147,40 +147,40 @@ export const FileTab = ({
       &:first-of-type {
         border-radius: 0 10px 10px 0;
       }
-      ${isVisible ? tabVisibleStyles : ""}
-      ${isBottom ? fileTabBottomStyles : ""}
-      ${isMerged ? fileTabMergedStyles : ""}
+      ${isVisible ? tabVisibleStyles : ''}
+      ${isBottom ? fileTabBottomStyles : ''}
+      ${isMerged ? fileTabMergedStyles : ''}
     `}
     role="button"
     onClick={props.onClick}
     {...props}
   />
-);
+)
 
 export const sidewaysTabStyle = css`
   display: flex;
   flex-direction: column-reverse;
   align-items: flex-end;
   overflow: auto; /* scroll tabs when they collide */
-`;
+`
 
 const editableTabStyle = css`
   background: white;
   border-left: 0;
   border-radius: 0 10px 10px 0; /* top rounded edges */
-`;
+`
 
 type Props = {
-  onLayerClick: Function;
-  onInputBlur: Function;
-  editableLayer?: string;
-  id: string,
-  visible: string[];
-  handleShareClick?: any; // TODO
-  handleDeleteClick?: any; // TODO
-  isBottom?: boolean;
-  colors?: AuthorColorsType;
-};
+  onLayerClick: Function
+  onInputBlur: Function
+  editableLayer?: string
+  id: string
+  visible: string[]
+  handleShareClick?: any // TODO
+  handleDeleteClick?: any // TODO
+  isBottom?: boolean
+  colors?: AuthorColorsType
+}
 
 export default function ListDocuments({
   onLayerClick,
@@ -201,18 +201,17 @@ export default function ListDocuments({
     upwell.subscribe(() => {
       setLayers(upwell.layers())
     })
-
   }, [id])
- return (
+  return (
     <div
       css={css`
         ${sidewaysTabStyle}
-        ${isBottom ? "overflow: unset;" : ""}
+        ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
       {layers.map((layer: Layer, index) => {
-        let visibleMaybe = visible.findIndex((id) => id === layer.id);
-        const isMerged = layer.archived;
+        let visibleMaybe = visible.findIndex((id) => id === layer.id)
+        const isMerged = layer.archived
         return (
           <FileTab
             key={layer.id}
@@ -221,9 +220,9 @@ export default function ListDocuments({
             isBottom={isBottom}
             isMerged={isMerged}
             onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onLayerClick(layer);
+              e.preventDefault()
+              e.stopPropagation()
+              onLayerClick(layer)
             }}
             title={`by ${layer.author}, ${relativeDate(new Date(layer.time))}`}
             css={css`
@@ -231,8 +230,9 @@ export default function ListDocuments({
               flex-direction: row;
               justify-content: flex-start;
               align-items: flex-start;
-              ${editableLayer === layer.id ? editableTabStyle : ""}
-              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||"none"} inset;
+              ${editableLayer === layer.id ? editableTabStyle : ''}
+              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||
+              'none'} inset;
             `}
           >
             {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
@@ -240,13 +240,13 @@ export default function ListDocuments({
               defaultValue={layer.message}
               placeholder="layer name"
               onClick={(e) => {
-                e.stopPropagation();
+                e.stopPropagation()
               }}
               onChange={(e) => {
-                e.stopPropagation();
+                e.stopPropagation()
               }}
               onBlur={(e) => {
-                onInputBlur(e, layer);
+                onInputBlur(e, layer)
               }}
             />
             <div>
@@ -254,15 +254,15 @@ export default function ListDocuments({
                 <EmojiButton
                   css={wiggleStyle}
                   onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                    e.preventDefault()
+                    e.stopPropagation()
                     if (
                       // eslint-disable-next-line no-restricted-globals
                       confirm(
                         "Do you want to share your layer? it can't be unshared."
                       )
                     ) {
-                      handleShareClick(layer);
+                      handleShareClick(layer)
                     }
                   }}
                 >
@@ -273,15 +273,15 @@ export default function ListDocuments({
                 <EmojiButton
                   css={wiggleStyle}
                   onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                    e.preventDefault()
+                    e.stopPropagation()
                     if (
                       // eslint-disable-next-line no-restricted-globals
                       confirm(
                         "Do you want to delete this layer? you can't get it back as of yet."
                       )
                     ) {
-                      handleDeleteClick(layer);
+                      handleDeleteClick(layer)
                     }
                   }}
                 >
@@ -290,14 +290,14 @@ export default function ListDocuments({
               )}
             </div>
           </FileTab>
-        );
+        )
       })}
     </div>
-  );
+  )
 }
 
 type ButtonType = React.ClassAttributes<HTMLButtonElement> &
-  React.ButtonHTMLAttributes<HTMLButtonElement>;
+  React.ButtonHTMLAttributes<HTMLButtonElement>
 
 function EmojiButton(props: ButtonType) {
   return (
@@ -316,5 +316,5 @@ function EmojiButton(props: ButtonType) {
       `}
       {...props}
     />
-  );
+  )
 }

@@ -1,18 +1,18 @@
-import { Upwell } from 'api';
+import { Upwell } from 'api'
 import FS from './storage/localStorage'
-import intoStream from 'into-stream';
-import HTTP from './storage/http';
+import intoStream from 'into-stream'
+import HTTP from './storage/http'
 
-const STORAGE_URL = process.env.STORAGE_URL 
+const STORAGE_URL = process.env.STORAGE_URL
 
 console.log(STORAGE_URL)
 
 export class Documents {
-  upwells: Map<string, Upwell> = new Map<string, Upwell>();
+  upwells: Map<string, Upwell> = new Map<string, Upwell>()
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)
 
-  async create (_id?: string) : Promise<Upwell> {
+  async create(_id?: string): Promise<Upwell> {
     let upwell = Upwell.create({ id: _id })
     let id = upwell.id
     this.upwells.set(id, upwell)
@@ -71,11 +71,14 @@ export class Documents {
     }
     if (!remoteBinary) {
       let newFile = await inMemory.toFile()
-      documents.remote.setItem(id, newFile).then(() => {
-        console.log('Shared for the first time!')
-      }).catch(err => {
-        console.error('Failed to share!')
-      })
+      documents.remote
+        .setItem(id, newFile)
+        .then(() => {
+          console.log('Shared for the first time!')
+        })
+        .catch((err) => {
+          console.error('Failed to share!')
+        })
     } else {
       // do sync
       let buf = Buffer.from(remoteBinary)
@@ -88,11 +91,14 @@ export class Documents {
       inMemory.merge(theirs)
       let newFile = await inMemory.toFile()
       documents.storage.setItem(id, newFile)
-      documents.remote.setItem(id, newFile).then(() => {
-        console.log('Synced!')
-      }).catch(err => {
-        console.error('Failed to share!')
-      })
+      documents.remote
+        .setItem(id, newFile)
+        .then(() => {
+          console.log('Synced!')
+        })
+        .catch((err) => {
+          console.error('Failed to share!')
+        })
     }
     return inMemory
   }
@@ -100,9 +106,8 @@ export class Documents {
 
 let documents: Documents
 
-export default function boop() : Documents {
+export default function boop(): Documents {
   if (documents) return documents
   documents = new Documents()
   return documents
 }
-
