@@ -8,6 +8,7 @@ import Debug from 'debug';
 import { loadDoc } from 'automerge-wasm-pack';
 
 export type Author = string 
+export const UNKNOWN_AUTHOR = "Unknown"
 
 export type UpwellOptions = {
   id?: string,
@@ -164,7 +165,7 @@ export class Upwell {
 
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
-    let author = options?.author || 'nknown'
+    let author = options?.author || UNKNOWN_AUTHOR
     let layer = Layer.create('Document initialized', author)
     let metadata = UpwellMetadata.create(id, layer.id)
     let upwell = new Upwell(metadata)

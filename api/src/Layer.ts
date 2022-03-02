@@ -52,7 +52,6 @@ export class LazyLayer {
 export class Layer {
   id: string
   doc: Automerge
-  private heads?: Heads;
   private subscriber?: Subscriber 
 
   constructor(id: string, doc: Automerge) {
@@ -67,7 +66,7 @@ export class Layer {
   }
 
   private _getValue(prop: string) {
-    let value = this.doc.value(ROOT, prop, this.heads)
+    let value = this.doc.value(ROOT, prop)
     if (value && value[0]) return value[1]
   }
 
@@ -125,10 +124,6 @@ export class Layer {
 
   set archived(value: boolean) {
     this.doc.set(ROOT, 'archived', value)
-  }
-
-  checkout(heads?: Heads) {
-    this.heads = heads
   }
 
   get metadata() : LayerMetadata {
@@ -224,9 +219,9 @@ export class Layer {
     this.doc.applyChanges(changes)
   }
 
-  mergeWithEdits(theirs: Layer) {
-    let edits = this.getEdits(theirs)
-    let newLayer = Layer.create('Merge', this.author)
+  static mergeWithEdits(ours: Layer, theirs: Layer) {
+    let edits = ours.getEdits(theirs)
+    let newLayer = ours.fork('Merge', ours.author)
     newLayer.merge(theirs)
 
     edits.forEach((edit) => {

@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
-import { css } from "@emotion/react/macro";
-import React from "react";
+import { css } from '@emotion/react/macro'
+import React from 'react'
 
 const inputStyle = css`
   font-size: inherit;
@@ -27,10 +27,10 @@ const inputStyle = css`
   &::placeholder {
     font-style: italic;
   }
-`;
+`
 
 type InputProps = React.ClassAttributes<HTMLInputElement> &
-  React.InputHTMLAttributes<HTMLInputElement>;
+  React.InputHTMLAttributes<HTMLInputElement>
 
 const Input = (props: InputProps) => (
   <input
@@ -40,8 +40,8 @@ const Input = (props: InputProps) => (
     type="text"
     {...props}
   />
-);
-export default Input;
+)
+export default Input
 
 export const TextareaInput = (
   props: JSX.IntrinsicAttributes &
@@ -58,4 +58,4 @@ export const TextareaInput = (
     `}
     {...props}
   />
-);
+)

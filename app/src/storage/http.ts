@@ -9,7 +9,7 @@ export default class HTTP {
     throw new Error('unimplemented')
   }
 
-  async getItem (id: string, actorId?: string): Promise<ArrayBuffer | null> { 
+  async getItem(id: string, actorId?: string): Promise<ArrayBuffer | null> {
     try {
       const response = await fetch(this.getURI(id))
       if (response.status === 200) return response.arrayBuffer()
@@ -20,12 +20,12 @@ export default class HTTP {
     }
   }
 
-  async setItem (id: string, binary: Uint8Array): Promise<Response> {
+  async setItem(id: string, binary: Uint8Array): Promise<Response> {
     let form = new FormData()
     form.append(id, new Blob([binary]))
     return fetch(this.getURI(id), {
       body: form,
-      method: "post"
+      method: 'post',
     })
   }
 
@@ -33,14 +33,13 @@ export default class HTTP {
     let binary = ''
     return fetch(this.getURI(id), {
       body: binary,
-      method: "post",
+      method: 'post',
       headers: {
-        "Content-Type": "application/octet-stream",
-      }
+        'Content-Type': 'application/octet-stream',
+      },
     })
   }
   getURI(id: string): string {
     return `${this.BASE}/${id}`
   }
-
 }

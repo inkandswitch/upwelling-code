@@ -1,8 +1,8 @@
-export type Binding = any;
+export type Binding = any
 
 export enum SYNC_STATE {
   SYNCED = 0,
   LOADING = 1,
   ERROR = 2,
-  OFFLINE = 3
+  OFFLINE = 3,
 }
