@@ -1,5 +1,7 @@
 # Upwell
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/f4b2cf82-77a4-478e-be46-07557df4d669/deploy-status)](https://vigilant-dijkstra-055cb3.netlify.app)
+
 This repository consists of multiple directories:
 
 - `app`: The example application for non-fiction professional text editing
