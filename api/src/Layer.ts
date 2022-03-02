@@ -222,6 +222,7 @@ export class Layer {
   static mergeWithEdits(ours: Layer, theirs: Layer) {
     let edits = ours.getEdits(theirs)
     let newLayer = ours.fork('Merge', ours.author)
+    console.log('mergingWithEdits')
     newLayer.merge(theirs)
 
     edits.forEach((edit) => {
@@ -263,17 +264,17 @@ export class Layer {
     let id = nanoid()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', author)
-    doc.set(ROOT, 'shared', false)
-    doc.set(ROOT, 'time', Date.now())
-    doc.set(ROOT, 'archived', false)
-    doc.make(ROOT, 'title', '', 'text')
-    doc.make(ROOT, 'text', '', 'text')
+    doc.set(ROOT, 'shared', false, 'boolean')
+    doc.set(ROOT, 'time', Date.now(), 'timestamp')
+    doc.set(ROOT, 'archived', false, 'boolean')
+    doc.make(ROOT, 'title', '')
+    doc.make(ROOT, 'text', '')
     return new Layer(id, doc)
   }
 
   commit(message: string): Heads {
     let meta: ChangeMetadata = { author: this.author, message }
-    let heads = this.doc.commit(JSON.stringify(meta))
+    let heads = this.doc.commit(JSON.stringify(meta), 0)
     if (this.subscriber) this.subscriber(this, heads)
     return heads
   }

@@ -12,7 +12,6 @@
 		],
         "module": "commonjs",
         "moduleResolution": "node",
-        "allowJs": true,
         "noImplicitAny": false,
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
@@ -25,7 +24,8 @@
       "src/**/*",
     ],
     "exclude": [
-        "node_modules"
+        "./dist/**/*",
+        "./node_modules"
     ],
     "types": [
         "mocha",
