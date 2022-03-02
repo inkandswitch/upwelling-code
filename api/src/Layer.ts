@@ -215,8 +215,8 @@ export class Layer {
   }
 
   merge(theirs: Layer) {
-    let changes = theirs.doc.getChanges(this.doc.getHeads())
-    this.doc.applyChanges(changes)
+    console.log('merging')
+    this.doc.merge(theirs.doc)
   }
 
   static mergeWithEdits(ours: Layer, theirs: Layer) {

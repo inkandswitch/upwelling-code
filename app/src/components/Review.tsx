@@ -31,8 +31,9 @@ export function ReviewView(props: { id: string; visible: string[] }) {
       }
       let layers = visible.map((id) => upwell.get(id))
       let mergedVisible = layers.slice(1).reduce((prev: Layer, cur: Layer) => {
-        prev.merge(cur)
-        return prev
+        let fork = prev.fork('beep', 'boop')
+        fork.merge(cur)
+        return fork
       }, layers[0])
       let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
       let marks = editsLayer.marks.map((m: any) => {
