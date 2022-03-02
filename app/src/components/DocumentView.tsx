@@ -36,21 +36,23 @@ export default function MaybeDocument(props: DocumentViewProps) {
       const newAuthorColors = { ...authorColors }
       let changed = false
       layers.forEach((l) => {
-        if (
-          l.author !== UNKNOWN_AUTHOR &&
-          authorColors[l.author] === undefined
-        ) {
+        if (!(l.author in authorColors)) {
           newAuthorColors[l.author] = ''
           changed = true
         }
       })
+      // also add this user in case they haven't made a layer
+      if (!(props.author in authorColors)) {
+        newAuthorColors[props.author] = ''
+        changed = true
+      }
       if (changed) {
         setAuthorColors((prevState) => {
           return { ...prevState, ...newAuthorColors }
         })
       }
     },
-    [setRootId, authorColors, setAuthorColors]
+    [setRootId, authorColors, setAuthorColors, props.author]
   )
 
   useEffect(() => {
