@@ -215,14 +215,12 @@ export class Layer {
   }
 
   merge(theirs: Layer) {
-    console.log('merging')
     this.doc.merge(theirs.doc)
   }
 
   static mergeWithEdits(ours: Layer, theirs: Layer) {
     let edits = ours.getEdits(theirs)
     let newLayer = ours.fork('Merge', ours.author)
-    console.log('mergingWithEdits')
     newLayer.merge(theirs)
 
     edits.forEach((edit) => {
@@ -274,7 +272,7 @@ export class Layer {
 
   commit(message: string): Heads {
     let meta: ChangeMetadata = { author: this.author, message }
-    let heads = this.doc.commit(JSON.stringify(meta), 0)
+    let heads = this.doc.commit(JSON.stringify(meta))
     if (this.subscriber) this.subscriber(this, heads)
     return heads
   }

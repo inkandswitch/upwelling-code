@@ -166,7 +166,6 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    console.log('creating layer')
     let layer = Layer.create('Document initialized', author)
     let metadata = UpwellMetadata.create(id, layer.id)
     let upwell = new Upwell(metadata)
