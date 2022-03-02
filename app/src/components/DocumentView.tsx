@@ -124,7 +124,6 @@ export function DocumentView(props: {
   }
 
   function onChangeMade() {
-    setSyncState(SYNC_STATE.LOADING)
     documents.save(props.id)
     let upwell = documents.get(props.id)
     render(upwell)
@@ -159,7 +158,12 @@ export function DocumentView(props: {
     onChangeMade()
   }
 
-  let onTextChange = debounce(async (layer: Layer) => {
+  let onTextChange = () => {
+    setSyncState(SYNC_STATE.LOADING)
+    debouncedOnTextChange()
+  }
+
+  let debouncedOnTextChange = debounce((layer: Layer) => {
     // this is saving every time text changes, do we want this??????
     onChangeMade()
   }, AUTOSAVE_INTERVAL)

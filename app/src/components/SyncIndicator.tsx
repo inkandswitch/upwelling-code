@@ -25,6 +25,7 @@ export function SyncIndicator(props: { state: SYNC_STATE }) {
         position: fixed;
         top: 5px;
         left: 5px;
+        color: white;
         font-size: 0.5em;
         svg {
           width: 20px;
