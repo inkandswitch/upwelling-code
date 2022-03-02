@@ -237,6 +237,7 @@ export class Layer {
         end = 0  
       }
 
+      /*
       newLayer.mark(
         edit.type,
         `[${start}..${end}]`,
@@ -245,6 +246,7 @@ export class Layer {
           text: edit.value
         })
       )
+      */
     })
     newLayer.commit('Merge')
 
