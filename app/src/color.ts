@@ -1,4 +1,4 @@
-import { lch } from 'd3-color'
+import { HCLColor, lch } from 'd3-color'
 
 // PJW-32 hash string to get numeric value
 const pjw = (str: string) => {
@@ -15,8 +15,8 @@ const pjw = (str: string) => {
 }
 
 // returns a css color string
-function deterministicColor(str: string): string {
+function deterministicColor(str: string): HCLColor {
   const hue = pjw(str)
-  return lch(80, 132, hue, 0.47).toString()
+  return lch(80, 132, hue, 0.47)
 }
 export default deterministicColor

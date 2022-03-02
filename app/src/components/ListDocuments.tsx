@@ -7,12 +7,12 @@ import { JSX } from '@emotion/react/jsx-runtime'
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import Documents from '../Documents'
+import { HCLColor } from 'd3-color'
 
 let documents = Documents()
 type ID = string
-type htmlColor = string
 export type AuthorColorsType = {
-  [key: ID]: htmlColor
+  [key: ID]: HCLColor
 }
 
 const tabStyles = css`
@@ -231,8 +231,9 @@ export default function ListDocuments({
               justify-content: flex-start;
               align-items: flex-start;
               ${editableLayer === layer.id ? editableTabStyle : ''}
-              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||
-              'none'} inset;
+              box-shadow: 18px 24px 0px -18px ${colors[
+                layer.author
+              ]?.toString() || 'none'} inset;
             `}
           >
             {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}

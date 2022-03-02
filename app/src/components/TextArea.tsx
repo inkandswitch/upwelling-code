@@ -2,6 +2,8 @@
 import { css } from '@emotion/react/macro'
 import React from 'react'
 import { Layer } from 'api'
+import { AuthorColorsType } from './ListDocuments'
+import { HCLColor } from 'd3-color'
 
 export const textCSS = css`
   width: 100%;
@@ -22,10 +24,14 @@ export const textCSS = css`
     outline: 0;
   }
 `
-export function TextArea(props: any) {
+export function TextArea(props: { color?: HCLColor } | any) {
   return (
     <textarea
-      css={textCSS}
+      css={css`
+        ${textCSS}
+        box-shadow: 0 10px 0 -2px ${props.color?.toString() || 'none'} inset;
+        caret-color: ${props.color?.copy({ opacity: 1 }).toString() || 'auto'};
+      `}
       className="text"
       value={props.state}
       onChange={(e) => props.onChange(e, 'text')}
@@ -37,10 +43,11 @@ export function TextArea(props: any) {
 type Props = {
   editableLayer: Layer
   onChange: any
+  colors?: AuthorColorsType
 }
 
 export function TextAreaView(props: Props) {
-  let { editableLayer, onChange } = props
+  let { editableLayer, onChange, colors = {} } = props
   let [state, setState] = React.useState<string>(editableLayer.text || '')
 
   function onTextChange(
@@ -83,5 +90,12 @@ export function TextAreaView(props: Props) {
     onChange(editableLayer)
   }
 
-  return <TextArea onChange={onTextChange} onPaste={onPaste} state={state} />
+  return (
+    <TextArea
+      color={colors[editableLayer.author]}
+      onChange={onTextChange}
+      onPaste={onPaste}
+      state={state}
+    />
+  )
 }

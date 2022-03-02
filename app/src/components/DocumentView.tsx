@@ -37,13 +37,13 @@ export default function MaybeDocument(props: DocumentViewProps) {
       let changed = false
       layers.forEach((l) => {
         if (!(l.author in authorColors)) {
-          newAuthorColors[l.author] = ''
+          newAuthorColors[l.author] = deterministicColor(l.author)
           changed = true
         }
       })
       // also add this user in case they haven't made a layer
       if (!(props.author in authorColors)) {
-        newAuthorColors[props.author] = ''
+        newAuthorColors[props.author] = deterministicColor(props.author)
         changed = true
       }
       if (changed) {
@@ -75,27 +75,6 @@ export default function MaybeDocument(props: DocumentViewProps) {
 
     get()
   }, [render, props.id])
-
-  useEffect(() => {
-    function assignColor() {
-      const newAuthorColors = { ...authorColors }
-      let changed = false
-
-      for (const [authorID, authorColor] of Object.entries(authorColors)) {
-        if (!authorColor) {
-          newAuthorColors[authorID] = deterministicColor(authorID)
-          changed = true
-        }
-      }
-
-      if (changed) {
-        setAuthorColors((prevState) => {
-          return { ...prevState, ...newAuthorColors }
-        })
-      }
-    }
-    assignColor()
-  }, [authorColors, setAuthorColors])
 
   if (!rootId) return <div>Loading..</div>
   return (
@@ -250,6 +229,7 @@ export function DocumentView(props: {
           onChange={onTextChange}
           visible={visible}
           author={author}
+          colors={authorColors}
         ></EditReviewView>
         <div
           id="right-side"
@@ -300,7 +280,9 @@ export function DocumentView(props: {
                 font-size: 16px;
                 cursor: not-allowed;
                 color: white;
-                box-shadow: 0px -9px 0px 0px ${authorColors[author] || 'none'} inset;
+                box-shadow: 0px -9px 0px 0px ${authorColors[
+                    author
+                  ]?.toString() || 'none'} inset;
               `}
               value={author}
             />

@@ -5,16 +5,23 @@ import { Author } from 'api'
 import { ReviewView } from './Review'
 import { TextAreaView } from './TextArea'
 import Documents from '../Documents'
+import { AuthorColorsType } from './ListDocuments'
 
 let documents = Documents()
 
 // visible 0 or more layers NOT including root
 // root
 
-type Props = { id: string; visible: string[]; onChange: any; author: Author }
+type Props = {
+  id: string
+  visible: string[]
+  onChange: any
+  author: Author
+  colors?: AuthorColorsType
+}
 
 export function EditReviewView(props: Props) {
-  const { author, id, visible, onChange } = props
+  const { author, id, visible, onChange, colors } = props
   let upwell = documents.get(id)
   let root = upwell.rootLayer()
 
@@ -28,7 +35,11 @@ export function EditReviewView(props: Props) {
     let layer = upwell.get(visible[0])
     if (author === layer.author) {
       let textArea = (
-        <TextAreaView onChange={onChange} editableLayer={layer}></TextAreaView>
+        <TextAreaView
+          colors={colors}
+          onChange={onChange}
+          editableLayer={layer}
+        ></TextAreaView>
       )
       component = (
         <React.Fragment>
