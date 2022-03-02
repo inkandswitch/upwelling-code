@@ -19,7 +19,7 @@
         "strict": true,
         "noFallthroughCasesInSwitch": true,
         "skipLibCheck": true,
-        "outDir": "dist"
+        "outDir": "./dist"
     },
     "include": [
       "src/**/*",
