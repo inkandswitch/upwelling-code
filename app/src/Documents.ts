@@ -64,21 +64,15 @@ export class Documents {
   }
 
   async sync(id: string): Promise<Upwell> {
-    let inMemory = documents.upwells.get(id)
-    let remoteBinary = await documents.remote.getItem(id)
+    let inMemory = this.upwells.get(id)
+    let remoteBinary = await this.remote.getItem(id)
     if (!inMemory) {
       throw new Error('open or create the upwell first before syncing!')
     }
     if (!remoteBinary) {
       let newFile = await inMemory.toFile()
-      documents.remote
-        .setItem(id, newFile)
-        .then(() => {
-          console.log('Shared for the first time!')
-        })
-        .catch((err) => {
-          console.error('Failed to share!')
-        })
+      await this.remote.setItem(id, newFile)
+      return inMemory
     } else {
       // do sync
       let buf = Buffer.from(remoteBinary)
@@ -90,8 +84,8 @@ export class Documents {
       let theirs = await this.toUpwell(buf)
       inMemory.merge(theirs)
       let newFile = await inMemory.toFile()
-      documents.storage.setItem(id, newFile)
-      documents.remote
+      this.storage.setItem(id, newFile)
+      this.remote
         .setItem(id, newFile)
         .then(() => {
           console.log('Synced!')

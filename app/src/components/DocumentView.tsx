@@ -7,6 +7,8 @@ import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
 //@ts-ignore
 import debounce from 'lodash.debounce'
+import { SYNC_STATE } from '../types'
+import { SyncIndicator } from './SyncIndicator'
 import Input from './Input'
 import deterministicColor from '../color'
 
@@ -17,7 +19,7 @@ type DocumentViewProps = {
   author: Author
 }
 
-const AUTOSAVE_INTERVAL = 1000 //ms
+const AUTOSAVE_INTERVAL = 3000
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [rootId, setRootId] = React.useState<string>()
@@ -113,6 +115,7 @@ export function DocumentView(props: {
   const { id, author, authorColors } = props
   let [visible, setVisible] = React.useState<string[]>([])
   let [rootId, setRootId] = React.useState<string>(props.rootId)
+  let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
 
   function render(upwell: Upwell) {
     console.log('rendering', upwell.id)
@@ -127,9 +130,11 @@ export function DocumentView(props: {
     documents
       .sync(props.id)
       .then((upwell) => {
+        setSyncState(SYNC_STATE.SYNCED)
         render(upwell)
       })
       .catch((err) => {
+        setSyncState(SYNC_STATE.OFFLINE)
         console.error('failed to sync', err)
       })
   }
@@ -153,7 +158,12 @@ export function DocumentView(props: {
     onChangeMade()
   }
 
-  let onTextChange = debounce(async (layer: Layer) => {
+  let onTextChange = () => {
+    setSyncState(SYNC_STATE.LOADING)
+    debouncedOnTextChange()
+  }
+
+  let debouncedOnTextChange = debounce((layer: Layer) => {
     // this is saving every time text changes, do we want this??????
     onChangeMade()
   }, AUTOSAVE_INTERVAL)
@@ -218,6 +228,7 @@ export function DocumentView(props: {
         background: url('/wood.png');
       `}
     >
+      <SyncIndicator state={sync_state}></SyncIndicator>
       <div
         id="writing-zone"
         css={css`
@@ -358,16 +369,5 @@ function Button(props: ButtonType) {
     );
     el.setAttribute("download", filename);
     el.click();
-  };
-
-  let onSyncClick = async () => {
-    try {
-      setStatus(SYNC_STATE.LOADING);
-      await upwell.syncWithServer(layer);
-      setState({ title: layer.title, text: layer.text });
-      setStatus(SYNC_STATE.SYNCED);
-    } catch (err) {
-      setStatus(SYNC_STATE.OFFLINE);
-    }
   };
   */

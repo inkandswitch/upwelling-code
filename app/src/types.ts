@@ -5,5 +5,4 @@ export enum SYNC_STATE {
   LOADING = 1,
   ERROR = 2,
   OFFLINE = 3,
-  PREVIEW = 4,
 }
