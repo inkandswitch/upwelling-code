@@ -74,8 +74,8 @@ export function TextAreaView(props: Props) {
 
   function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
     if (!editableLayer) return console.error('Layer not editable.')
-    //@ts-ignore
     editableLayer.insertAt(
+      //@ts-ignore
       e.target.selectionEnd,
       e.clipboardData.getData('text/plain')
     )
