@@ -2,13 +2,15 @@
 import { css } from "@emotion/react/macro";
 import React, { useCallback, useEffect } from "react";
 import { Upwell, Author, Layer, UNKNOWN_AUTHOR } from "api";
-import ListDocuments, { ButtonTab, InfoTab, AuthorColorsType } from "./ListDocuments";
-import * as Documents from "../Documents";
+import ListDocuments, { ButtonTab, AuthorColorsType } from "./ListDocuments";
+import Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
 import Input from "./Input";
 import deterministicColor from "../color";
+
+let documents = Documents()
 
 type DocumentViewProps = {
   id: string;
@@ -18,18 +20,17 @@ type DocumentViewProps = {
 const AUTOSAVE_INTERVAL = 1000; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
-  let [layers, setLayers] = React.useState<Layer[]>([]);
-  let [root, setRoot] = React.useState<Layer>();
+  let [rootId, setRootId] = React.useState<string>();
   let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({});
 
   const render = useCallback(
     (upwell: Upwell) => {
-      let layers = upwell.layers();
+      console.log('rendering', upwell.id)
       let root = upwell.rootLayer();
-      setRoot(root);
-      setLayers(layers.filter((l) => l.id !== root.id));
-
+      setRootId(root.id);
+      
       // find the authors
+      const layers = upwell.layers();
       const newAuthorColors = { ...authorColors };
       let changed = false;
       layers.forEach((l) => {
@@ -47,23 +48,23 @@ export default function MaybeDocument(props: DocumentViewProps) {
         });
       }
     },
-    [setRoot, setLayers, authorColors, setAuthorColors]
+    [setRootId, authorColors, setAuthorColors]
   );
 
   useEffect(() => {
     async function get() {
       let upwell;
       try {
-        upwell = await Documents.open(props.id);
+        upwell = await documents.open(props.id);
       } catch (err) {
         upwell = null;
       }
 
       try {
-        if (!upwell) upwell = await Documents.sync(props.id);
+        if (!upwell) upwell = await documents.sync(props.id);
         render(upwell);
       } catch (err) {
-        let upwell = await Documents.create(props.id);
+        let upwell = await documents.create(props.id);
         render(upwell);
       }
     }
@@ -92,26 +93,11 @@ export default function MaybeDocument(props: DocumentViewProps) {
     assignColor()
   }, [authorColors, setAuthorColors]);
 
-  function onChangeMade() {
-    Documents.save(props.id);
-    let upwell = Documents.get(props.id);
-    render(upwell);
-    Documents.sync(props.id)
-      .then((upwell) => {
-        render(upwell);
-      })
-      .catch((err) => {
-        console.error("failed to sync", err);
-      });
-  }
-
-  if (!root) return <div>Loading..</div>;
+  if (!rootId) return <div>Loading..</div>;
   return (
     <DocumentView
       id={props.id}
-      layers={layers}
-      onChangeMade={onChangeMade}
-      root={root}
+      rootId={rootId}
       author={props.author}
       authorColors={authorColors}
     />
@@ -120,16 +106,33 @@ export default function MaybeDocument(props: DocumentViewProps) {
 
 export function DocumentView(props: {
   id: string;
-  layers: Layer[];
-  root?: Layer;
+  rootId: string;
   author: Author;
   authorColors: AuthorColorsType;
-  onChangeMade: Function;
 }) {
-  const { id, root, layers, author, onChangeMade, authorColors } = props;
-  let [visible, setVisible] = React.useState<Layer[]>(
-    layers.length ? layers.slice(0, 1) : []
-  );
+  const { id, author, authorColors } = props;
+  let [visible, setVisible] = React.useState<string[]>([]);
+  let [rootId, setRootId] = React.useState<string>(props.rootId);
+
+
+  function render(upwell: Upwell) {
+    console.log('rendering', upwell.id)
+    let root = upwell.rootLayer();
+    setRootId(root.id);
+  }
+
+  function onChangeMade() {
+    documents.save(props.id);
+    let upwell = documents.get(props.id);
+    render(upwell);
+    documents.sync(props.id)
+      .then((upwell) => {
+        render(upwell);
+      })
+      .catch((err) => {
+        console.error("failed to sync", err);
+      });
+  }
 
   let onArchiveClick = () => {
     setVisible([]);
@@ -137,11 +140,11 @@ export function DocumentView(props: {
   };
 
   let onLayerClick = (layer: Layer) => {
-    let exists = visible.findIndex((l) => l.id === layer.id);
+    let exists = visible.findIndex((id) => id === layer.id);
     if (exists > -1) {
-      setVisible(visible.filter((l) => l.id !== layer.id));
+      setVisible(visible.filter((id) => id !== layer.id));
     } else {
-      setVisible(visible.concat([layer]));
+      setVisible(visible.concat([layer.id]));
     }
   };
 
@@ -149,7 +152,7 @@ export function DocumentView(props: {
     e: React.FocusEvent<HTMLInputElement, Element>,
     l: Layer
   ) => {
-    let upwell = Documents.get(id);
+    let upwell = documents.get(id);
     l.message = e.target.value;
     upwell.set(l.id, l);
     onChangeMade();
@@ -163,7 +166,7 @@ export function DocumentView(props: {
   let onCreateLayer = async () => {
     let message = "";
     // always forking from root layer (for now)
-    let upwell = Documents.get(id);
+    let upwell = documents.get(id);
     let root = upwell.rootLayer();
     let newLayer = root.fork(message, author);
     upwell.add(newLayer);
@@ -171,17 +174,17 @@ export function DocumentView(props: {
   };
 
   let handleShareClick = (l: Layer) => {
-    let upwell = Documents.get(id);
+    let upwell = documents.get(id);
     upwell.share(l.id);
     onChangeMade();
   };
 
   const handleDeleteClick = (l: Layer) => {
-    let upwell = Documents.get(id);
+    let upwell = documents.get(id);
     upwell.archive(l.id);
 
     // also remove from visible list
-    const newVisible = visible.filter((layer: Layer) => l.id !== layer.id);
+    const newVisible = visible.filter((id: string) => l.id !== id);
     setVisible(newVisible);
 
     onChangeMade();
@@ -193,24 +196,24 @@ export function DocumentView(props: {
   };
 
   let mergeVisible = async () => {
-    if (!root) return console.error("no root race condition");
-    let upwell = Documents.get(id);
-    let merged = visible.reduce((prev: Layer, cur: Layer) => {
-      if (cur.id !== root?.id) {
-        upwell.archive(cur.id);
-        upwell.share(cur.id);
+    if (!rootId) return console.error("no root race condition");
+    let upwell = documents.get(id);
+    let merged = visible.reduce((prev: Layer, cur: string) => {
+
+      if (cur !== rootId) {
+        upwell.archive(cur);
+        upwell.share(cur);
       }
-      return Layer.merge(prev, cur);
-    }, root);
+      let cur_layer = upwell.get(cur)
+      prev.merge(cur_layer);
+      return prev
+    }, upwell.rootLayer());
     upwell.add(merged);
     onChangeMade();
     setVisible([]);
   };
-  let sharedLayers = layers.filter(
-    (l: Layer) => !l.archived && l.shared && l.id !== root?.id
-  );
 
-  if (!root) return <div>Loading...</div>;
+
   return (
     <div
       id="folio"
@@ -237,10 +240,10 @@ export function DocumentView(props: {
         `}
       >
         <EditReviewView
+          id={id}
           onChange={onTextChange}
           visible={visible}
           author={author}
-          root={root}
         ></EditReviewView>
         <div
           id="right-side"
@@ -251,24 +254,20 @@ export function DocumentView(props: {
             margin-left: -1px;
           `}
         >
-          <div id="private" css={css``}>
-            <InfoTab css={css``} title="Layers area">
-              🌱 local
-            </InfoTab>
-            <ButtonTab onClick={onCreateLayer} title="new layer">
-              ➕
-            </ButtonTab>
+          <ButtonTab onClick={onCreateLayer} title="new layer">
+            ➕
+          </ButtonTab>
             <ListDocuments
-              isBottom
               id={id}
+              isBottom
+              colors={authorColors}
               onLayerClick={onLayerClick}
               visible={visible}
-              layers={layers.filter(
-                (l: Layer) => l.archived && l.id !== root?.id
-              )}
+              handleShareClick={handleShareClick}
+              handleDeleteClick={handleDeleteClick}
               onInputBlur={handleFileNameInputBlur}
+              editableLayer={getEditableLayer()}
             />
-          </div>
         </div>
         <div
           id="bottom-bar"

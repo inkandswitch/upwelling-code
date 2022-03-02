@@ -1,4 +1,4 @@
-import { Author, Upwell, Layer } from '../src/index'
+import { Edit, Author, Upwell, Layer } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
 import { nanoid } from 'nanoid';
@@ -37,7 +37,7 @@ describe('edits', () => {
 
   describe('getEdits', () => {
 
-    let edits = []
+    let edits: Edit[] = []
 
     describe('with (root, modified) document order', () => {
       beforeEach(() => {

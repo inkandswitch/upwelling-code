@@ -7,6 +7,7 @@ export class UpwellMetadata {
   doc: Automerge.Automerge
 
   constructor(doc: Automerge.Automerge) {
+    if (!doc) throw new Error('doc required')
     this.doc = doc
   }
 
@@ -15,7 +16,7 @@ export class UpwellMetadata {
   }
 
   static create(id: string, main_id: string): UpwellMetadata {
-    debug("creating metadata", id, main_id)
+    debug(`creating metadata ${id}  ${main_id}`)
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id) 
     doc.set(ROOT, 'main_id', main_id)
@@ -23,11 +24,15 @@ export class UpwellMetadata {
   }
 
   get id(): string {
-    return this.doc.value(ROOT, 'id')[1] as string
+    let value = this.doc.value(ROOT, 'id')
+    if (value) return value[1] as string
+    else return ''
   }
 
   get main(): string {
-    return this.doc.value(ROOT, 'main_id')[1] as string
+    let value = this.doc.value(ROOT, 'main_id')
+    if (value) return value[1] as string
+    else return ''
   }
 
   set main (id: string) {

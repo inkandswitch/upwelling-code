@@ -74,7 +74,7 @@ describe('save and load', () => {
       stream = await upwell.serialize()
       //@ts-ignore
       let end = new Date() - start
-      assert.isBelow(end, 3 * 1000) // 2sec
+      assert.isBelow(end, 3 * 2000) // 2sec
 
     })
 
@@ -83,7 +83,7 @@ describe('save and load', () => {
       await Upwell.deserialize(stream)
       //@ts-ignore
       let end = new Date() - start
-      assert.isBelow(end, 1 * 1000) // 1sec
+      assert.isBelow(end, 1 * 2000) // 1sec
     })
   })
 })

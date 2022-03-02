@@ -1,12 +1,14 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from "@emotion/react/macro";
-import React from "react";
+import React,{useEffect, useState} from "react";
 import { Layer } from "api";
 import { JSX } from "@emotion/react/jsx-runtime";
 //@ts-ignore
 import relativeDate from "relative-date";
 import { TextareaInput } from "./Input";
+import Documents from '../Documents'
 
+let documents = Documents()
 type ID = string;
 type htmlColor = string;
 export type AuthorColorsType = {
@@ -171,9 +173,9 @@ const editableTabStyle = css`
 type Props = {
   onLayerClick: Function;
   onInputBlur: Function;
-  editableLayer?: Layer;
-  layers: Layer[];
-  visible: Layer[];
+  editableLayer?: string;
+  id: string,
+  visible: string[];
   handleShareClick?: any; // TODO
   handleDeleteClick?: any; // TODO
   isBottom?: boolean;
@@ -181,17 +183,27 @@ type Props = {
 };
 
 export default function ListDocuments({
-  layers,
   onLayerClick,
   handleShareClick,
   handleDeleteClick,
   onInputBlur,
   editableLayer,
   visible,
+  id,
   isBottom = false,
   colors = {},
 }: Props) {
-  return (
+  let [layers, setLayers] = useState<Layer[]>([])
+
+  useEffect(() => {
+    let upwell = documents.get(id)
+    setLayers(upwell.layers())
+    upwell.subscribe(() => {
+      setLayers(upwell.layers())
+    })
+
+  }, [id])
+ return (
     <div
       css={css`
         ${sidewaysTabStyle}
@@ -199,7 +211,7 @@ export default function ListDocuments({
       `}
     >
       {layers.map((layer: Layer, index) => {
-        let visibleMaybe = visible.findIndex((l) => l.id === layer.id);
+        let visibleMaybe = visible.findIndex((id) => id === layer.id);
         const isMerged = layer.archived;
         return (
           <FileTab
@@ -219,9 +231,8 @@ export default function ListDocuments({
               flex-direction: row;
               justify-content: flex-start;
               align-items: flex-start;
-              ${editableLayer?.id === layer.id ? editableTabStyle : ""}
-              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||
-              "none"} inset;
+              ${editableLayer === layer.id ? editableTabStyle : ""}
+              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||"none"} inset;
             `}
           >
             {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}

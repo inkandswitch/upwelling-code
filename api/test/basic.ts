@@ -116,10 +116,10 @@ describe('upwell', () => {
     newLayer.insertAt(9, 'l')
     newLayer.insertAt(10, 'd')
 
-    let merged = Layer.merge(doc, newLayer)
-    assert.equal(merged.text, 'Hello world')
+    doc.merge(newLayer)
+    assert.equal(doc.text, 'Hello world')
 
-    d.add(merged)
+    d.add(doc)
     layers = d.layers()
     assert.equal(layers.length, 2)
 
