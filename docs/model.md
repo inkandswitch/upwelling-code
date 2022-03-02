@@ -37,7 +37,6 @@ LayerMetadata is a Map that has the following properties:
 
 | prop | type | description
 | --- | --- | --- | 
-| id | string | A unqiue identifer for this layer.
 | parent_id | string | The id of the layer this layer was derived from.
 | author | string | The handle of the author who created this layer. 
 | message | string | A human-readable message to describe the layer.
