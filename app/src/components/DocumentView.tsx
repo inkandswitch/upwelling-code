@@ -1,13 +1,14 @@
 /** @jsxImportSource @emotion/react */
 import { css } from "@emotion/react/macro";
-import React, { useEffect } from "react";
-import { Upwell, Author, Layer } from "api";
-import ListDocuments, { ButtonTab, InfoTab } from "./ListDocuments";
+import React, { useCallback, useEffect } from "react";
+import { Upwell, Author, Layer, UNKNOWN_AUTHOR } from "api";
+import ListDocuments, { ButtonTab, AuthorColorsType } from "./ListDocuments";
 import Documents from "../Documents";
 import { EditReviewView } from "./EditReview";
 //@ts-ignore
 import debounce from "lodash.debounce";
 import Input from "./Input";
+import deterministicColor from "../color";
 
 let documents = Documents()
 
@@ -20,12 +21,35 @@ const AUTOSAVE_INTERVAL = 1000; //ms
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [rootId, setRootId] = React.useState<string>();
+  let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({});
 
-  function render(upwell: Upwell) {
-    console.log('rendering', upwell.id)
-    let root = upwell.rootLayer();
-    setRootId(root.id);
-  }
+  const render = useCallback(
+    (upwell: Upwell) => {
+      console.log('rendering', upwell.id)
+      let root = upwell.rootLayer();
+      setRootId(root.id);
+      
+      // find the authors
+      const layers = upwell.layers();
+      const newAuthorColors = { ...authorColors };
+      let changed = false;
+      layers.forEach((l) => {
+        if (
+          l.author !== UNKNOWN_AUTHOR &&
+          authorColors[l.author] === undefined
+        ) {
+          newAuthorColors[l.author] = "";
+          changed = true;
+        }
+      });
+      if (changed) {
+        setAuthorColors((prevState) => {
+          return { ...prevState, ...newAuthorColors };
+        });
+      }
+    },
+    [setRootId, authorColors, setAuthorColors]
+  );
 
   useEffect(() => {
     async function get() {
@@ -46,7 +70,28 @@ export default function MaybeDocument(props: DocumentViewProps) {
     }
 
     get();
-  }, [props.id]);
+  }, [render, props.id]);
+
+  useEffect(() => {
+    function assignColor() {
+      const newAuthorColors = { ...authorColors };
+      let changed = false;
+
+      for (const [authorID, authorColor] of Object.entries(authorColors)) {
+        if (!authorColor) {
+          newAuthorColors[authorID] = deterministicColor(authorID);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        setAuthorColors((prevState) => {
+          return { ...prevState, ...newAuthorColors };
+        });
+      }
+    }
+    assignColor()
+  }, [authorColors, setAuthorColors]);
 
   if (!rootId) return <div>Loading..</div>;
   return (
@@ -54,6 +99,7 @@ export default function MaybeDocument(props: DocumentViewProps) {
       id={props.id}
       rootId={rootId}
       author={props.author}
+      authorColors={authorColors}
     />
   );
 }
@@ -62,8 +108,9 @@ export function DocumentView(props: {
   id: string;
   rootId: string;
   author: Author;
+  authorColors: AuthorColorsType;
 }) {
-  const { id, author, } = props;
+  const { id, author, authorColors } = props;
   let [visible, setVisible] = React.useState<string[]>([]);
   let [rootId, setRootId] = React.useState<string>(props.rootId);
 
@@ -211,13 +258,15 @@ export function DocumentView(props: {
             ➕
           </ButtonTab>
             <ListDocuments
-            id={id}
-            onLayerClick={onLayerClick}
-            visible={visible}
-            handleShareClick={handleShareClick}
-            handleDeleteClick={handleDeleteClick}
-            onInputBlur={handleFileNameInputBlur}
-            editableLayer={getEditableLayer()}
+              id={id}
+              isBottom
+              colors={authorColors}
+              onLayerClick={onLayerClick}
+              visible={visible}
+              handleShareClick={handleShareClick}
+              handleDeleteClick={handleDeleteClick}
+              onInputBlur={handleFileNameInputBlur}
+              editableLayer={getEditableLayer()}
             />
         </div>
         <div
@@ -245,6 +294,7 @@ export function DocumentView(props: {
                 font-size: 16px;
                 cursor: not-allowed;
                 color: white;
+                box-shadow: 0px -9px 0px 0px ${authorColors[author] || "none"} inset;
               `}
               value={author}
             />

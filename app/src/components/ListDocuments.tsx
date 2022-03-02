@@ -9,6 +9,11 @@ import { TextareaInput } from "./Input";
 import Documents from '../Documents'
 
 let documents = Documents()
+type ID = string;
+type htmlColor = string;
+export type AuthorColorsType = {
+  [key: ID]: htmlColor;
+};
 
 const tabStyles = css`
   border: 1px #b9b9b9 solid;
@@ -25,7 +30,6 @@ const extendedTabStyles = css`
   border: 1px lightgray solid;
   padding-left: 27px;
   margin-right: 0;
-  border-radius: 0 10px 10px 0; /* top rounded edges */
 `;
 
 const tabVisibleStyles = css`
@@ -106,16 +110,13 @@ type TabType = {
   React.ButtonHTMLAttributes<HTMLDivElement>;
 
 const fileTabBottomStyles = css`
-  border-radius: 0 10px 0 0; /* top rounded edge only */
   border-width: 1px 1px 0px 1px;
   margin-top: 0;
   margin-bottom: -6px;
 `;
 const fileTabMergedStyles = css`
-  ${extendedTabStyles}
   background: gray;
   border-color: #4d4d4d;
-  cursor: not-allowed;
   border-left-color: transparent;
   &:hover {
     background: gray;
@@ -136,15 +137,14 @@ export const FileTab = ({
       text-align: end;
       margin-top: -6px;
       max-width: 110px;
-      border-radius: 0 0 10px 0; /* bottom rounded edge only */
+      border-radius: 0 10px 10px 0;
       cursor: pointer;
       max-height: 80px;
-      z-index: ${isBottom ? 1000 + index : 1000 - index};
+      z-index: ${isBottom ? 1000 - index : 1000 + index};
       &:hover {
         background: #d1eaff;
       }
       &:first-of-type {
-        margin-top: 0px;
         border-radius: 0 10px 10px 0;
       }
       ${isVisible ? tabVisibleStyles : ""}
@@ -179,7 +179,7 @@ type Props = {
   handleShareClick?: any; // TODO
   handleDeleteClick?: any; // TODO
   isBottom?: boolean;
-  isMerged?: boolean;
+  colors?: AuthorColorsType;
 };
 
 export default function ListDocuments({
@@ -191,7 +191,7 @@ export default function ListDocuments({
   visible,
   id,
   isBottom = false,
-  isMerged = false,
+  colors = {},
 }: Props) {
   let [layers, setLayers] = useState<Layer[]>([])
 
@@ -212,6 +212,7 @@ export default function ListDocuments({
     >
       {layers.map((layer: Layer, index) => {
         let visibleMaybe = visible.findIndex((id) => id === layer.id);
+        const isMerged = layer.archived;
         return (
           <FileTab
             key={layer.id}
@@ -231,6 +232,7 @@ export default function ListDocuments({
               justify-content: flex-start;
               align-items: flex-start;
               ${editableLayer === layer.id ? editableTabStyle : ""}
+              box-shadow: 18px 24px 0px -18px ${colors[layer.author] ||"none"} inset;
             `}
           >
             {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
