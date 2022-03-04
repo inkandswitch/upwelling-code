@@ -119,6 +119,8 @@ export class Upwell {
       }
 
       let extract = tar.extract()
+      let bufs: any = []
+
       extract.on('entry', (header, stream, next) => {
         if (header.name === METADATA_KEY) {
           unpackFileStream(stream, (buf: Buffer) => {
@@ -129,18 +131,24 @@ export class Upwell {
           unpackFileStream(stream, (buf: Buffer) => {
             let filename = header.name
             let id = filename.split('.')[0]
-            var start = new Date()
-            let layer = Layer.load(id, buf)
-            //@ts-ignore
-            var end = new Date() - start
-            debug('(loadDoc): execution time %dms', end)
-            upwell.add(layer)
+            bufs.push({id, buf})
             next()
           })
         }
       })
   
       extract.on('finish', function () {
+        bufs.forEach(item => {
+          let { id, buf } = item
+          if (!upwell.isArchived(id)) {
+            var start = new Date()
+            let layer = Layer.load(id, buf)
+            //@ts-ignore
+            var end = new Date() - start
+            debug('(loadDoc): execution time %dms', end)
+            upwell.add(layer)
+          }
+        })
         resolve(upwell)
       })
 

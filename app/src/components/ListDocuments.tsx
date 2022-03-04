@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from '@emotion/react/macro'
 import React, { useEffect, useState } from 'react'
-import { Layer } from 'api'
+import { Upwell, Layer } from 'api'
 import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
@@ -194,9 +194,12 @@ export default function ListDocuments({
   colors = {},
 }: Props) {
   let [layers, setLayers] = useState<Layer[]>([])
+  let [upwell, setUpwell] = useState<Upwell>(documents.get(id))
+
 
   useEffect(() => {
     let upwell = documents.get(id)
+    setUpwell(upwell)
     setLayers(upwell.layers())
     upwell.subscribe(() => {
       setLayers(upwell.layers())
@@ -211,7 +214,7 @@ export default function ListDocuments({
     >
       {layers.map((layer: Layer, index) => {
         let visibleMaybe = visible.findIndex((id) => id === layer.id)
-        const isMerged = layer.archived
+        const isMerged = upwell.isArchived(layer.id)
         return (
           <FileTab
             key={layer.id}
