@@ -196,7 +196,6 @@ export default function ListDocuments({
   let [layers, setLayers] = useState<Layer[]>([])
   let [upwell, setUpwell] = useState<Upwell>(documents.get(id))
 
-
   useEffect(() => {
     let upwell = documents.get(id)
     setUpwell(upwell)

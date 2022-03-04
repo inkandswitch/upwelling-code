@@ -95,24 +95,14 @@ export function DocumentView(props: {
 }) {
   const { id, author, authorColors } = props
   let [visible, setVisible] = React.useState<string[]>([])
-  let [rootId, setRootId] = React.useState<string>(props.rootId)
   let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
-
-  function render(upwell: Upwell) {
-    console.log('rendering', upwell.id)
-    let root = upwell.rootLayer()
-    setRootId(root.id)
-  }
 
   function onChangeMade() {
     documents.save(props.id)
-    let upwell = documents.get(props.id)
-    render(upwell)
     documents
       .sync(props.id)
       .then((upwell) => {
         setSyncState(SYNC_STATE.SYNCED)
-        render(upwell)
       })
       .catch((err) => {
         setSyncState(SYNC_STATE.OFFLINE)
@@ -273,39 +263,6 @@ export function DocumentView(props: {
         </div>
       </div>
     </div>
-  )
-}
-
-type ButtonType = React.ClassAttributes<HTMLButtonElement> &
-  React.ButtonHTMLAttributes<HTMLButtonElement>
-
-function Button(props: ButtonType) {
-  return (
-    <button
-      css={css`
-        padding: 3px 14px;
-        font-size: 14px;
-        border-radius: 3px;
-        border: none;
-        font-weight: 500;
-        cursor: pointer;
-        display: inline-flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        color: black;
-        &:hover {
-          background: #d1eaff;
-        }
-        &:disabled {
-          opacity: 70%;
-          cursor: not-allowed;
-          filter: grayscale(40%) brightness(90%);
-        }
-      `}
-      {...props}
-    />
   )
 }
 
