@@ -8,6 +8,7 @@ import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import Documents from '../Documents'
 import { HCLColor } from 'd3-color'
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 let documents = Documents()
 type ID = string
@@ -201,10 +202,12 @@ export default function ListDocuments({
         ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
+      <TransitionGroup>
       {layers.map((layer: Layer, index) => {
         let visibleMaybe = visible.findIndex((id) => id === layer.id)
         const isMerged = layer.archived
         return (
+          <CSSTransition key={layer.id}  classNames='my-node' timeout={900}>
           <FileTab
             key={layer.id}
             aria-pressed={visibleMaybe > -1}
@@ -283,8 +286,10 @@ export default function ListDocuments({
               )}
             </div>
           </FileTab>
+          </CSSTransition>
         )
       })}
+      </TransitionGroup>
     </div>
   )
 }

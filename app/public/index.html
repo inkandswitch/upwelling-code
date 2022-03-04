@@ -28,6 +28,23 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
+    <style>
+    .my-node-enter {
+      opacity: 0;
+    }
+    .my-node-enter-active {
+      opacity: 1;
+      transition: opacity 200ms;
+    }
+    .my-node-exit {
+      opacity: 1;
+    }
+    .my-node-exit-active {
+      opacity: 0;
+      transition: opacity 200ms;
+    }
+    </style>
+
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

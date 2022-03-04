@@ -12,6 +12,7 @@ import { SyncIndicator } from './SyncIndicator'
 import Input from './Input'
 import deterministicColor from '../color'
 
+
 let documents = Documents()
 
 type DocumentViewProps = {
