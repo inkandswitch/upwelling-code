@@ -181,23 +181,6 @@ export function DocumentView(props: {
     else return undefined
   }
 
-  let mergeVisible = async () => {
-    if (!rootId) return console.error('no root race condition')
-    let upwell = documents.get(id)
-    let merged = visible.reduce((prev: Layer, cur: string) => {
-      if (cur !== rootId) {
-        upwell.archive(cur)
-        upwell.share(cur)
-      }
-      let cur_layer = upwell.get(cur)
-      prev.merge(cur_layer)
-      return prev
-    }, upwell.rootLayer())
-    upwell.add(merged)
-    onChangeMade()
-    setVisible([])
-  }
-
   return (
     <div
       id="folio"
@@ -287,7 +270,6 @@ export function DocumentView(props: {
               value={author}
             />
           </div>
-          <Button onClick={mergeVisible}>Merge visible</Button>
         </div>
       </div>
     </div>
