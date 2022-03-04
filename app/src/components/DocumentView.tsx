@@ -25,8 +25,8 @@ export default function MaybeDocument(props: DocumentViewProps) {
   let [rootId, setRootId] = React.useState<string>()
 
   useEffect(() => {
-    let upwell: Upwell 
-    async function render () {
+    let upwell: Upwell
+    async function render() {
       try {
         upwell = await documents.open(props.id)
         upwell = await documents.sync(props.id)
@@ -40,17 +40,10 @@ export default function MaybeDocument(props: DocumentViewProps) {
     }
 
     render()
-   
   }, [props.id])
 
   if (!rootId) return <div>Loading..</div>
-  return (
-    <DocumentView
-      id={props.id}
-      rootId={rootId}
-      author={props.author}
-    />
-  )
+  return <DocumentView id={props.id} rootId={rootId} author={props.author} />
 }
 
 export function DocumentView(props: {
@@ -68,7 +61,7 @@ export function DocumentView(props: {
     (upwell: Upwell) => {
       // find the authors
       let rootId = upwell.rootLayer().id
-      const layers = upwell.layers().filter(l => l.id !== rootId)
+      const layers = upwell.layers().filter((l) => l.id !== rootId)
       setLayers(layers)
 
       const newAuthorColors = { ...authorColors }

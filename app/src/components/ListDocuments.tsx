@@ -1,15 +1,13 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from '@emotion/react/macro'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Layer } from 'api'
 import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
-import Documents from '../Documents'
 import { HCLColor } from 'd3-color'
 
-let documents = Documents()
 type ID = string
 export type AuthorColorsType = {
   [key: ID]: HCLColor
@@ -177,7 +175,7 @@ type Props = {
   visible: string[]
   handleShareClick?: any // TODO
   handleDeleteClick?: any // TODO
-  layers: Layer[],
+  layers: Layer[]
   isBottom?: boolean
   colors?: AuthorColorsType
 }
@@ -193,7 +191,6 @@ export default function ListDocuments({
   isBottom = false,
   colors = {},
 }: Props) {
-
   return (
     <div
       css={css`
