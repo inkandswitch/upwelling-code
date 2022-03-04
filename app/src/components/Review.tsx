@@ -30,6 +30,8 @@ export function ReviewView(props: { id: string; visible: string[] }) {
         return
       }
       let layers = visible.map((id) => upwell.get(id))
+      // TODO: merge all visible layer combinations in the backend ahead of time
+      // and just render them here
       let mergedVisible = layers.slice(1).reduce((prev: Layer, cur: Layer) => {
         let fork = prev.fork('beep', 'boop')
         fork.merge(cur)

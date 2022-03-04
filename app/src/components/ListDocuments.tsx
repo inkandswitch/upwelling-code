@@ -174,10 +174,10 @@ type Props = {
   onLayerClick: Function
   onInputBlur: Function
   editableLayer?: string
-  id: string
   visible: string[]
   handleShareClick?: any // TODO
   handleDeleteClick?: any // TODO
+  layers: Layer[],
   isBottom?: boolean
   colors?: AuthorColorsType
 }
@@ -189,19 +189,11 @@ export default function ListDocuments({
   onInputBlur,
   editableLayer,
   visible,
-  id,
+  layers,
   isBottom = false,
   colors = {},
 }: Props) {
-  let [layers, setLayers] = useState<Layer[]>([])
 
-  useEffect(() => {
-    let upwell = documents.get(id)
-    setLayers(upwell.layers())
-    upwell.subscribe(() => {
-      setLayers(upwell.layers())
-    })
-  }, [id])
   return (
     <div
       css={css`

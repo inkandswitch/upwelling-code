@@ -8,15 +8,25 @@ const STORAGE_URL = process.env.STORAGE_URL
 console.log(STORAGE_URL)
 
 export class Documents {
-  upwells: Map<string, Upwell> = new Map<string, Upwell>()
+  upwells = new Map<string, Upwell>()
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)
+  subscriptions = new Map<string, Function>()
 
   async create(_id?: string): Promise<Upwell> {
     let upwell = Upwell.create({ id: _id })
     let id = upwell.id
     this.upwells.set(id, upwell)
     return this.save(id)
+  }
+
+  subscribe(id: string, fn: Function) {
+    this.subscriptions.set(id, fn)
+    fn(this.upwells.get(id))
+  }
+
+  unsubscribe(id: string) {
+    this.subscriptions.delete(id)
   }
 
   toUpwell(binary: Buffer): Promise<Upwell> {
@@ -28,6 +38,11 @@ export class Documents {
     let upwell = this.upwells.get(id)
     if (!upwell) throw new Error('open upwell before get')
     return upwell
+  }
+
+  notify(id: string) {
+    let fn = this.subscriptions.get(id)
+    if (fn) fn(this.upwells.get(id))
   }
 
   async save(id: string): Promise<Upwell> {
@@ -81,10 +96,14 @@ export class Documents {
         // the one we have in memory is up to date
         return inMemory
       }
+      // update our local one
       let theirs = await this.toUpwell(buf)
       inMemory.merge(theirs)
+      this.notify(id)
+
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
+      this.notify(id)
       this.remote
         .setItem(id, newFile)
         .then(() => {
