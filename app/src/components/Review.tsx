@@ -82,7 +82,6 @@ export function ReviewView(props: { id: string; visible: string[] }) {
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})
   if (!state.atjsonLayer) {
-    updateAtjsonState()
     return <div>Loading...</div>
   } else {
     return (
