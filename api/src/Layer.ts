@@ -21,12 +21,10 @@ export type ChangeMetadata = {
 
 export type Heads = string[];
 export type LayerMetadata = {
-  id: string,
   shared: boolean,
   parent_id: string,
   author: Author,
-  message: string,
-  archived: boolean
+  message: string
 }
 
 export type Edit = {
@@ -118,21 +116,11 @@ export class Layer {
     return this._getValue('parent_id') as string
   }
 
-  get archived(): boolean {
-    return this._getValue('archived') as boolean
-  }
-
-  set archived(value: boolean) {
-    this.doc.set(ROOT, 'archived', value)
-  }
-
   get metadata() : LayerMetadata {
     return {
-      id: this.id,
       message: this.message,
       author: this.author,
       parent_id: this.parent_id,
-      archived: this.archived,
       shared: this.shared
     }
   }

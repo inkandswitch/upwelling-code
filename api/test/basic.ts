@@ -126,7 +126,7 @@ describe('upwell', () => {
     it('can be archived', () => {
       d.archive(newLayer.id)
       layers = d.layers()
-      assert.equal(layers[1].archived, true)
+      assert.equal(d.isArchived(layers[1].id), true)
       let root = d.rootLayer()
       assert.equal(root.id, rootId)
       assert.equal(doc.id, rootId)
@@ -153,7 +153,7 @@ describe('upwell', () => {
     assert.deepEqual(incomingShared.metadata, doc.metadata)
     assert.equal(incomingShared.author, 'Susan')
     assert.equal(incomingShared.shared, true)
-    assert.equal(incomingShared.archived, false)
+    assert.equal(d.isArchived(incomingShared.id), false)
   })
 
   it('gets root layer', () => {

@@ -72,10 +72,12 @@ export class Upwell {
     this.subscriber()
   }
 
+  isArchived(id: string) : boolean {
+    return this.metadata.isArchived(id)
+  }
+
   archive(id: string): void {
-    let layer = this.get(id)
-    layer.archived = true
-    this.set(id, layer)
+    this.metadata.archive(id)
     this.subscriber()
   }
 

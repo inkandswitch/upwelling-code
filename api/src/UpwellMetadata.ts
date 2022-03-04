@@ -20,7 +20,36 @@ export class UpwellMetadata {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id) 
     doc.set(ROOT, 'main_id', main_id)
+    doc.set(ROOT, 'archived', {})
     return new UpwellMetadata(doc)
+  }
+
+  getArchivedLayers(): Automerge.ObjID {
+    let value = this.doc.value(ROOT, 'archived')
+    let map;
+    if (!value) {
+      map = this.doc.set(ROOT, 'archived', {})
+    } else if (value[0] === 'map') {
+      map = value[1]
+    } else {
+      throw new Error('Archived property not a map')
+    }
+    return map
+  }
+
+  isArchived(id: string): boolean {
+    let map = this.getArchivedLayers()
+    let maybe = this.doc.value(map, id)
+    if (maybe && maybe[0] === 'boolean') {
+      return maybe[1]
+    } else {
+      return false
+    }
+  }
+
+  archive(id: string) {
+    let map = this.getArchivedLayers()
+    this.doc.set(map, id, true)
   }
 
   get id(): string {
