@@ -49,7 +49,7 @@ export class Upwell {
   }
 
   layers(): Layer[] {
-    return Array.from(this._layers.values())
+    return Array.from(this._layers.values()).reverse()
   }
 
   add(layer: Layer): void {
