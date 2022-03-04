@@ -198,7 +198,7 @@ export default function ListDocuments({
         ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
-      {layers.map((layer: Layer, index) => {
+      {layers.sort((a, b) => a.time - b.time).map((layer: Layer, index) => {
         let visibleMaybe = visible.findIndex((id) => id === layer.id)
         const isMerged = layer.archived
         return (
