@@ -34,6 +34,7 @@ export function ReviewView(props: { id: string; visible: string[] }) {
       // and just render them here
       let mergedVisible = layers.slice(1).reduce((prev: Layer, cur: Layer) => {
         let fork = prev.fork('beep', 'boop')
+        console.log('merging')
         fork.merge(cur)
         return fork
       }, layers[0])
@@ -76,6 +77,7 @@ export function ReviewView(props: { id: string; visible: string[] }) {
   )
 
   useEffect(() => {
+    console.log('effect2')
     updateAtjsonState()
   }, [updateAtjsonState, visible])
 
