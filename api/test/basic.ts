@@ -1,6 +1,8 @@
 import { Author, Upwell, Layer, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
+import { UpwellMetadata } from '../src/UpwellMetadata';
+import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
   it('subscribes to document changes', async () => {
@@ -88,6 +90,25 @@ describe('upwell', () => {
     assert.equal(newLayer.author, author)
   })
 
+  describe('UpwellMetadata', () => {
+    it('sets and gets archived', () => {
+      let meta = UpwellMetadata.create(nanoid(), 'unknown')
+      meta.archive('boop')
+      let archived = meta.isArchived('boop')
+      assert.equal(archived, true)
+    })
+
+    it('saves and loads state', () => {
+      let meta = UpwellMetadata.create(nanoid(), 'unknown')
+      meta.archive('boop')
+      let binary = meta.doc.save()
+      let loaded = UpwellMetadata.load(binary)
+      let archived = loaded.isArchived('boop')
+      assert.equal(archived, true)
+    })
+
+  })
+
   describe('merges two layers', () => {
     let first_author: Author =  'Susan'
     let d = Upwell.create({ author: first_author})
@@ -123,13 +144,17 @@ describe('upwell', () => {
     layers = d.layers()
     assert.equal(layers.length, 2)
 
-    it('can be archived', () => {
+    it('can be archived', async () => {
       d.archive(newLayer.id)
-      layers = d.layers()
-      assert.equal(d.isArchived(layers[1].id), true)
-      let root = d.rootLayer()
-      assert.equal(root.id, rootId)
-      assert.equal(doc.id, rootId)
+      let layers = await d.getArchivedLayers()
+      let layer = layers.next()
+      assert.ok(layer.value)
+      if (layer.value) {
+        assert.equal(d.isArchived(layer.value.id), true)
+        let root = d.rootLayer()
+        assert.equal(root.id, rootId)
+        assert.equal(doc.id, rootId)
+      }
     })
 
   })

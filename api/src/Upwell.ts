@@ -5,7 +5,6 @@ import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import Debug from 'debug';
-import { loadDoc } from 'automerge-wasm-pack';
 
 export type Author = string 
 export const UNKNOWN_AUTHOR = "Unknown"
@@ -24,6 +23,7 @@ export class Upwell {
   _layers: Map<string, Layer> = new Map();
   metadata: UpwellMetadata
   subscriber: Function = function noop () {}
+  _archived: Map<string, Uint8Array> = new Map()
 
   constructor(metadata: UpwellMetadata) {
     this.metadata = metadata
@@ -49,7 +49,17 @@ export class Upwell {
   }
 
   layers(): Layer[] {
-    return Array.from(this._layers.values())
+    return Array.from(this._layers.values()).filter((l) => !this.isArchived(l.id)).reverse()
+  }
+
+  *getArchivedLayers(): Generator<Layer> {
+    let archived = Array.from(this._archived)
+    for (let i = 0; i < archived.length; i++) {
+      let [ id, buf ] = archived[i]
+      console.log(i)
+      let doc = Layer.load(id, buf)
+      yield doc
+    }
   }
 
   add(layer: Layer): void {
@@ -79,6 +89,8 @@ export class Upwell {
   archive(id: string): void {
     this.metadata.archive(id)
     this.subscriber()
+    let doc = this.get(id)
+    this._archived.set(id, doc.save())
   }
 
   set(id: string, layer: Layer) {
@@ -137,10 +149,12 @@ export class Upwell {
         }
       })
   
-      extract.on('finish', function () {
+      extract.on('finish', () => {
         bufs.forEach(item => {
           let { id, buf } = item
-          if (!upwell.isArchived(id)) {
+          if (upwell.isArchived(id)) {
+            upwell._archived.set(id, buf)
+          } else {
             var start = new Date()
             let layer = Layer.load(id, buf)
             //@ts-ignore

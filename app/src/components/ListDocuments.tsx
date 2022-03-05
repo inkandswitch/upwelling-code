@@ -1,15 +1,15 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from '@emotion/react/macro'
-import React, { useEffect, useState } from 'react'
-import { Upwell, Layer } from 'api'
+import React from 'react'
+import { Layer } from 'api'
 import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
-import Documents from '../Documents'
 import { HCLColor } from 'd3-color'
-
+import Documents from '../Documents';
 let documents = Documents()
+
 type ID = string
 export type AuthorColorsType = {
   [key: ID]: HCLColor
@@ -174,10 +174,11 @@ type Props = {
   onLayerClick: Function
   onInputBlur: Function
   editableLayer?: string
-  id: string
   visible: string[]
   handleShareClick?: any // TODO
+  id: string,
   handleDeleteClick?: any // TODO
+  layers: Layer[]
   isBottom?: boolean
   colors?: AuthorColorsType
 }
@@ -185,25 +186,16 @@ type Props = {
 export default function ListDocuments({
   onLayerClick,
   handleShareClick,
+  id,
   handleDeleteClick,
   onInputBlur,
   editableLayer,
   visible,
-  id,
+  layers,
   isBottom = false,
   colors = {},
 }: Props) {
-  let [layers, setLayers] = useState<Layer[]>([])
-  let [upwell, setUpwell] = useState<Upwell>(documents.get(id))
-
-  useEffect(() => {
-    let upwell = documents.get(id)
-    setUpwell(upwell)
-    setLayers(upwell.layers())
-    upwell.subscribe(() => {
-      setLayers(upwell.layers())
-    })
-  }, [id])
+  let upwell = documents.get(id)
   return (
     <div
       css={css`
@@ -211,7 +203,7 @@ export default function ListDocuments({
         ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
-      {layers.map((layer: Layer, index) => {
+      {layers.sort((a, b) => a.time - b.time).map((layer: Layer, index) => {
         let visibleMaybe = visible.findIndex((id) => id === layer.id)
         const isMerged = upwell.isArchived(layer.id)
         return (

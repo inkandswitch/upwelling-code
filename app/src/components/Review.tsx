@@ -30,6 +30,8 @@ export function ReviewView(props: { id: string; visible: string[] }) {
         return
       }
       let layers = visible.map((id) => upwell.get(id))
+      // TODO: merge all visible layer combinations in the backend ahead of time
+      // and just render them here
       let mergedVisible = layers.slice(1).reduce((prev: Layer, cur: Layer) => {
         let fork = prev.fork('beep', 'boop')
         fork.merge(cur)
@@ -80,7 +82,6 @@ export function ReviewView(props: { id: string; visible: string[] }) {
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})
   if (!state.atjsonLayer) {
-    updateAtjsonState()
     return <div>Loading...</div>
   } else {
     return (

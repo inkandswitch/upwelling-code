@@ -23,16 +23,47 @@ const AUTOSAVE_INTERVAL = 3000
 
 export default function MaybeDocument(props: DocumentViewProps) {
   let [rootId, setRootId] = React.useState<string>()
+
+  useEffect(() => {
+    let upwell: Upwell
+    async function render() {
+      try {
+        upwell = await documents.open(props.id)
+        upwell = await documents.sync(props.id)
+      } catch (err) {
+        upwell = await documents.create(props.id)
+      } finally {
+        if (!upwell) throw new Error('couuld not create upwell')
+        let root = upwell.rootLayer()
+        setRootId(root.id)
+      }
+    }
+
+    render()
+  }, [props.id])
+
+  if (!rootId) return <div>Loading..</div>
+  return <DocumentView id={props.id} rootId={rootId} author={props.author} />
+}
+
+export function DocumentView(props: {
+  id: string
+  rootId: string
+  author: Author
+}) {
+  const { id, author } = props
+  let [visible, setVisible] = React.useState<string[]>([])
+  let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({})
+  let [layers, setLayers] = React.useState<Layer[]>([])
 
   const render = useCallback(
     (upwell: Upwell) => {
-      console.log('rendering', upwell.id)
-      let root = upwell.rootLayer()
-      setRootId(root.id)
-
       // find the authors
-      const layers = upwell.layers()
+      let rootId = upwell.rootLayer().id
+      const layers = upwell.layers().filter((l) => l.id !== rootId)
+      setLayers(layers)
+
       const newAuthorColors = { ...authorColors }
       let changed = false
       layers.forEach((l) => {
@@ -52,56 +83,36 @@ export default function MaybeDocument(props: DocumentViewProps) {
         })
       }
     },
-    [setRootId, authorColors, setAuthorColors, props.author]
+    [authorColors, setAuthorColors, props.author]
   )
 
   useEffect(() => {
-    async function get() {
-      let upwell
-      try {
-        upwell = await documents.open(props.id)
-      } catch (err) {
-        upwell = null
-      }
-
-      try {
-        if (!upwell) upwell = await documents.sync(props.id)
-        render(upwell)
-      } catch (err) {
-        let upwell = await documents.create(props.id)
-        render(upwell)
+    documents.subscribe(id, (upwell: Upwell) => {
+      render(upwell)
+    })
+    // first time render
+    let upwell = documents.get(id)
+    render(upwell)
+    if (layers.length) {
+      // show the layer that is the most recent layer that was mine
+      for (let i = layers.length - 1; i > 0; i--) {
+        if (layers[i].author === props.author) {
+          setVisible([layers[i].id])
+          break;
+        }
       }
     }
-
-    get()
-  }, [render, props.id])
-
-  if (!rootId) return <div>Loading..</div>
-  return (
-    <DocumentView
-      id={props.id}
-      rootId={rootId}
-      author={props.author}
-      authorColors={authorColors}
-    />
-  )
-}
-
-export function DocumentView(props: {
-  id: string
-  rootId: string
-  author: Author
-  authorColors: AuthorColorsType
-}) {
-  const { id, author, authorColors } = props
-  let [visible, setVisible] = React.useState<string[]>([])
-  let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
+    return () => {
+      documents.unsubscribe(id)
+    }
+  }, [id, render])
 
   function onChangeMade() {
     documents.save(props.id)
     documents
       .sync(props.id)
       .then((upwell) => {
+        render(upwell)
         setSyncState(SYNC_STATE.SYNCED)
       })
       .catch((err) => {
@@ -146,6 +157,7 @@ export function DocumentView(props: {
     let root = upwell.rootLayer()
     let newLayer = root.fork(message, author)
     upwell.add(newLayer)
+    setVisible([newLayer.id])
     onChangeMade()
   }
 
@@ -218,6 +230,7 @@ export function DocumentView(props: {
           </ButtonTab>
           <ListDocuments
             id={id}
+            layers={layers}
             isBottom
             colors={authorColors}
             onLayerClick={onLayerClick}
