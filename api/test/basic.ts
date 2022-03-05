@@ -149,7 +149,7 @@ describe('upwell', () => {
     let incomingLayers = inc.layers()
     assert.equal(incomingLayers.length, 2)
 
-    let incomingShared = incomingLayers[1]
+    let incomingShared = incomingLayers[0]
     assert.deepEqual(incomingShared.metadata, doc.metadata)
     assert.equal(incomingShared.author, 'Susan')
     assert.equal(incomingShared.shared, true)
