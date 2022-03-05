@@ -88,40 +88,48 @@ describe('upwell', () => {
     assert.equal(newLayer.author, author)
   })
 
-  describe('merges two layers', () => {
+  describe('Layer', () => {
     let first_author: Author =  'Susan'
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
+    let rootId
+    let newLayer
     assert.equal(layers.length, 1)
-    doc.insertAt(0, 'H')
-    doc.insertAt(1, 'e')
-    doc.insertAt(2, 'l')
-    doc.insertAt(3, 'l')
-    doc.insertAt(4, 'o')
-    assert.equal(doc.text, 'Hello')
+    it('inserts text', () => {
+      doc.insertAt(0, 'H')
+      doc.insertAt(1, 'e')
+      doc.insertAt(2, 'l')
+      doc.insertAt(3, 'l')
+      doc.insertAt(4, 'o')
+      assert.equal(doc.text, 'Hello')
+    })
 
 
-    let name = 'Started typing on the train'
-    let author: Author = 'Theroux'
-    let newLayer = doc.fork(name, author)
-    d.add(newLayer)
+    it('forks', () => {
+      let name = 'Started typing on the train'
+      let author: Author = 'Theroux'
+      newLayer = doc.fork(name, author)
+      d.add(newLayer)
+  
+      newLayer.insertAt(5, ' ')
+      newLayer.insertAt(6, 'w')
+      newLayer.insertAt(7, 'o')
+      newLayer.insertAt(8, 'r')
+      newLayer.insertAt(9, 'l')
+      newLayer.insertAt(10, 'd')
+      rootId = d.rootLayer().id
+    })
 
-    let rootId = d.rootLayer().id
 
-    newLayer.insertAt(5, ' ')
-    newLayer.insertAt(6, 'w')
-    newLayer.insertAt(7, 'o')
-    newLayer.insertAt(8, 'r')
-    newLayer.insertAt(9, 'l')
-    newLayer.insertAt(10, 'd')
+    it('merged', () => {
+      doc.merge(newLayer)
+      assert.equal(doc.text, 'Hello world')
 
-    doc.merge(newLayer)
-    assert.equal(doc.text, 'Hello world')
-
-    d.add(doc)
-    layers = d.layers()
-    assert.equal(layers.length, 2)
+      d.add(doc)
+      layers = d.layers()
+      assert.equal(layers.length, 2)
+    })
 
     it('can be archived', () => {
       d.archive(newLayer.id)
