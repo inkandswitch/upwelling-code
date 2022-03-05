@@ -39,7 +39,7 @@ describe('edits', () => {
 
     let edits: Edit[] = []
 
-    describe('with (root, modified) document order', () => {
+    describe('with ("_root", modified) document order', () => {
       beforeEach(() => {
         edits = doc1.getEdits(doc2)
       });
@@ -68,7 +68,7 @@ describe('edits', () => {
       })
     })
 
-    describe('with (modified, root) document order', () => {
+    describe('with (modified, "_root") document order', () => {
       beforeEach(() => {
         edits = doc2.getEdits(doc1)
       });
@@ -143,7 +143,7 @@ describe('edits', () => {
 
         // this is a contrived example because this approach would only allow
         // us to merge together layers that have *not* been updated to the most
-        // recent root. See parallel merge below for the more realistic scenario.
+        // recent "_root". See parallel merge below for the more realistic scenario.
 
         beforeEach(() => {
           let merged12 = Layer.mergeWithEdits(doc1, doc2)
@@ -198,7 +198,7 @@ describe('edits', () => {
       describe('parallel merge', () => {
 
         // this scenario is what our current working model assumes; layers are
-        // kept up-to-date with root separately, and then merged together
+        // kept up-to-date with "_root" separately, and then merged together
 
         beforeEach(() => {
           let merged12 = Layer.mergeWithEdits(doc1, doc2)

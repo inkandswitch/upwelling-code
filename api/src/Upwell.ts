@@ -75,7 +75,6 @@ export class Upwell {
   archive(id: string): void {
     let layer = this.get(id)
     layer.archived = true
-    this.set(id, layer)
     this.subscriber()
   }
 

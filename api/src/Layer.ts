@@ -12,8 +12,6 @@ export async function loadForTheFirstTimeLoL() {
   })
 }
 
-const ROOT = '_root'
-
 export type ChangeMetadata = {
   message: string,
   author: Author
@@ -59,71 +57,68 @@ export class Layer {
     this.doc = doc
   }
 
-  private _getAutomergeText(prop: string): string {
-    let value = this.doc.value(ROOT, prop)
-    if (value && value[0] === 'text') return this.doc.text(value[1])
-    else return ''
-  }
-
-  private _getValue(prop: string) {
-    let value = this.doc.value(ROOT, prop)
-    if (value && value[0]) return value[1]
-  }
-
-  get shared () {
-    return this._getValue('shared') as boolean;
+  get shared (): boolean{
+    let value = this.doc.value("_root", 'shared');
+    if (value && value[0] === 'boolean') return value[1]
+    return false 
   }
 
   set shared (value: boolean) {
-    this.doc.set(ROOT, 'shared', value)
-  }
-
-  get version () {
-    return this._getValue('version') as string;
-  }
-
-  set version (value: string) {
-    this.doc.set(ROOT, 'version', value)
+    this.doc.set("_root", 'shared', value)
   }
 
   get time(): number {
-    return this._getValue('time') as number
+    let value = this.doc.value("_root", 'time');
+    if (value && value[0] === 'int') return value[1]
+    return Date.now()
   }
 
   set time(value: number){
-    this.doc.set(ROOT, 'time', value) 
+    this.doc.set("_root", 'time', value) 
   }
 
   get message (): string {
-    return this._getValue('message') as string;
+    let value = this.doc.value("_root", 'message');
+    if (value && value[0] === 'str') return value[1]
+    return ''
   }
 
   set message(value: string) {
-    this.doc.set(ROOT, 'message', value)
+    this.doc.set("_root", 'message', value)
   }
 
   get text (): string {
-    return this._getAutomergeText('text')
+    let value = this.doc.value("_root", 'text');
+    if (value && value[0] === 'text') return this.doc.text(value[1])
+    return ''
   }
 
   get author(): Author {
-    return this._getValue('author') as Author
+    let value = this.doc.value("_root", 'author');
+    if (value && value[0] === 'str') return value[1]
+    return ''
   }
 
   get title (): string {
-    return this._getAutomergeText('title')
+    let value = this.doc.value("_root", 'title');
+    if (value && value[0] === 'text') return this.doc.text(value[1])
+    return ''
   }
 
   get parent_id(): string {
-    return this._getValue('parent_id') as string
+    let value = this.doc.value("_root", 'parent_id');
+    if (value && value[0] === 'str') return value[1]
+    return ''
   }
 
   get archived(): boolean {
-    return this._getValue('archived') as boolean
+    let value = this.doc.value("_root", 'archived')
+    if (value && value[0] === 'boolean') return value[1]
+    else return false
   }
 
   set archived(value: boolean) {
-    this.doc.set(ROOT, 'archived', value)
+    this.doc.set("_root", 'archived', value)
   }
 
   get metadata() : LayerMetadata {
@@ -171,25 +166,25 @@ export class Layer {
   }
 
   insertAt(position: number, value: string | Array<string>, prop = 'text') {
-    let obj = this.doc.value(ROOT, prop)
+    let obj = this.doc.value("_root", prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, 0, value)
     else throw new Error('Text field not properly initialized')
   }
 
   deleteAt(position: number, count: number = 1, prop = 'text') {
-    let obj = this.doc.value(ROOT, prop)
+    let obj = this.doc.value("_root", prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, count, '')
     else throw new Error('Text field not properly initialized')
   }
 
   mark(name: string, range: string, value: Value, prop = 'text') {
-    let obj = this.doc.value(ROOT, prop)
+    let obj = this.doc.value("_root", prop)
     if (obj && obj[0] === 'text') return this.doc.mark(obj[1], range, name, value)
     else throw new Error('Text field not properly initialized')
   }
 
   getMarks(prop = 'text') {
-    let obj = this.doc.value(ROOT, 'text')
+    let obj = this.doc.value("_root", 'text')
     if (obj && obj[0] === 'text') return this.doc.raw_spans(obj[1])
     else throw new Error('Text field not properly initialized')
   }
@@ -205,12 +200,12 @@ export class Layer {
   fork(message: string, author: Author): Layer {
     let id = nanoid()
     let doc = this.doc.fork()
-    doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'author', author)
-    doc.set(ROOT, 'shared', false)
-    doc.set(ROOT, 'time', Date.now())
-    doc.set(ROOT, 'archived', false)
-    doc.set(ROOT, 'parent_id', this.id)
+    doc.set("_root", 'message', message)
+    doc.set("_root", 'author', author)
+    doc.set("_root", 'shared', false)
+    doc.set("_root", 'time', Date.now())
+    doc.set("_root", 'archived', false)
+    doc.set("_root", 'parent_id', this.id)
     return new Layer(id, doc)
   }
 
@@ -262,13 +257,13 @@ export class Layer {
   static create(message: string, author: Author): Layer {
     let doc = create()
     let id = nanoid()
-    doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'author', author)
-    doc.set(ROOT, 'shared', false, 'boolean')
-    doc.set(ROOT, 'time', Date.now(), 'timestamp')
-    doc.set(ROOT, 'archived', false, 'boolean')
-    doc.make(ROOT, 'title', '')
-    doc.make(ROOT, 'text', '')
+    doc.set("_root", 'message', message)
+    doc.set("_root", 'author', author)
+    doc.set("_root", 'shared', false, 'boolean')
+    doc.set("_root", 'time', Date.now(), 'timestamp')
+    doc.set("_root", 'archived', false, 'boolean')
+    doc.make("_root", 'title', '')
+    doc.make("_root", 'text', '')
     return new Layer(id, doc)
   }
 
