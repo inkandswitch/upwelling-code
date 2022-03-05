@@ -29,11 +29,15 @@ export default function MaybeDocument(props: DocumentViewProps) {
     async function render() {
       try {
         upwell = await documents.open(props.id)
+        console.log('got upwell', upwell.layers())
+      } catch (err) {}
+
+      try {
         upwell = await documents.sync(props.id)
       } catch (err) {
-        upwell = await documents.create(props.id)
+        if (!upwell) upwell = await documents.create(props.id)
       } finally {
-        if (!upwell) throw new Error('couuld not create upwell')
+        if (!upwell) throw new Error('could not create upwell')
         let root = upwell.rootLayer()
         setRootId(root.id)
       }
@@ -87,11 +91,12 @@ export function DocumentView(props: {
   )
 
   useEffect(() => {
-    documents.subscribe(id, (upwell: Upwell) => {
+    let upwell = documents.get(id)
+    upwell.subscribe(() => {
+      console.log('rendering')
       render(upwell)
     })
     // first time render
-    let upwell = documents.get(id)
     render(upwell)
     if (layers.length) {
       // show the layer that is the most recent layer that was mine
