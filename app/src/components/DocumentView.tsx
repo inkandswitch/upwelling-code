@@ -90,6 +90,18 @@ export function DocumentView(props: {
     documents.subscribe(id, (upwell: Upwell) => {
       render(upwell)
     })
+    // first time render
+    let upwell = documents.get(id)
+    render(upwell)
+    if (layers.length) {
+      // show the layer that is the most recent layer that was mine
+      for (let i = layers.length - 1; i > 0; i--) {
+        if (layers[i].author === props.author) {
+          setVisible([layers[i].id])
+          break;
+        }
+      }
+    }
     return () => {
       documents.unsubscribe(id)
     }

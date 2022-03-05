@@ -22,7 +22,6 @@ export class Documents {
 
   subscribe(id: string, fn: Function) {
     this.subscriptions.set(id, fn)
-    fn(this.upwells.get(id))
   }
 
   unsubscribe(id: string) {
