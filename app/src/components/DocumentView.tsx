@@ -98,7 +98,7 @@ export function DocumentView(props: {
       for (let i = layers.length - 1; i > 0; i--) {
         if (layers[i].author === props.author) {
           setVisible([layers[i].id])
-          break;
+          break
         }
       }
     }

@@ -5,7 +5,6 @@ import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import Debug from 'debug';
-import { loadDoc } from 'automerge-wasm-pack';
 
 export type Author = string 
 export const UNKNOWN_AUTHOR = "Unknown"
