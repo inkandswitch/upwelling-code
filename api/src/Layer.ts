@@ -29,11 +29,6 @@ export type LayerMetadata = {
   archived: boolean
 }
 
-export type Edit = {
-  type: 'insert' | 'delete' | 'retain',
-  start: number,
-  value: string
-}
 export type Subscriber = (doc: Layer, heads: Heads) => void 
 
 export class LazyLayer {
