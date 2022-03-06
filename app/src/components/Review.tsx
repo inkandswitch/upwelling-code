@@ -20,24 +20,20 @@ export function ReviewView(props: { id: string; visible: string[] }) {
   let updateAtjsonState = useCallback(
     async function () {
       let upwell = documents.get(id)
-      let rootLayer = upwell.rootLayer()
       if (!visible.length) {
         let atjsonLayer = new UpwellSource({
-          content: rootLayer.text,
+          content: '',
           annotations: [],
         })
         setState({ atjsonLayer })
         return
       }
+
+      // FIXME these need to be ordered by dependency graph to make sense (earliest first).
       let layers = visible.map((id) => upwell.get(id))
-      // TODO: merge all visible layer combinations in the backend ahead of time
-      // and just render them here
-      let mergedVisible = layers.slice(1).reduce((prev: Layer, cur: Layer) => {
-        let fork = prev.fork('beep', 'boop')
-        fork.merge(cur)
-        return fork
-      }, layers[0])
-      let editsLayer = Layer.mergeWithEdits(rootLayer, mergedVisible)
+      let [first, ...rest] = layers
+
+      let editsLayer = Layer.mergeWithEdits(first, ...rest)
       let marks = editsLayer.marks.map((m: any) => {
         let attrs = JSON.parse(m.value)
         // I wonder if there's a (good) way to preserve identity of the mark
