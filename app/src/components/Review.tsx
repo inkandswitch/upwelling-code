@@ -7,6 +7,7 @@ import UpwellSource from './upwell-source'
 import { Layer } from 'api'
 import { textCSS } from './TextArea'
 import Documents from '../Documents'
+import { AuthorColorsType } from './ListDocuments'
 
 let documents = Documents()
 
@@ -14,8 +15,12 @@ type ReviewState = {
   atjsonLayer?: UpwellSource
 }
 
-export function ReviewView(props: { id: string; visible: string[] }) {
-  const { visible, id } = props
+export function ReviewView(props: {
+  id: string
+  visible: string[]
+  colors?: AuthorColorsType
+}) {
+  const { visible, id, colors } = props
 
   let updateAtjsonState = useCallback(
     async function () {
@@ -36,6 +41,7 @@ export function ReviewView(props: { id: string; visible: string[] }) {
       let editsLayer = Layer.mergeWithEdits(first, ...rest)
       let marks = editsLayer.marks.map((m: any) => {
         let attrs = JSON.parse(m.value)
+        if (colors) attrs['authorColor'] = colors[attrs.author].toString()
         // I wonder if there's a (good) way to preserve identity of the mark
         // here (id? presumably?) Or I guess just the mark itself?) so that we
         // can do direct actions on the Upwell layer via the atjson annotation

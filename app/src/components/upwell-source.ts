@@ -3,6 +3,7 @@ import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
 
 export class Insertion extends InlineAnnotation<{
   author?: string
+  authorColor?: string
   text: string
 }> {
   static vendorPrefix = 'upwell'
@@ -11,6 +12,7 @@ export class Insertion extends InlineAnnotation<{
 
 export class Deletion extends InlineAnnotation<{
   author?: string
+  authorColor?: string
   text: string
 }> {
   static vendorPrefix = 'upwell'
