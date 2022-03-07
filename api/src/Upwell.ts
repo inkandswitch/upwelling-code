@@ -63,15 +63,7 @@ export class Upwell {
   }
 
   add(layer: Layer): void {
-    try {
-      let existing = this.get(layer.id)
-      // we know about this layer already.
-      // merge this layer with our existing layer 
-      existing.merge(layer)
-      this.set(existing.id, existing)
-    } catch (err) { 
-      this.set(layer.id, layer)
-    }
+    this.set(layer.id, layer)
     this.subscriber()
   }
 
@@ -190,7 +182,6 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    console.log('creating layer')
     let layer = Layer.create('Document initialized', author)
     let metadata = UpwellMetadata.create(id, layer.id)
     let upwell = new Upwell(metadata)
@@ -204,7 +195,12 @@ export class Upwell {
 
     //merge layers
     layersToMerge.forEach(layer => {
-      this.add(layer)
+      try {
+        let existing = this.get(layer.id)
+        existing.merge(layer)
+      } catch (err) {
+        this.add(layer) 
+      }
     })
 
     //merge metadata

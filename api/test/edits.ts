@@ -1,4 +1,4 @@
-import { Edit, Author, Upwell, Layer } from '../src/index'
+import { Author, Upwell, Layer } from '../src/index'
 import { it } from 'mocha'
 import { assert } from 'chai'
 import { nanoid } from 'nanoid'
