@@ -3,9 +3,9 @@ import { css } from '@emotion/react/macro'
 import React from 'react'
 import { Author } from 'api'
 import { ReviewView } from './Review'
-import { TextAreaView } from './TextArea'
 import Documents from '../Documents'
 import { AuthorColorsType } from './ListDocuments'
+import { EditorView } from './Editor'
 
 let documents = Documents()
 
@@ -37,11 +37,11 @@ export function EditReviewView(props: Props) {
     let layer = upwell.get(visible[0])
     if (author === layer.author) {
       let textArea = (
-        <TextAreaView
+        <EditorView
           colors={colors}
           onChange={onChange}
           editableLayer={layer}
-        ></TextAreaView>
+        ></EditorView>
       )
       component = (
         <React.Fragment>

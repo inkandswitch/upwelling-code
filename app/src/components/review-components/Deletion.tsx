@@ -34,7 +34,7 @@ export const Delete: React.FC<AttributesOf<Annotation>> = (props) => {
           display: none;
         `}
       >
-        {props.text}
+        {props.children}
       </span>
     </span>
   )
