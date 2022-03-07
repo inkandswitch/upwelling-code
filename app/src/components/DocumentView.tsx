@@ -60,7 +60,7 @@ export function DocumentView(props: {
   let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({})
   let [layers, setLayers] = React.useState<Layer[]>([])
-  const [didLoad, setDidLoad] = React.useState<boolean>(false);
+  const [didLoad, setDidLoad] = React.useState<boolean>(false)
 
   const render = useCallback(
     (upwell: Upwell) => {
@@ -118,7 +118,6 @@ export function DocumentView(props: {
       }
     }
   }, [id, didLoad, layers, props.author, render])
-    
 
   function onChangeMade() {
     documents.save(props.id)
@@ -159,6 +158,16 @@ export function DocumentView(props: {
   }, AUTOSAVE_INTERVAL)
 
   let onCreateLayer = async () => {
+    let upwell = documents.get(id)
+
+    if (upwell.layers.length === 0) {
+      let message = ''
+      let newLayer = upwell.rootLayer().fork(message, author)
+      upwell.add(newLayer)
+      setVisible([newLayer.id])
+      return onChangeMade()
+    }
+
     let editableLayerId = getEditableLayer()
     if (!editableLayerId) {
       return alert(
@@ -167,7 +176,6 @@ export function DocumentView(props: {
     }
 
     let message = ''
-    let upwell = documents.get(id)
     let editableLayer = upwell.get(editableLayerId)
     let newLayer = editableLayer.fork(message, author)
     upwell.add(newLayer)
