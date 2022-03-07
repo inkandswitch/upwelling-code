@@ -24,7 +24,7 @@ export class UpwellMetadata {
     return new UpwellMetadata(doc)
   }
 
-  private _getArchivedLayers(): Automerge.ObjID {
+  _getArchivedLayersObj(): Automerge.ObjID {
     let value = this.doc.value(ROOT, 'archived')
     let map;
     if (!value) {
@@ -38,7 +38,7 @@ export class UpwellMetadata {
   }
 
   isArchived(id: string): boolean {
-    let map = this._getArchivedLayers()
+    let map = this._getArchivedLayersObj()
     let maybe = this.doc.value(map, id)
     if (maybe && maybe[0] === 'boolean') {
       return maybe[1]
@@ -48,7 +48,7 @@ export class UpwellMetadata {
   }
 
   archive(id: string) {
-    let map = this._getArchivedLayers()
+    let map = this._getArchivedLayersObj()
     this.doc.set(map, id, true, 'boolean')
   }
 

@@ -14,6 +14,11 @@ export type UpwellOptions = {
   author?: Author,
 }
 
+type MaybeLayer = {
+  id: string,
+  binary: Uint8Array
+}
+
 const debug = Debug('upwell')
 const LAYER_EXT = '.layer'
 const METADATA_KEY = 'metadata.automerge'
@@ -49,16 +54,23 @@ export class Upwell {
   }
 
   layers(): Layer[] {
-    return Array.from(this._layers.values()).filter((l) => !this.isArchived(l.id)).reverse()
+    return Array.from(this._layers.values())
   }
 
   *getArchivedLayers(): Generator<Layer> {
-    let archived = Array.from(this._archived)
+    let archivedObj = this.metadata._getArchivedLayersObj()
+    let archived = this.metadata.doc.keys(archivedObj)
     for (let i = 0; i < archived.length; i++) {
-      let [ id, buf ] = archived[i]
-      console.log(i)
-      let doc = Layer.load(id, buf)
-      yield doc
+      let id = archived[i]
+      let value = this.metadata.doc.value(archivedObj, id)
+      if (value && value[0] === 'boolean') {
+        let buf = this._archived.get(id)
+        if (!buf) console.error('no buf', buf)
+        else {
+          let doc = Layer.load(id, buf)
+          yield doc
+        }
+      }
     }
   }
 
@@ -109,7 +121,6 @@ export class Upwell {
 
   static deserialize(stream: Readable): Promise<Upwell> {
     return new Promise<Upwell>((resolve, reject) => {
-      let upwell = new Upwell(UpwellMetadata.create(nanoid(), 'Unknown'))
 
       let unpackFileStream = (stream: any, next: Function) => {
         let concatStream = concat((buf: Buffer) => {
@@ -122,33 +133,38 @@ export class Upwell {
         stream.resume() 
       }
 
+      let metadata: any = null 
       let extract = tar.extract()
-      let bufs: any = []
+      let layers: MaybeLayer[] = []
 
-      extract.on('entry', (header, stream, next) => {
+      function onentry (header, stream, next) {
         if (header.name === METADATA_KEY) {
           unpackFileStream(stream, (buf: Buffer) => {
-            upwell.metadata = UpwellMetadata.load(buf)
+            metadata = buf
             next()
           })
         } else {
-          unpackFileStream(stream, (buf: Buffer) => {
+          unpackFileStream(stream, (binary: Buffer) => {
             let filename = header.name
             let id = filename.split('.')[0]
-            bufs.push({id, buf})
+            layers.push({
+              id,
+              binary: Uint8Array.from(binary)
+            })
             next()
           })
         }
-      })
+      }
   
-      extract.on('finish', () => {
-        bufs.forEach(item => {
-          let { id, buf } = item
-          if (upwell.isArchived(id)) {
-            upwell._archived.set(id, buf)
+      function finish () {
+        let upwell = new Upwell(UpwellMetadata.load(metadata))
+        layers.forEach(item => {
+          let { id, binary } = item
+          if (upwell.metadata.isArchived(id)) {
+            upwell._archived.set(id, binary)
           } else {
             var start = new Date()
-            let layer = Layer.load(id, buf)
+            let layer = Layer.load(id, binary)
             //@ts-ignore
             var end = new Date() - start
             debug('(loadDoc): execution time %dms', end)
@@ -156,7 +172,10 @@ export class Upwell {
           }
         })
         resolve(upwell)
-      })
+      }
+
+      extract.on('entry', onentry)
+      extract.on('finish', finish)
 
       stream.pipe(extract)
     })
@@ -165,14 +184,16 @@ export class Upwell {
   serialize(): tar.Pack {
     let pack = tar.pack()
     let layers = this.layers()
-    layers.forEach(layer => {
+    layers.forEach(writeLayer)
+    
+    function writeLayer (layer: Layer) {
       let start = new Date()
       let binary = layer.save()
       //@ts-ignore
       var end = new Date() - start
       debug('(save): execution time %dms', end)
       pack.entry({ name: `${layer.id}.${LAYER_EXT}`}, Buffer.from(binary))
-    })
+    }
 
     pack.entry({ name: METADATA_KEY }, Buffer.from(this.metadata.doc.save()))
     pack.finalize()

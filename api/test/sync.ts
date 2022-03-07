@@ -56,6 +56,7 @@ describe('save and load', () => {
   describe('100 layers with 3 paragraphs of text', () => {
     let stream: any = null
     let upwell = Upwell.create()
+    const NUM = 100
     const text = 'Past user research has taught us that writers and editors have complex relationships which vary from institution to institution and even from project to project. There is a consistent theme in our user research: people want to decide when, how, and with whom they share their work, and they want to be deliberate and conscious about edits made by others. Many report stress when they feel someone else is looking over their shoulder while editing or writing. When another person is writing in the same document, sometimes the interface will adjust and move as they are interacting with it. Many report that **it can be distracting and interrupt the creative process when too much is happening in a document**. Although not every project is the same, we do find some common themes that lead us to believe that the most popular design paradigms for collaborative editing just aren’t as good as they could be. Today, people create clever workarounds within existing tools to get their desired behavior. For example, they might copy-paste the document contents into another application altogether, duplicate the document for edits, or tell a contributor to edit a particular section and send it to back in a new document. A problem with this multi-document method is that if another user were to modify the source document in the meantime, those edits would be lost when the document is pasted together. Typically, a person or a team is tasked with maintaining the semantic meaning of the document. This involves some decision-making about which edits should be integrated into the final document, which is often a tedious process involving manual labor. How can we build tools that support these collaborative editing workflows? In this work, we focus on non-fiction writing, and exclude fiction, code, images, videos, or other content types that could also be subject to collaborative editing. Although some of these primitives may transfer, we wanted to scope the project to be a bit more specific to explore some of these ideas and test them with real users, which would have been a much longer project had we included other content types. We already understand from our user research and professional experience on the team that fiction writing, in particular, brings forth different editing patterns and team dynamics than that of non-fiction. In future work, we’d be interested in attempting to apply these ideas to other content types.' 
 
     it('serializes in less than two seconds', async () => {
@@ -66,7 +67,7 @@ describe('save and load', () => {
         layer.insertAt(0, 'boop')
       }
   
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < NUM; i++) {
         createLayer()
       }
   
@@ -86,28 +87,27 @@ describe('save and load', () => {
       assert.isBelow(end, 1 * 2000) // 2sec
     })
 
-    let deserialized: Upwell
     it('lazy loads archived', async () => {
+      let deserialized: Upwell
       let layers = upwell.layers()
-      let i = 0
+      let i = 1
       for (let layer of layers) {
-        if (i % 2 === 0) upwell.archive(layer.id)
+        if (i % 2 === 0) {
+          upwell.archive(layer.id)
+        }
         i++
       }
       stream = await upwell.serialize()
 
       deserialized = await Upwell.deserialize(stream)
-      assert.equal(deserialized.layers().length, 50)
-    })
-
-    it('getArchivedLayers', async () => {
+      assert.equal(deserialized.layers().length, NUM / 2 + 1)
       let generator = deserialized.getArchivedLayers()
       let archived = 0
       for (const layer of generator) {
         archived++
         assert.equal(upwell.isArchived(layer.id), true)
       }
-      assert.equal(archived, 50)
+      assert.equal(archived, NUM / 2)
     })
   })
 })
