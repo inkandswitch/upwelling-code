@@ -165,7 +165,7 @@ export function DocumentView(props: {
   let onCreateLayer = async () => {
     let upwell = documents.get(id)
 
-    if (upwell.layers.length === 0) {
+    if (upwell.layers().length === 1) {
       let message = ''
       let newLayer = upwell.rootLayer().fork(message, author)
       upwell.add(newLayer)
