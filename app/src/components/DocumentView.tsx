@@ -134,7 +134,12 @@ export function DocumentView(props: {
   }
 
   let onLayerClick = (layer: Layer) => {
-    setVisible(visible.concat([layer.id]))
+    let exists = visible.findIndex((id) => id === layer.id)
+    if (exists > -1) {
+      setVisible(visible.filter((id) => id !== layer.id))
+    } else {
+      setVisible(visible.concat([layer.id]))
+    }
   }
 
   const handleFileNameInputBlur = (
