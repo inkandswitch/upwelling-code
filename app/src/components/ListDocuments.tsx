@@ -7,6 +7,8 @@ import { JSX } from '@emotion/react/jsx-runtime'
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import { HCLColor } from 'd3-color'
+import Documents from '../Documents';
+let documents = Documents()
 
 type ID = string
 export type AuthorColorsType = {
@@ -174,6 +176,7 @@ type Props = {
   editableLayer?: string
   visible: string[]
   handleShareClick?: any // TODO
+  id: string,
   handleDeleteClick?: any // TODO
   layers: Layer[]
   isBottom?: boolean
@@ -183,6 +186,7 @@ type Props = {
 export default function ListDocuments({
   onLayerClick,
   handleShareClick,
+  id,
   handleDeleteClick,
   onInputBlur,
   editableLayer,
@@ -191,6 +195,7 @@ export default function ListDocuments({
   isBottom = false,
   colors = {},
 }: Props) {
+  let upwell = documents.get(id)
   return (
     <div
       css={css`
@@ -202,7 +207,7 @@ export default function ListDocuments({
         .sort((a, b) => a.time - b.time)
         .map((layer: Layer, index) => {
           let visibleMaybe = visible.findIndex((id) => id === layer.id)
-          const isMerged = layer.archived
+          const isMerged = upwell.isArchived(layer.id)
           return (
             <FileTab
               key={layer.id}

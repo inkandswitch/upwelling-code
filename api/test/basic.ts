@@ -1,6 +1,8 @@
 import { Author, Upwell, Layer, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
+import { UpwellMetadata } from '../src/UpwellMetadata';
+import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
   it('subscribes to document changes', async () => {
@@ -131,13 +133,17 @@ describe('upwell', () => {
       assert.equal(layers.length, 2)
     })
 
-    it('can be archived', () => {
+    it('can be archived', async () => {
       d.archive(newLayer.id)
-      layers = d.layers()
-      assert.equal(layers[1].archived, true)
-      let root = d.rootLayer()
-      assert.equal(root.id, rootId)
-      assert.equal(doc.id, rootId)
+      let layers = await d.getArchivedLayers()
+      let layer = layers.next()
+      assert.ok(layer.value)
+      if (layer.value) {
+        assert.equal(d.isArchived(layer.value.id), true)
+        let root = d.rootLayer()
+        assert.equal(root.id, rootId)
+        assert.equal(doc.id, rootId)
+      }
     })
 
   })
@@ -157,11 +163,11 @@ describe('upwell', () => {
     let incomingLayers = inc.layers()
     assert.equal(incomingLayers.length, 2)
 
-    let incomingShared = incomingLayers[0]
+    let incomingShared = incomingLayers[1]
     assert.deepEqual(incomingShared.metadata, doc.metadata)
     assert.equal(incomingShared.author, 'Susan')
     assert.equal(incomingShared.shared, true)
-    assert.equal(incomingShared.archived, false)
+    assert.equal(d.isArchived(incomingShared.id), false)
   })
 
   it('gets root layer', () => {

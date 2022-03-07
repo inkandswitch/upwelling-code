@@ -256,6 +256,7 @@ export function DocumentView(props: {
             ➕
           </ButtonTab>
           <ListDocuments
+            id={id}
             layers={layers}
             isBottom
             colors={authorColors}
