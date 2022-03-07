@@ -22,7 +22,7 @@ export const Delete: React.FC<AttributesOf<Annotation>> = (props) => {
         className="mark"
         css={css`
           width: 5px;
-          color: red;
+          color: ${props.authorColor || 'red'};
         `}
       >
         ⌫
@@ -30,7 +30,7 @@ export const Delete: React.FC<AttributesOf<Annotation>> = (props) => {
       <span
         className="text"
         css={css`
-          color: red;
+          color: ${props.authorColor || 'red'};
           display: none;
         `}
       >

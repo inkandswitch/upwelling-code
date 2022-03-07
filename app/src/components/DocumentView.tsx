@@ -164,11 +164,17 @@ export function DocumentView(props: {
   }, AUTOSAVE_INTERVAL)
 
   let onCreateLayer = async () => {
+    let editableLayerId = getEditableLayer()
+    if (!editableLayerId) {
+      return alert(
+        'please make only one layer visible - the new layer will be based off of that one'
+      )
+    }
+
     let message = ''
-    // always forking from root layer (for now)
     let upwell = documents.get(id)
-    let root = upwell.rootLayer()
-    let newLayer = root.fork(message, author)
+    let editableLayer = upwell.get(editableLayerId)
+    let newLayer = editableLayer.fork(message, author)
     upwell.add(newLayer)
     setVisible([newLayer.id])
     onChangeMade()
