@@ -27,11 +27,6 @@ export type LayerMetadata = {
   message: string
 }
 
-export type Edit = {
-  type: 'insert' | 'delete' | 'retain',
-  start: number,
-  value: string
-}
 export type Subscriber = (doc: Layer, heads: Heads) => void 
 
 export class LazyLayer {
@@ -126,36 +121,7 @@ export class Layer {
   }
 
   subscribe(subscriber: Subscriber) {
-    this.subscriber = subscriber  
-  }
-
-  getEdits(other: Layer): Edit[] {
-    let ours = this.text
-    let theirs = other.text
-
-    let diffs = Diff.diffWordsWithSpace(ours, theirs)
-
-    let idx = 0
-    return diffs.map(d => {
-      let type
-
-      if (d.added) {
-        type = 'insert'
-      } else if (d.removed) {
-        type = 'delete'
-      } else {
-        type = 'retain'
-      }
-
-      let currIdx = idx
-      if (type === 'insert' || type === 'retain') idx = currIdx + d.value.length
-
-      return {
-        type,
-        start: currIdx,
-        value: d.value
-      }
-    })
+    this.subscriber = subscriber
   }
 
   insertAt(position: number, value: string | Array<string>, prop = 'text') {
@@ -206,36 +172,56 @@ export class Layer {
     this.doc.merge(theirs.doc)
   }
 
-  static mergeWithEdits(ours: Layer, theirs: Layer) {
-    let edits = ours.getEdits(theirs)
+  static mergeWithEdits(ours: Layer, ...theirs: Layer[]) {
+    // Fork the comparison layer, because we want to create a copy, not modify
+    // the original. It might make sense to remove this from here and force the
+    // caller to do the fork if this is the behaviour they want in order to
+    // parallel Layer.merge() behaviour.
     let newLayer = ours.fork('Merge', ours.author)
-    newLayer.merge(theirs)
+    let origHead = newLayer.doc.getHeads()
 
-    edits.forEach((edit) => {
-      if (edit.type === 'retain') return
+    // Merge all the passed-in layers to this one.
+    theirs.forEach(layer => newLayer.merge(layer))
 
-      let start = edit.start
-      let end: number
+    // Now do a blame against the heads of the comparison layers.
+    let heads = theirs.map(layer => layer.doc.getHeads())
 
-      if (edit.type === 'delete') {
-        end = edit.start
-      } else if (edit.type === 'insert') {
-        end = edit.start + edit.value.length
-      } else {
-        end = 0  
-      }
+    let obj = newLayer.doc.value(ROOT, 'text')
+    if (!obj || obj[0] !== 'text') throw new Error('Text field not properly initialized')
 
-      /*
-      newLayer.mark(
-        edit.type,
-        `[${start}..${end}]`,
-        JSON.stringify({ // I *really* don't want to do this, but as a quick hack it's not the worst thing I've ever done. Pending a better solution.
-          author: theirs.author,
-          text: edit.value
-        })
-      )
-      */
-    })
+    let blame = newLayer.doc.blame(obj[1], origHead, heads)
+
+    // blame contains an array with an entry for each layer passed in above,
+    // with edits (add, del) applied against newLayer's text. Convert those to marks!
+
+    for (let i = 0; i < blame.length; i++) {
+      let layer = theirs[i]
+      let edits = blame[i]
+
+      edits.add.forEach(edit => {
+        let text = newLayer.text.substring(edit.start, edit.end)
+        newLayer.mark(
+          'insert',
+          `(${edit.start}..${edit.end})`,
+          JSON.stringify({
+            author: layer.author,
+            text
+          })
+        )
+      })
+
+      edits.del.forEach(edit => {
+        newLayer.mark(
+          'delete',
+          `(${edit.pos}..${edit.pos})`,
+          JSON.stringify({
+            author: layer.author,
+            text: edit.val
+          })
+        )
+      })
+    }
+
     newLayer.commit('Merge')
 
     return newLayer

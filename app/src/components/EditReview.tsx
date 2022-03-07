@@ -29,7 +29,9 @@ export function EditReviewView(props: Props) {
   if (!root) return <div></div>
 
   // visible.length === 0 or visible.length > 1
-  let reviewView = <ReviewView id={id} visible={visible}></ReviewView>
+  let reviewView = (
+    <ReviewView id={id} visible={visible} colors={colors}></ReviewView>
+  )
   let component = reviewView
   if (visible.length === 1) {
     let layer = upwell.get(visible[0])

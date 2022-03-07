@@ -203,90 +203,94 @@ export default function ListDocuments({
         ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
-      {layers.sort((a, b) => a.time - b.time).map((layer: Layer, index) => {
-        let visibleMaybe = visible.findIndex((id) => id === layer.id)
-        const isMerged = upwell.isArchived(layer.id)
-        return (
-          <FileTab
-            key={layer.id}
-            aria-pressed={visibleMaybe > -1}
-            index={index}
-            isBottom={isBottom}
-            isMerged={isMerged}
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onLayerClick(layer)
-            }}
-            title={`by ${layer.author}, ${relativeDate(new Date(layer.time))}`}
-            css={css`
-              display: flex;
-              flex-direction: row;
-              justify-content: flex-start;
-              align-items: flex-start;
-              ${editableLayer === layer.id ? editableTabStyle : ''}
-              box-shadow: 18px 24px 0px -18px ${colors[
-                layer.author
-              ]?.toString() || 'none'} inset;
-            `}
-          >
-            {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
-            <TextareaInput
-              defaultValue={layer.message}
-              placeholder="layer name"
+      {layers
+        .sort((a, b) => a.time - b.time)
+        .map((layer: Layer, index) => {
+          let visibleMaybe = visible.findIndex((id) => id === layer.id)
+          const isMerged = upwell.isArchived(layer.id)
+          return (
+            <FileTab
+              key={layer.id}
+              aria-pressed={visibleMaybe > -1}
+              index={index}
+              isBottom={isBottom}
+              isMerged={isMerged}
               onClick={(e) => {
+                e.preventDefault()
                 e.stopPropagation()
+                onLayerClick(layer)
               }}
-              onChange={(e) => {
-                e.stopPropagation()
-              }}
-              onBlur={(e) => {
-                onInputBlur(e, layer)
-              }}
-            />
-            <div>
-              {!layer.shared && (
-                <EmojiButton
-                  css={wiggleStyle}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    if (
-                      // eslint-disable-next-line no-restricted-globals
-                      confirm(
-                        "Do you want to share your layer? it can't be unshared."
-                      )
-                    ) {
-                      handleShareClick(layer)
-                    }
-                  }}
-                >
-                  ↓
-                </EmojiButton>
-              )}
-              {!isMerged && (
-                <EmojiButton
-                  css={wiggleStyle}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    if (
-                      // eslint-disable-next-line no-restricted-globals
-                      confirm(
-                        "Do you want to delete this layer? you can't get it back as of yet."
-                      )
-                    ) {
-                      handleDeleteClick(layer)
-                    }
-                  }}
-                >
-                  🗑
-                </EmojiButton>
-              )}
-            </div>
-          </FileTab>
-        )
-      })}
+              title={`by ${layer.author}, ${relativeDate(
+                new Date(layer.time)
+              )}`}
+              css={css`
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: flex-start;
+                ${editableLayer === layer.id ? editableTabStyle : ''}
+                box-shadow: 18px 24px 0px -18px ${colors[
+                  layer.author
+                ]?.toString() || 'none'} inset;
+              `}
+            >
+              {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
+              <TextareaInput
+                defaultValue={layer.message}
+                placeholder="layer name"
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+                onChange={(e) => {
+                  e.stopPropagation()
+                }}
+                onBlur={(e) => {
+                  onInputBlur(e, layer)
+                }}
+              />
+              <div>
+                {!layer.shared && (
+                  <EmojiButton
+                    css={wiggleStyle}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (
+                        // eslint-disable-next-line no-restricted-globals
+                        confirm(
+                          "Do you want to share your layer? it can't be unshared."
+                        )
+                      ) {
+                        handleShareClick(layer)
+                      }
+                    }}
+                  >
+                    ↓
+                  </EmojiButton>
+                )}
+                {!isMerged && (
+                  <EmojiButton
+                    css={wiggleStyle}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (
+                        // eslint-disable-next-line no-restricted-globals
+                        confirm(
+                          "Do you want to delete this layer? you can't get it back as of yet."
+                        )
+                      ) {
+                        handleDeleteClick(layer)
+                      }
+                    }}
+                  >
+                    🗑
+                  </EmojiButton>
+                )}
+              </div>
+            </FileTab>
+          )
+        })}
     </div>
   )
 }

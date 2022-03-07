@@ -29,11 +29,15 @@ export default function MaybeDocument(props: DocumentViewProps) {
     async function render() {
       try {
         upwell = await documents.open(props.id)
+        console.log('got upwell', upwell.layers())
+      } catch (err) {}
+
+      try {
         upwell = await documents.sync(props.id)
       } catch (err) {
-        upwell = await documents.create(props.id)
+        if (!upwell) upwell = await documents.create(props.id)
       } finally {
-        if (!upwell) throw new Error('couuld not create upwell')
+        if (!upwell) throw new Error('could not create upwell')
         let root = upwell.rootLayer()
         setRootId(root.id)
       }
@@ -56,6 +60,7 @@ export function DocumentView(props: {
   let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({})
   let [layers, setLayers] = React.useState<Layer[]>([])
+  const [didLoad, setDidLoad] = React.useState<boolean>(false)
 
   const render = useCallback(
     (upwell: Upwell) => {
@@ -78,7 +83,7 @@ export function DocumentView(props: {
         changed = true
       }
       if (changed) {
-        setAuthorColors((prevState) => {
+        setAuthorColors((prevState: any) => {
           return { ...prevState, ...newAuthorColors }
         })
       }
@@ -87,25 +92,32 @@ export function DocumentView(props: {
   )
 
   useEffect(() => {
-    documents.subscribe(id, (upwell: Upwell) => {
+    let upwell = documents.get(id)
+    upwell.subscribe(() => {
+      console.log('rendering')
       render(upwell)
     })
-    // first time render
-    let upwell = documents.get(id)
     render(upwell)
-    if (layers.length) {
-      // show the layer that is the most recent layer that was mine
-      for (let i = layers.length - 1; i > 0; i--) {
-        if (layers[i].author === props.author) {
-          setVisible([layers[i].id])
-          break;
-        }
-      }
-    }
     return () => {
       documents.unsubscribe(id)
     }
   }, [id, render])
+
+  useEffect(() => {
+    // first time render
+    if (!didLoad && layers.length) {
+      setDidLoad(true)
+      if (layers.length) {
+        // show the layer that is the most recent layer that was mine
+        for (let i = layers.length - 1; i > 0; i--) {
+          if (layers[i].author === props.author) {
+            setVisible([layers[i].id])
+            break
+          }
+        }
+      }
+    }
+  }, [id, didLoad, layers, props.author, render])
 
   function onChangeMade() {
     documents.save(props.id)
@@ -122,12 +134,7 @@ export function DocumentView(props: {
   }
 
   let onLayerClick = (layer: Layer) => {
-    let exists = visible.findIndex((id) => id === layer.id)
-    if (exists > -1) {
-      setVisible(visible.filter((id) => id !== layer.id))
-    } else {
-      setVisible(visible.concat([layer.id]))
-    }
+    setVisible(visible.concat([layer.id]))
   }
 
   const handleFileNameInputBlur = (
@@ -151,11 +158,26 @@ export function DocumentView(props: {
   }, AUTOSAVE_INTERVAL)
 
   let onCreateLayer = async () => {
-    let message = ''
-    // always forking from root layer (for now)
     let upwell = documents.get(id)
-    let root = upwell.rootLayer()
-    let newLayer = root.fork(message, author)
+
+    if (upwell.layers.length === 0) {
+      let message = ''
+      let newLayer = upwell.rootLayer().fork(message, author)
+      upwell.add(newLayer)
+      setVisible([newLayer.id])
+      return onChangeMade()
+    }
+
+    let editableLayerId = getEditableLayer()
+    if (!editableLayerId) {
+      return alert(
+        'please make only one layer visible - the new layer will be based off of that one'
+      )
+    }
+
+    let message = ''
+    let editableLayer = upwell.get(editableLayerId)
+    let newLayer = editableLayer.fork(message, author)
     upwell.add(newLayer)
     setVisible([newLayer.id])
     onChangeMade()
