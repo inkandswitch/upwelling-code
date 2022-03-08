@@ -74,7 +74,7 @@ export function ReviewView(props: {
       })
       setState({ atjsonLayer: atjsonLayer })
     },
-    [id, visible]
+    [id, visible, colors]
   )
 
   useEffect(() => {

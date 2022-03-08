@@ -60,6 +60,7 @@ export function DocumentView(props: {
   let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [authorColors, setAuthorColors] = React.useState<AuthorColorsType>({})
   let [layers, setLayers] = React.useState<Layer[]>([])
+  const [didLoad, setDidLoad] = React.useState<boolean>(false)
 
   const render = useCallback(
     (upwell: Upwell) => {
@@ -82,7 +83,7 @@ export function DocumentView(props: {
         changed = true
       }
       if (changed) {
-        setAuthorColors((prevState) => {
+        setAuthorColors((prevState: any) => {
           return { ...prevState, ...newAuthorColors }
         })
       }
@@ -96,21 +97,27 @@ export function DocumentView(props: {
       console.log('rendering')
       render(upwell)
     })
-    // first time render
     render(upwell)
-    if (layers.length) {
-      // show the layer that is the most recent layer that was mine
-      for (let i = layers.length - 1; i > 0; i--) {
-        if (layers[i].author === props.author) {
-          setVisible([layers[i].id])
-          break
-        }
-      }
-    }
     return () => {
       documents.unsubscribe(id)
     }
   }, [id, render])
+
+  useEffect(() => {
+    // first time render
+    if (!didLoad && layers.length) {
+      setDidLoad(true)
+      if (layers.length) {
+        // show the layer that is the most recent layer that was mine
+        for (let i = layers.length - 1; i > 0; i--) {
+          if (layers[i].author === props.author) {
+            setVisible([layers[i].id])
+            break
+          }
+        }
+      }
+    }
+  }, [id, didLoad, layers, props.author, render])
 
   function onChangeMade() {
     documents.save(props.id)
@@ -156,6 +163,16 @@ export function DocumentView(props: {
   }, AUTOSAVE_INTERVAL)
 
   let onCreateLayer = async () => {
+    let upwell = documents.get(id)
+
+    if (upwell.layers().length === 1) {
+      let message = ''
+      let newLayer = upwell.rootLayer().fork(message, author)
+      upwell.add(newLayer)
+      setVisible([newLayer.id])
+      return onChangeMade()
+    }
+
     let editableLayerId = getEditableLayer()
     if (!editableLayerId) {
       return alert(
@@ -164,7 +181,6 @@ export function DocumentView(props: {
     }
 
     let message = ''
-    let upwell = documents.get(id)
     let editableLayer = upwell.get(editableLayerId)
     let newLayer = editableLayer.fork(message, author)
     upwell.add(newLayer)
@@ -240,6 +256,7 @@ export function DocumentView(props: {
             ➕
           </ButtonTab>
           <ListDocuments
+            id={id}
             layers={layers}
             isBottom
             colors={authorColors}
