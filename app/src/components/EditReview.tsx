@@ -22,11 +22,15 @@ type Props = {
 
 export function EditReviewView(props: Props) {
   const { author, id, visible, onChange, colors } = props
+  console.log('rendering EditReviewView')
   let upwell = documents.get(id)
   let root = upwell.rootLayer()
 
   let [reviewMode, setReviewMode] = React.useState<Boolean>(false)
-  if (!root) return <div></div>
+  if (!root) {
+    console.log('no root')
+    return <div></div>
+  }
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
@@ -35,7 +39,7 @@ export function EditReviewView(props: Props) {
   let component = reviewView
   if (visible.length === 1) {
     let layer = upwell.get(visible[0])
-    if (author === layer.author) {
+    if (root.id !== layer.id) {
       let textArea = (
         <TextAreaView
           colors={colors}

@@ -7,7 +7,7 @@ import { JSX } from '@emotion/react/jsx-runtime'
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import { HCLColor } from 'd3-color'
-import Documents from '../Documents';
+import Documents from '../Documents'
 let documents = Documents()
 
 type ID = string
@@ -176,7 +176,7 @@ type Props = {
   editableLayer?: string
   visible: string[]
   handleShareClick?: any // TODO
-  id: string,
+  id: string
   handleDeleteClick?: any // TODO
   layers: Layer[]
   isBottom?: boolean
