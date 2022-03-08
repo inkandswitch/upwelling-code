@@ -14,47 +14,9 @@ import deterministicColor from '../color'
 
 let documents = Documents()
 
-type DocumentViewProps = {
-  id: string
-  author: Author
-}
-
 const AUTOSAVE_INTERVAL = 3000
 
-export default function MaybeDocument(props: DocumentViewProps) {
-  let [rootId, setRootId] = React.useState<string>()
-
-  useEffect(() => {
-    let upwell: Upwell
-    async function render() {
-      try {
-        upwell = await documents.open(props.id)
-        console.log('got upwell', upwell.layers())
-      } catch (err) {}
-
-      try {
-        upwell = await documents.sync(props.id)
-      } catch (err) {
-        if (!upwell) upwell = await documents.create(props.id)
-      } finally {
-        if (!upwell) throw new Error('could not create upwell')
-        let root = upwell.rootLayer()
-        setRootId(root.id)
-      }
-    }
-
-    render()
-  }, [props.id])
-
-  if (!rootId) return <div>Loading..</div>
-  return <DocumentView id={props.id} rootId={rootId} author={props.author} />
-}
-
-export function DocumentView(props: {
-  id: string
-  rootId: string
-  author: Author
-}) {
+export default function DocumentView(props: { id: string; author: Author }) {
   const { id, author } = props
   let [visible, setVisible] = React.useState<string[]>([])
   let [sync_state, setSyncState] = React.useState<SYNC_STATE>(SYNC_STATE.SYNCED)

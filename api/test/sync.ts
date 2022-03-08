@@ -10,7 +10,6 @@ function helloWorld(): Upwell {
   return upwell
 }
 
-
 describe('save and load', () => {
   it('serializes metadata and single layer', async () => {
     let a = helloWorld()
