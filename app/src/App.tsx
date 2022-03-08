@@ -1,10 +1,10 @@
-import React, { Component, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import DocumentView from './components/DocumentView'
 import { Route, useLocation } from 'wouter'
 import Documents from './Documents'
 import catnames from 'cat-names'
 import DraftView from './components/DraftView'
-import DraftList from './components/DraftList'
+import DraftList from './components/DraftTable'
 import withDocument from './components/withDocument'
 require('setimmediate')
 

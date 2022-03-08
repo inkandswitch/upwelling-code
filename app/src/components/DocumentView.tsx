@@ -27,7 +27,7 @@ export default function DocumentView(props: { id: string; author: Author }) {
   const render = useCallback(
     (upwell: Upwell) => {
       // find the authors
-      let rootId = upwell.rootLayer().id
+      let rootId = upwell.rootLayer.id
       const layers = upwell.layers().filter((l) => l.id !== rootId)
       setLayers(layers)
 
@@ -129,7 +129,7 @@ export default function DocumentView(props: { id: string; author: Author }) {
 
     if (upwell.layers.length === 0) {
       let message = ''
-      let newLayer = upwell.rootLayer().fork(message, author)
+      let newLayer = upwell.rootLayer.fork(message, author)
       upwell.add(newLayer)
       setVisible([newLayer.id])
       return onChangeMade()
@@ -201,6 +201,7 @@ export default function DocumentView(props: { id: string; author: Author }) {
         <EditReviewView
           id={id}
           onChange={onTextChange}
+          reviewMode={true}
           visible={visible}
           author={author}
           colors={authorColors}

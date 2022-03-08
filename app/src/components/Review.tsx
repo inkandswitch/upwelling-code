@@ -36,7 +36,9 @@ export function ReviewView(props: {
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
       let layers = visible.map((id) => upwell.get(id))
+      layers.push(upwell.rootLayer)
       let [first, ...rest] = layers
+
 
       let editsLayer = Layer.mergeWithEdits(first, ...rest)
       let marks = editsLayer.marks.map((m: any) => {

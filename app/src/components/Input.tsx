@@ -9,7 +9,6 @@ const inputStyle = css`
   box-sizing: border-box;
   border: 1px solid transparent;
   color: black;
-  font-family: monospace;
   padding: 0;
   border-radius: 0; /* phone user agents like to add border radius */
   height: 100%;

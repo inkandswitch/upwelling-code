@@ -1,10 +1,9 @@
-/** @jsxImportSource @emotion/react */
-import { css, Interpolation, Theme } from '@emotion/react/macro'
 import React, { useState, useEffect, useCallback } from 'react'
 import Documents from '../Documents'
 import { Button } from './Button'
 import { Upwell, Layer, Author } from 'api'
 import { useLocation } from 'wouter'
+import ClickableDraftList from './ClickableDraftList'
 
 let documents = Documents()
 
@@ -19,10 +18,12 @@ export default function DraftList(props: DraftListProps) {
   let [layers, setLayers] = useState<Layer[]>([])
   let [root, setRoot] = useState<Layer>()
 
+  let upwell = documents.get(id)
+
   const render = useCallback((upwell: Upwell) => {
     // find the authors
-    let root = upwell.rootLayer()
-    const layers = upwell.layers().filter((l) => l.id !== root.id)
+    let root = upwell.rootLayer
+    const layers = upwell.layers()
     setRoot(root)
     setLayers(layers)
   }, [])
@@ -39,39 +40,33 @@ export default function DraftList(props: DraftListProps) {
     }
   }, [id, render])
 
-  console.log(author)
-  function createLayer() {
-    let upwell = documents.get(id)
-    let message = 'Magenta'
-    let newLayer = upwell.rootLayer().fork(message, author)
-    upwell.add(newLayer)
-    let url = `/document/${id}/draft/${newLayer.id}`
+  function createDraft() {
+    let draft = upwell.createDraft(author)
+    let url = `/document/${id}/draft/${draft.id}`
     setLocation(url)
   }
 
   function goToLatest() {
     let upwell = documents.get(id)
-    let latest = upwell.rootLayer()
-    let url = `/document/${id}/draft/${latest.id}`
+    let latest = upwell.rootLayer
+    goToDraft(latest.id)
+  }
+
+  function goToDraft(did:string) {
+    let url = `/document/${id}/draft/${did}`
     setLocation(url)
   }
 
-  console.log(layers)
   return (
     <div>
       <div>
-        <Button onClick={createLayer}>Create Draft</Button>
-        <Button onClick={goToLatest}>Latest</Button>
+        <Button onClick={createDraft}>Create Draft</Button>
       </div>
-      {layers.map((l) => {
-        return (
-          <ul>
-            <li>
-              <a href={`/document/${id}/draft/${l.id}`}>{l.message}</a>
-            </li>
-          </ul>
-        )
-      })}
+      <ClickableDraftList
+        id={id}
+        onLayerClick={(layer: Layer) => goToDraft(layer.id)}
+        layers={layers.filter(l => !upwell.isArchived(l.id))}
+      />
     </div>
   )
 }

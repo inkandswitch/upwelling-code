@@ -17,16 +17,15 @@ type Props = {
   visible: string[]
   onChange: any
   author: Author
+  reviewMode: boolean
   colors?: AuthorColorsType
 }
 
 export function EditReviewView(props: Props) {
-  const { author, id, visible, onChange, colors } = props
+  const { id, visible, onChange, reviewMode, colors } = props
   console.log('rendering EditReviewView')
   let upwell = documents.get(id)
-  let root = upwell.rootLayer()
-
-  let [reviewMode, setReviewMode] = React.useState<Boolean>(false)
+  let root = upwell.rootLayer
   if (!root) {
     console.log('no root')
     return <div></div>
@@ -39,7 +38,6 @@ export function EditReviewView(props: Props) {
   let component = reviewView
   if (visible.length === 1) {
     let layer = upwell.get(visible[0])
-    if (root.id !== layer.id) {
       let textArea = (
         <TextAreaView
           colors={colors}
@@ -50,23 +48,15 @@ export function EditReviewView(props: Props) {
       component = (
         <React.Fragment>
           {reviewMode ? reviewView : textArea}
-          <button
-            css={css`
-              margin-bottom: 1ex;
-            `}
-            onClick={() => setReviewMode(!reviewMode)}
-          >
-            {reviewMode ? 'reviewing' : 'editing'}
-          </button>
         </React.Fragment>
       )
-    }
   }
 
   return (
     <div
       css={css`
         width: 100%;
+        height: 100%;
       `}
     >
       {component}

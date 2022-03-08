@@ -7,8 +7,8 @@ import { JSX } from '@emotion/react/jsx-runtime'
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import { HCLColor } from 'd3-color'
-import { EmojiButton } from './EmojiButton'
 import Documents from '../Documents'
+
 let documents = Documents()
 
 type ID = string
@@ -17,52 +17,20 @@ export type AuthorColorsType = {
 }
 
 const tabStyles = css`
-  border: 1px #b9b9b9 solid;
-  background: #eaeaea;
-  border-left: 1px solid lightgray;
-  margin-right: 16px;
-  padding: 12px 10px 12px 10px;
-  border-radius: 0 10px 10px 0; /* top rounded edges */
-  box-sizing: content-box;
-  line-height: 16px;
+height: 100px;
+pointer: cursor;
+padding: 20px;
+margin: 20px;
+border: 1px solid black;
 `
 
 const extendedTabStyles = css`
-  border: 1px lightgray solid;
-  padding-left: 27px;
-  margin-right: 0;
 `
 
 const tabVisibleStyles = css`
-  ${extendedTabStyles}
-  background: white;
-  min-height: 60px;
-  max-height: 120px;
 `
 
 const wiggleStyle = css`
-  @keyframes wiggle {
-    0% {
-      transform: rotate(25deg);
-    }
-    20% {
-      transform: rotate(-25deg);
-    }
-    35% {
-      transform: rotate(0deg);
-    }
-    95% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(0deg);
-    }
-  }
-
-  &:hover {
-    display: inline-block;
-    animation: wiggle 2.5s infinite;
-  }
 `
 
 export const InfoTab = (
@@ -106,7 +74,6 @@ type TabType = {
   index: number
   isBottom?: boolean
   isMerged?: boolean
-  'aria-pressed': boolean
 } & React.ClassAttributes<HTMLDivElement> &
   React.ButtonHTMLAttributes<HTMLDivElement>
 
@@ -128,19 +95,11 @@ export const FileTab = ({
   index,
   isBottom = false,
   isMerged = false,
-  'aria-pressed': isVisible,
   ...props
 }: TabType) => (
   <div
     css={css`
       ${tabStyles};
-      min-height: 40px;
-      text-align: end;
-      margin-top: -6px;
-      max-width: 110px;
-      border-radius: 0 10px 10px 0;
-      cursor: pointer;
-      max-height: 80px;
       z-index: ${isBottom ? 1000 - index : 1000 + index};
       &:hover {
         background: #d1eaff;
@@ -148,7 +107,6 @@ export const FileTab = ({
       &:first-of-type {
         border-radius: 0 10px 10px 0;
       }
-      ${isVisible ? tabVisibleStyles : ''}
       ${isBottom ? fileTabBottomStyles : ''}
       ${isMerged ? fileTabMergedStyles : ''}
     `}
@@ -158,13 +116,6 @@ export const FileTab = ({
   />
 )
 
-export const sidewaysTabStyle = css`
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: flex-end;
-  overflow: auto; /* scroll tabs when they collide */
-`
-
 const editableTabStyle = css`
   background: white;
   border-left: 0;
@@ -173,12 +124,7 @@ const editableTabStyle = css`
 
 type Props = {
   onLayerClick: Function
-  onInputBlur: Function
-  editableLayer?: string
-  visible: string[]
-  handleShareClick?: any // TODO
   id: string
-  handleDeleteClick?: any // TODO
   layers: Layer[]
   isBottom?: boolean
   colors?: AuthorColorsType
@@ -186,12 +132,7 @@ type Props = {
 
 export default function ListDocuments({
   onLayerClick,
-  handleShareClick,
   id,
-  handleDeleteClick,
-  onInputBlur,
-  editableLayer,
-  visible,
   layers,
   isBottom = false,
   colors = {},
@@ -200,19 +141,16 @@ export default function ListDocuments({
   return (
     <div
       css={css`
-        ${sidewaysTabStyle}
         ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
       {layers
-        .sort((a, b) => a.time - b.time)
+        .sort((a, b) => b.time - a.time)
         .map((layer: Layer, index) => {
-          let visibleMaybe = visible.findIndex((id) => id === layer.id)
           const isMerged = upwell.isArchived(layer.id)
           return (
             <FileTab
               key={layer.id}
-              aria-pressed={visibleMaybe > -1}
               index={index}
               isBottom={isBottom}
               isMerged={isMerged}
@@ -221,73 +159,23 @@ export default function ListDocuments({
                 e.stopPropagation()
                 onLayerClick(layer)
               }}
-              title={`by ${layer.author}, ${relativeDate(
-                new Date(layer.time)
-              )}`}
               css={css`
                 display: flex;
                 flex-direction: row;
                 justify-content: flex-start;
                 align-items: flex-start;
-                ${editableLayer === layer.id ? editableTabStyle : ''}
                 box-shadow: 18px 24px 0px -18px ${colors[
                   layer.author
                 ]?.toString() || 'none'} inset;
               `}
             >
               {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
-              <TextareaInput
-                defaultValue={layer.message}
-                placeholder="layer name"
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-                onChange={(e) => {
-                  e.stopPropagation()
-                }}
-                onBlur={(e) => {
-                  onInputBlur(e, layer)
-                }}
-              />
               <div>
-                {!layer.shared && (
-                  <EmojiButton
-                    css={wiggleStyle}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      if (
-                        // eslint-disable-next-line no-restricted-globals
-                        confirm(
-                          "Do you want to share your layer? it can't be unshared."
-                        )
-                      ) {
-                        handleShareClick(layer)
-                      }
-                    }}
-                  >
-                    ↓
-                  </EmojiButton>
-                )}
-                {!isMerged && (
-                  <EmojiButton
-                    css={wiggleStyle}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      if (
-                        // eslint-disable-next-line no-restricted-globals
-                        confirm(
-                          "Do you want to delete this layer? you can't get it back as of yet."
-                        )
-                      ) {
-                        handleDeleteClick(layer)
-                      }
-                    }}
-                  >
-                    🗑
-                  </EmojiButton>
-                )}
+                {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
+                <div>
+                  by {layer.author}, {relativeDate(new Date(layer.time))}
+             
+                </div>
               </div>
             </FileTab>
           )
