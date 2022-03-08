@@ -5,7 +5,6 @@ import { Layer } from 'api'
 import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
-import { TextareaInput } from './Input'
 import { HCLColor } from 'd3-color'
 import Documents from '../Documents'
 
@@ -17,21 +16,14 @@ export type AuthorColorsType = {
 }
 
 const tabStyles = css`
-height: 100px;
-pointer: cursor;
-padding: 20px;
-margin: 20px;
-border: 1px solid black;
+  height: 100px;
+  pointer: cursor;
+  padding: 20px;
+  margin: 20px;
+  border: 1px solid black;
 `
 
-const extendedTabStyles = css`
-`
-
-const tabVisibleStyles = css`
-`
-
-const wiggleStyle = css`
-`
+const wiggleStyle = css``
 
 export const InfoTab = (
   props: JSX.IntrinsicAttributes & {
@@ -116,12 +108,6 @@ export const FileTab = ({
   />
 )
 
-const editableTabStyle = css`
-  background: white;
-  border-left: 0;
-  border-radius: 0 10px 10px 0; /* top rounded edges */
-`
-
 type Props = {
   onLayerClick: Function
   id: string
@@ -165,8 +151,8 @@ export default function ListDocuments({
                 justify-content: flex-start;
                 align-items: flex-start;
                 box-shadow: 18px 24px 0px -18px ${colors[
-                  layer.author
-                ]?.toString() || 'none'} inset;
+                    layer.author
+                  ]?.toString() || 'none'} inset;
               `}
             >
               {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
@@ -174,7 +160,6 @@ export default function ListDocuments({
                 {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
                 <div>
                   by {layer.author}, {relativeDate(new Date(layer.time))}
-             
                 </div>
               </div>
             </FileTab>

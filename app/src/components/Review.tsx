@@ -39,7 +39,6 @@ export function ReviewView(props: {
       layers.push(upwell.rootLayer)
       let [first, ...rest] = layers
 
-
       let editsLayer = Layer.mergeWithEdits(first, ...rest)
       let marks = editsLayer.marks.map((m: any) => {
         let attrs = JSON.parse(m.value)

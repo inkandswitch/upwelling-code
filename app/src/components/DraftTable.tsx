@@ -16,7 +16,7 @@ export default function DraftList(props: DraftListProps) {
   const { id, author } = props
   const [, setLocation] = useLocation()
   let [layers, setLayers] = useState<Layer[]>([])
-  let [root, setRoot] = useState<Layer>()
+  let [, setRoot] = useState<Layer>()
 
   let upwell = documents.get(id)
 
@@ -46,13 +46,7 @@ export default function DraftList(props: DraftListProps) {
     setLocation(url)
   }
 
-  function goToLatest() {
-    let upwell = documents.get(id)
-    let latest = upwell.rootLayer
-    goToDraft(latest.id)
-  }
-
-  function goToDraft(did:string) {
+  function goToDraft(did: string) {
     let url = `/document/${id}/draft/${did}`
     setLocation(url)
   }
@@ -65,7 +59,7 @@ export default function DraftList(props: DraftListProps) {
       <ClickableDraftList
         id={id}
         onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-        layers={layers.filter(l => !upwell.isArchived(l.id))}
+        layers={layers.filter((l) => !upwell.isArchived(l.id))}
       />
     </div>
   )

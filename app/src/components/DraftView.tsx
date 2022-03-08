@@ -10,8 +10,8 @@ import { EditReviewView } from './EditReview'
 import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
 import deterministicColor from '../color'
-import { Button } from './Button';
-import { useLocation } from 'wouter';
+import { Button } from './Button'
+import { useLocation } from 'wouter'
 import { TextareaInput } from './Input'
 
 let documents = Documents()
@@ -34,10 +34,6 @@ export default function DraftView(props: DraftViewProps) {
   let [reviewMode, setReviewMode] = React.useState<boolean>(false)
 
   let visible = [did]
-
-  function onChange() {
-    console.log('boop')
-  }
 
   const render = useCallback(
     (upwell: Upwell) => {
@@ -154,27 +150,34 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
-      <div id="middle"
+      <div
+        id="middle"
         css={css`
-        height: 100%;
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        `}>
-
-      <div id="top-bar"
-        css={css`
+          height: 100%;
+          width: 100%;
           display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          padding-bottom: 20px;
-          margin: 10px 0;
-        `}>
-        <SyncIndicator state={sync_state}></SyncIndicator>
-        <Button onClick={() => setLocation(`/document/${id}/drafts`)}> Back to Drafts</Button>
-          <TextareaInput css={css`
-          color: white;
+          flex-direction: column;
         `}
+      >
+        <div
+          id="top-bar"
+          css={css`
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            margin: 10px 0;
+          `}
+        >
+          <SyncIndicator state={sync_state}></SyncIndicator>
+          <Button onClick={() => setLocation(`/document/${id}/drafts`)}>
+            {' '}
+            Back to Drafts
+          </Button>
+          <TextareaInput
+            css={css`
+              color: white;
+            `}
             defaultValue={layer.message}
             onClick={(e) => {
               e.stopPropagation()
@@ -186,52 +189,46 @@ export default function DraftView(props: DraftViewProps) {
               //@ts-ignore
               handleFileNameInputBlur(e, layer)
             }}
-            />
+          />
 
           <div>
-          Track changes
-          <button
-            css={css`
-              margin-bottom: 1ex;
-            `}
-            onClick={() => setReviewMode(!reviewMode)}
-          >
-            {reviewMode ? 'on' : 'off'}
-          </button>
-
-        
-            {rootId === layer.id
-              ? <div>This is the latest</div>
-              : rootId !== layer.parent_id
-                ? <Button css={css`
+            Track changes
+            <button
+              css={css`
+                margin-bottom: 1ex;
               `}
-                  onClick={handleUpdateClick}
-                >
+              onClick={() => setReviewMode(!reviewMode)}
+            >
+              {reviewMode ? 'on' : 'off'}
+            </button>
+            {rootId === layer.id ? (
+              <div>This is the latest</div>
+            ) : rootId !== layer.parent_id ? (
+              <Button css={css``} onClick={handleUpdateClick}>
                 Update to Latest
               </Button>
-             : <Button
-            css={css`
-            background-color: blue;
-            color: white;
-          `}
-            onClick={handleMergeClick}
-            >
-              Set as Latest
-            </Button>
-        }
+            ) : (
+              <Button
+                css={css`
+                  background-color: blue;
+                  color: white;
+                `}
+                onClick={handleMergeClick}
+              >
+                Set as Latest
+              </Button>
+            )}
+          </div>
         </div>
+
+        <EditReviewView
+          visible={visible}
+          id={id}
+          author={author}
+          reviewMode={reviewMode}
+          onChange={onTextChange}
+        />
       </div>
-
-
-      <EditReviewView
-        visible={visible}
-        id={id}
-        author={author}
-        reviewMode={reviewMode}
-        onChange={onTextChange}
-      />
-      </div>
-
     </div>
   )
 }

@@ -1,8 +1,8 @@
 /** @jsxImportSource @emotion/react */
-import { css, Interpolation, Theme } from '@emotion/react/macro'
+import { css } from '@emotion/react/macro'
 
 type ButtonType = React.ClassAttributes<HTMLButtonElement> &
-React.ButtonHTMLAttributes<HTMLButtonElement>
+  React.ButtonHTMLAttributes<HTMLButtonElement>
 
 export function EmojiButton(props: ButtonType) {
   return (

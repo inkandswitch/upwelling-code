@@ -8,12 +8,11 @@ body {
   margin: 0px;
   padding: 0px;
   background: lightgray;
-  font-family:  'Merriweather', sans-serif; 
+  font-family: 'Merriweather', sans-serif;
 }
 
 textarea {
-  font-family:  'Merriweather', sans-serif; 
-
+  font-family: 'Merriweather', sans-serif;
 }
 
 #toolbar {

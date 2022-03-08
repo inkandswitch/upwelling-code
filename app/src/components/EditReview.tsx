@@ -38,18 +38,16 @@ export function EditReviewView(props: Props) {
   let component = reviewView
   if (visible.length === 1) {
     let layer = upwell.get(visible[0])
-      let textArea = (
-        <TextAreaView
-          colors={colors}
-          onChange={onChange}
-          editableLayer={layer}
-        ></TextAreaView>
-      )
-      component = (
-        <React.Fragment>
-          {reviewMode ? reviewView : textArea}
-        </React.Fragment>
-      )
+    let textArea = (
+      <TextAreaView
+        colors={colors}
+        onChange={onChange}
+        editableLayer={layer}
+      ></TextAreaView>
+    )
+    component = (
+      <React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
+    )
   }
 
   return (
