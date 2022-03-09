@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import DocumentView from './components/DocumentView'
 import { Route, useLocation } from 'wouter'
 import Documents from './Documents'
 import catnames from 'cat-names'
+import DraftView from './components/DraftView'
+import DraftList from './components/DraftTable'
+import withDocument from './components/withDocument'
 require('setimmediate')
 
 let documents = Documents()
@@ -22,7 +24,7 @@ export default function App() {
 
   async function newUpwell() {
     let doc = await documents.create()
-    setLocation('/document/' + doc.id)
+    setLocation('/document/' + doc.id + '/drafts')
   }
 
   return (
@@ -30,8 +32,26 @@ export default function App() {
       {/* <div id="topbar">
       My name is {author}
     </div> */}
-      <Route path="/document/:id">
-        {(params) => <DocumentView author={author} id={params.id} />}
+      <Route path="/document/:id/drafts">
+        {(params) => {
+          let props = {
+            author,
+            ...params,
+          }
+          let Component = withDocument(DraftList, props)
+          return <Component />
+        }}
+      </Route>
+
+      <Route path="/document/:id/draft/:did">
+        {(params) => {
+          let props = {
+            author,
+            ...params,
+          }
+          let Component = withDocument(DraftView, props)
+          return <Component />
+        }}
       </Route>
       <Route path="/">
         {() => {

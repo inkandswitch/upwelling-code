@@ -111,6 +111,10 @@ export class Layer {
     return this._getValue('parent_id') as string
   }
 
+  set parent_id(value: string) {
+    this.doc.set(ROOT, 'parent_id', value)
+  }
+
   get metadata() : LayerMetadata {
     return {
       message: this.message,

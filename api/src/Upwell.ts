@@ -38,11 +38,21 @@ export class Upwell {
     return this.metadata.id
   }
 
-  rootLayer() {
+  get rootLayer() {
     let rootId = this.metadata.main
     let root = this.layers().find(l => l.id === rootId)
     if (!root) throw new Error('No root?')
     return root
+  }
+
+  set rootLayer(layer: Layer) {
+    // TODO: check to see that layer has been 
+    // effectively 'rebased' on the latest
+    let oldRoot = this.metadata.main
+    this.metadata.main = layer.id
+    this.archive(oldRoot)
+
+    this.subscriber()
   }
 
   subscribe(subscriber: Function) {
@@ -55,6 +65,13 @@ export class Upwell {
 
   layers(): Layer[] {
     return Array.from(this._layers.values())
+  }
+
+  createDraft(author: string) {
+    let message = 'Magenta'
+    let newLayer = this.rootLayer.fork(message, author)
+    this.add(newLayer)
+    return newLayer
   }
 
   *getArchivedLayers(): Generator<Layer> {

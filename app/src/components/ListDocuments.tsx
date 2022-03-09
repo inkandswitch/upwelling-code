@@ -7,7 +7,8 @@ import { JSX } from '@emotion/react/jsx-runtime'
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import { HCLColor } from 'd3-color'
-import Documents from '../Documents';
+import { EmojiButton } from './EmojiButton'
+import Documents from '../Documents'
 let documents = Documents()
 
 type ID = string
@@ -176,7 +177,7 @@ type Props = {
   editableLayer?: string
   visible: string[]
   handleShareClick?: any // TODO
-  id: string,
+  id: string
   handleDeleteClick?: any // TODO
   layers: Layer[]
   isBottom?: boolean
@@ -292,28 +293,5 @@ export default function ListDocuments({
           )
         })}
     </div>
-  )
-}
-
-type ButtonType = React.ClassAttributes<HTMLButtonElement> &
-  React.ButtonHTMLAttributes<HTMLButtonElement>
-
-function EmojiButton(props: ButtonType) {
-  return (
-    <button
-      css={css`
-        font-size: 16px;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-        background: transparent;
-        color: black;
-        padding: 0;
-      `}
-      {...props}
-    />
   )
 }

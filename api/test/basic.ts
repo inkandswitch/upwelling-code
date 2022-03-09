@@ -1,8 +1,6 @@
 import { Author, Upwell, Layer, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
-import { UpwellMetadata } from '../src/UpwellMetadata';
-import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
   it('subscribes to document changes', async () => {
@@ -120,7 +118,7 @@ describe('upwell', () => {
       newLayer.insertAt(8, 'r')
       newLayer.insertAt(9, 'l')
       newLayer.insertAt(10, 'd')
-      rootId = d.rootLayer().id
+      rootId = d.rootLayer.id
     })
 
 
@@ -140,7 +138,7 @@ describe('upwell', () => {
       assert.ok(layer.value)
       if (layer.value) {
         assert.equal(d.isArchived(layer.value.id), true)
-        let root = d.rootLayer()
+        let root = d.rootLayer
         assert.equal(root.id, rootId)
         assert.equal(doc.id, rootId)
       }
@@ -175,14 +173,14 @@ describe('upwell', () => {
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
     let doc = layers[0]
-    let root = d.rootLayer()
+    let root = d.rootLayer
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
     assert.deepEqual(root.metadata, doc.metadata)
 
     d.add(doc.fork("beep boop", "john"))
 
-    root = d.rootLayer()
+    root = d.rootLayer
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
     assert.deepEqual(root.metadata, doc.metadata)

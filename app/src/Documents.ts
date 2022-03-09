@@ -62,7 +62,6 @@ export class Documents {
         if (localBinary) {
           let ours = await this.toUpwell(localBinary)
           this.upwells.set(id, ours)
-          console.log('setting', id)
           return resolve(ours)
         } else {
           let remoteBinary = await this.remote.getItem(id)
