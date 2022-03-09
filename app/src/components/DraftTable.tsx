@@ -29,9 +29,22 @@ export default function DraftList(props: DraftListProps) {
   }, [])
 
   useEffect(() => {
+    let interval = setInterval(() => {
+      documents
+      .sync(props.id)
+      .then((upwell) => {
+        render(upwell)
+      })
+
+    }, 2000)
+    return () => {
+      clearInterval(interval)
+    }
+  })
+
+  useEffect(() => {
     let upwell = documents.get(id)
     upwell.subscribe(() => {
-      console.log('rendering')
       render(upwell)
     })
     render(upwell)
