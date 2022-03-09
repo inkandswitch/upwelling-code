@@ -31,8 +31,13 @@ export class RealTimeDraft {
 
   connect() {
     if (!STORAGE_URL) throw new Error('no storage url')
-    let url = STORAGE_URL.replace(/https:\/\//, 'wss://')
-    url = STORAGE_URL.replace(/http:\/\//, 'ws://')
+    var httpProtocol = 'http://'; 
+    var wsProtocol = 'ws://';
+    if (window.location.protocol === 'https:') {
+        httpProtocol = 'http://';
+        wsProtocol = 'wss://';
+    }
+    let url = STORAGE_URL.replace(httpProtocol, wsProtocol)
     url = `${url}/${this.draft.id}/connect/${this.peerId}`
     let ws = new WebSocket(url)
     ws.onopen = () => {
