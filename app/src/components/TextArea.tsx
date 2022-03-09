@@ -41,6 +41,7 @@ export function TextArea(props: { color?: HCLColor } | any) {
 }
 
 type Props = {
+  id: string
   editableLayer: Layer
   onChange: any
   colors?: AuthorColorsType

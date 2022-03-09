@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Upwell } from 'api'
+import { Upwell, Layer } from 'api'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -13,9 +13,8 @@ export default function withDocument(
   props: DocumentProps
 ) {
   return function () {
-    let [rootId, setRootId] = useState<string>()
+    let [root, setRoot] = useState<Layer>()
     let { id } = props
-    console.log(props)
 
     useEffect(() => {
       let upwell: Upwell
@@ -31,15 +30,14 @@ export default function withDocument(
           if (!upwell) upwell = await documents.create(props.id)
         } finally {
           if (!upwell) throw new Error('could not create upwell')
-          let root = upwell.rootLayer()
-          setRootId(root.id)
+          setRoot(upwell.rootLayer)
         }
       }
 
       render()
     }, [id])
 
-    if (!rootId) return <div>Loading..</div>
-    return <WrappedComponent {...props} />
+    if (!root) return <div>Loading..</div>
+    return <WrappedComponent root={root} {...props} />
   }
 }

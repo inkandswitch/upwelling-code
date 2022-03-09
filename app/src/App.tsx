@@ -1,10 +1,9 @@
-import React, { Component, useEffect, useState } from 'react'
-import DocumentView from './components/DocumentView'
+import React, { useEffect, useState } from 'react'
 import { Route, useLocation } from 'wouter'
 import Documents from './Documents'
 import catnames from 'cat-names'
 import DraftView from './components/DraftView'
-import DraftList from './components/DraftList'
+import DraftList from './components/DraftTable'
 import withDocument from './components/withDocument'
 require('setimmediate')
 
@@ -33,17 +32,6 @@ export default function App() {
       {/* <div id="topbar">
       My name is {author}
     </div> */}
-      <Route path="/document/:id">
-        {(params) => {
-          let props = {
-            author,
-            ...params,
-          }
-          let Component = withDocument(DocumentView, props)
-          return <Component />
-        }}
-      </Route>
-
       <Route path="/document/:id/drafts">
         {(params) => {
           let props = {
