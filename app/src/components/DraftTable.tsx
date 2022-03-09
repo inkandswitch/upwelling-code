@@ -30,12 +30,9 @@ export default function DraftList(props: DraftListProps) {
 
   useEffect(() => {
     let interval = setInterval(() => {
-      documents
-      .sync(props.id)
-      .then((upwell) => {
+      documents.sync(props.id).then((upwell) => {
         render(upwell)
       })
-
     }, 2000)
     return () => {
       clearInterval(interval)

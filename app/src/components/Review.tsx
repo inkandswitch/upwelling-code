@@ -13,7 +13,7 @@ type ReviewState = {
 }
 
 export function ReviewView(props: {
-  root: Layer,
+  root: Layer
   visible: Layer[]
   colors?: AuthorColorsType
 }) {

@@ -67,13 +67,10 @@ export default function DraftView(props: DraftViewProps) {
 
   useEffect(() => {
     let interval = setInterval(() => {
-      documents
-      .sync(props.id)
-      .then((upwell) => {
+      documents.sync(props.id).then((upwell) => {
         render(upwell)
         setSyncState(SYNC_STATE.SYNCED)
       })
-
     }, 2000)
     return () => {
       clearInterval(interval)

@@ -1,5 +1,4 @@
 /** @jsxImportSource @emotion/react */
-import { css, Interpolation, Theme } from '@emotion/react/macro'
 import React, { useState, useEffect, useCallback } from 'react'
 import Documents from '../Documents'
 import { Button } from './Button'
@@ -17,7 +16,7 @@ export default function DraftList(props: DraftListProps) {
   const { id, author } = props
   const [, setLocation] = useLocation()
   let [layers, setLayers] = useState<Layer[]>([])
-  let [root, setRoot] = useState<Layer>()
+  let [, setRoot] = useState<Layer>()
 
   const render = useCallback((upwell: Upwell) => {
     // find the authors

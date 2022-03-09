@@ -5,7 +5,6 @@ import { Layer } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import { HCLColor } from 'd3-color'
 
-
 export const textCSS = css`
   width: 100%;
   height: 100%;
