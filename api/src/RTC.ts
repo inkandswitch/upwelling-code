@@ -34,7 +34,7 @@ export class RealTimeDraft {
     var httpProtocol = 'http://'; 
     var wsProtocol = 'ws://';
     if (window.location.protocol === 'https:') {
-        httpProtocol = 'http://';
+        httpProtocol = 'https://';
         wsProtocol = 'wss://';
     }
     let url = STORAGE_URL.replace(httpProtocol, wsProtocol)
