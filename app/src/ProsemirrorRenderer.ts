@@ -4,7 +4,8 @@ import { schema } from './upwell-pm-schema'
 
 export default class ProsemirrorRenderer extends Renderer {
   *root(): any {
-    return schema.node('doc', undefined, ...(yield))
+    let doc = schema.node('doc', undefined, yield)
+    return doc
   }
 
   *renderAnnotation(

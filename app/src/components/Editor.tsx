@@ -5,6 +5,8 @@ import { AuthorColorsType } from './ListDocuments'
 
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
+import { keymap } from 'prosemirror-keymap'
+import { baseKeymap } from 'prosemirror-commands'
 import ProsemirrorRenderer from '../ProsemirrorRenderer'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
 import UpwellSource from './upwell-source'
@@ -59,23 +61,28 @@ export function EditorView(props: Props) {
   while (pidx !== -1) {
     let start = pidx
     pidx = editableLayer.text.indexOf('\n', pidx + 1)
-    let end = pidx === -1 ? editableLayer.text.length : pidx
+    let end = pidx === -1 ? editableLayer.text.length : pidx + 1
     marks.push({
       start: start,
       end: end,
       type: '-upwell-paragraph',
       attributes: {},
     })
+    if (pidx !== -1) pidx++
   }
 
   let atjsonLayer = new UpwellSource({
-    content: editableLayer.text,
+    content: editableLayer.text.replaceAll('\n', '¶'),
     annotations: marks,
   })
 
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
 
-  const [state, setState] = useProseMirror({ schema, doc: pmDoc })
+  const [state, setState] = useProseMirror({
+    schema,
+    doc: pmDoc,
+    plugins: [keymap({ ...baseKeymap })],
+  })
 
   const viewRef = useRef(null)
 
@@ -86,21 +93,35 @@ export function EditorView(props: Props) {
   }
 
   let dispatchHandler = (transaction: any) => {
-    console.log(transaction)
     for (let step of transaction.steps) {
+      console.log(step)
       if (step instanceof ReplaceStep) {
         let from = pm2am(step.from, transaction.before)
         let to = pm2am(step.to, transaction.before)
         if (from !== to) {
+          console.log(
+            `DELETING AT ${from}: ${editableLayer.text.substring(from, to)}`
+          )
           editableLayer.deleteAt(from, to - from)
         }
         if (step.slice) {
-          // insertion
-          const insertedContent = step.slice.content.textBetween(
-            0,
-            step.slice.content.size
-          )
-          editableLayer.insertAt(from, insertedContent)
+          // @ts-ignore
+          if (step.structure === false) {
+            // insertion
+            const insertedContent = step.slice.content.textBetween(
+              0,
+              step.slice.content.size
+            )
+            console.log(`INSERTING AT ${from}: ${insertedContent}`)
+            editableLayer.insertAt(from, insertedContent)
+          } else {
+            // STRUCTURE CHANGE. PROSEMIRROR'S API HERE IS LE GARBAGE
+            // DELETE THIS COMMENT BEFORE IT GOES PUBLIC
+            // @ts-ignore
+            if (step.slice.content.content.length === 2) {
+              editableLayer.insertAt(from, '\n')
+            }
+          }
         }
       }
     }
