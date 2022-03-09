@@ -12,10 +12,12 @@ export default class ProsemirrorRenderer extends Renderer {
     annotation: Annotation<any>,
     context: Context
   ): Iterator<void, any, any> {
-    const annotationChildren = (yield).map((c: any) => {
+    let annotationChildren = (yield).map((c: any) => {
       if (typeof c === 'string') return schema.text(c)
       else return c
     })
+
+    if (annotationChildren.length === 0) annotationChildren = schema.text(' ')
 
     return schema.node(
       annotation.type,
