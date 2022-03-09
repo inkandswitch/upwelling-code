@@ -6,25 +6,21 @@ import * as components from './review-components'
 import UpwellSource from './upwell-source'
 import { Layer } from 'api'
 import { textCSS } from './TextArea'
-import Documents from '../Documents'
 import { AuthorColorsType } from './ListDocuments'
-
-let documents = Documents()
 
 type ReviewState = {
   atjsonLayer?: UpwellSource
 }
 
 export function ReviewView(props: {
-  id: string
-  visible: string[]
+  root: Layer,
+  visible: Layer[]
   colors?: AuthorColorsType
 }) {
-  const { visible, id, colors } = props
+  const { root, visible, colors } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      let upwell = documents.get(id)
       if (!visible.length) {
         let atjsonLayer = new UpwellSource({
           content: '',
@@ -35,9 +31,8 @@ export function ReviewView(props: {
       }
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
-      let layers = visible.map((id) => upwell.get(id))
-      layers.push(upwell.rootLayer)
-      let [first, ...rest] = layers
+      visible.push(root)
+      let [first, ...rest] = visible
 
       let editsLayer = Layer.mergeWithEdits(first, ...rest)
       let marks = editsLayer.marks.map((m: any) => {
@@ -75,7 +70,7 @@ export function ReviewView(props: {
       })
       setState({ atjsonLayer: atjsonLayer })
     },
-    [id, visible, colors]
+    [root, visible, colors]
   )
 
   useEffect(() => {

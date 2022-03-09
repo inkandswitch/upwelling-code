@@ -31,9 +31,10 @@ export default function DraftView(props: DraftViewProps) {
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [rootId, setRoot] = useState<string>(root.id)
-  let [reviewMode, setReviewMode] = React.useState<boolean>(false)
+  let [reviewMode, setReviewMode] = useState<boolean>(false)
 
-  let visible = [did]
+  let upwell = documents.get(id)
+  let layer = upwell.get(did)
 
   const render = useCallback(
     (upwell: Upwell) => {
@@ -64,6 +65,21 @@ export default function DraftView(props: DraftViewProps) {
     [authorColors, setAuthorColors, props.author]
   )
 
+  useEffect(() => {
+    let interval = setInterval(() => {
+      documents
+      .sync(props.id)
+      .then((upwell) => {
+        render(upwell)
+        setSyncState(SYNC_STATE.SYNCED)
+      })
+
+    }, 2000)
+    return () => {
+      clearInterval(interval)
+    }
+  })
+
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>,
     l: Layer
@@ -91,7 +107,6 @@ export default function DraftView(props: DraftViewProps) {
   useEffect(() => {
     let upwell = documents.get(id)
     upwell.subscribe(() => {
-      console.log('rendering')
       render(upwell)
     })
     render(upwell)
@@ -131,9 +146,6 @@ export default function DraftView(props: DraftViewProps) {
     upwell.rootLayer = layer
     onChangeMade()
   }
-
-  let upwell = documents.get(id)
-  let layer = upwell.get(did)
 
   let debouncedOnTextChange = debounce((layer: Layer) => {
     // this is saving every time text changes, do we want this??????
@@ -222,7 +234,8 @@ export default function DraftView(props: DraftViewProps) {
         </div>
 
         <EditReviewView
-          visible={visible}
+          root={root}
+          visible={[layer]}
           id={id}
           author={author}
           reviewMode={reviewMode}

@@ -1,20 +1,18 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React from 'react'
-import { Author } from 'api'
+import { Layer, Author } from 'api'
 import { ReviewView } from './Review'
 import { TextAreaView } from './TextArea'
-import Documents from '../Documents'
 import { AuthorColorsType } from './ListDocuments'
-
-let documents = Documents()
 
 // visible 0 or more layers NOT including root
 // root
 
 type Props = {
   id: string
-  visible: string[]
+  root: Layer
+  visible: Layer[]
   onChange: any
   author: Author
   reviewMode: boolean
@@ -22,10 +20,8 @@ type Props = {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, visible, onChange, reviewMode, colors } = props
+  const { id, root, visible, onChange, reviewMode, colors } = props
   console.log('rendering EditReviewView')
-  let upwell = documents.get(id)
-  let root = upwell.rootLayer
   if (!root) {
     console.log('no root')
     return <div></div>
@@ -33,16 +29,16 @@ export function EditReviewView(props: Props) {
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
-    <ReviewView id={id} visible={visible} colors={colors}></ReviewView>
+    <ReviewView root={root} visible={visible} colors={colors}></ReviewView>
   )
   let component = reviewView
   if (visible.length === 1) {
-    let layer = upwell.get(visible[0])
     let textArea = (
       <TextAreaView
+        id={id}
         colors={colors}
         onChange={onChange}
-        editableLayer={layer}
+        editableLayer={visible[0]}
       ></TextAreaView>
     )
     component = (

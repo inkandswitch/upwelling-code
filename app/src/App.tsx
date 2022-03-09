@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import DocumentView from './components/DocumentView'
 import { Route, useLocation } from 'wouter'
 import Documents from './Documents'
 import catnames from 'cat-names'
@@ -33,17 +32,6 @@ export default function App() {
       {/* <div id="topbar">
       My name is {author}
     </div> */}
-      <Route path="/document/:id">
-        {(params) => {
-          let props = {
-            author,
-            ...params,
-          }
-          let Component = withDocument(DocumentView, props)
-          return <Component />
-        }}
-      </Route>
-
       <Route path="/document/:id/drafts">
         {(params) => {
           let props = {
