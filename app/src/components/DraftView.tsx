@@ -36,6 +36,16 @@ export default function DraftView(props: DraftViewProps) {
   let upwell = documents.get(id)
   let layer = upwell.get(did)
 
+  useEffect(() => {
+    let upwell = documents.get(id)
+    let layer = upwell.get(did)
+
+    documents.connect(layer)
+    return () => {
+      documents.disconnect()
+    }
+  }, [id, did])
+
   const render = useCallback(
     (upwell: Upwell) => {
       // find the authors
@@ -65,9 +75,10 @@ export default function DraftView(props: DraftViewProps) {
     [authorColors, setAuthorColors, props.author]
   )
 
+  /*
   useEffect(() => {
     let interval = setInterval(() => {
-      documents.sync(props.id).then((upwell) => {
+      documents.sync(id).then((upwell) => {
         render(upwell)
         setSyncState(SYNC_STATE.SYNCED)
       })
@@ -75,7 +86,8 @@ export default function DraftView(props: DraftViewProps) {
     return () => {
       clearInterval(interval)
     }
-  })
+  }, [id, render])
+  */
 
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>,
@@ -88,9 +100,7 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   function onChangeMade() {
-    documents.save(props.id)
-    documents
-      .sync(props.id)
+    documents.upwellChanged(props.id)
       .then((upwell) => {
         render(upwell)
         setSyncState(SYNC_STATE.SYNCED)
@@ -102,15 +112,14 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   useEffect(() => {
-    let upwell = documents.get(id)
     upwell.subscribe(() => {
       render(upwell)
     })
     render(upwell)
     return () => {
-      documents.unsubscribe(id)
+      upwell.unsubscribe()
     }
-  }, [id, render])
+  }, [upwell, render])
 
   let onTextChange = () => {
     if (rootId === layer.id) {
@@ -118,8 +127,9 @@ export default function DraftView(props: DraftViewProps) {
       let url = `/document/${id}/draft/${draft.id}`
       setLocation(url)
     } else {
-      setSyncState(SYNC_STATE.LOADING)
+      documents.updatePeers(id, did)
       debouncedOnTextChange()
+      setSyncState(SYNC_STATE.LOADING)
     }
   }
 

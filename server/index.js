@@ -4,6 +4,8 @@ const fs = require('fs')
 const cors = require('cors')
 const bodyParser = require('body-parser');
 const { GetObjectCommand, S3Client } = require('@aws-sdk/client-s3');
+var expressWs = require('express-ws')
+
 
 let accessKeyId = "ZRJT7RHB37KDQC72YYAT"
 let secretAccessKey = process.env.SPACES_SECRET
@@ -20,6 +22,7 @@ const s3Client = new S3Client({
 
 const BUCKET = "upwelling-semi-reliable-storage"
 let app = express()
+expressWs(app);
 app.use(cors());
 app.use(require('skipper')());
 
@@ -44,7 +47,6 @@ const streamToString = (stream) => {
 
 app.get('/:id', (req, res) => {
   let id = req.params.id
-  console.log('got key', id)
 
   // Specifies a path within your Space and the file to download.
   const bucketParams = {
@@ -85,5 +87,55 @@ app.post('/:id', (req, res) => {
     });
   })
 })
+
+let documents = {}
+
+app.ws('/:did/connect/:peerId', function(ws, req) {
+  let doc = documents[req.params.did]
+  if (!doc) {
+    doc = {}
+    documents[req.params.did] = doc
+  }
+  
+  let peer = doc[req.params.peerId] 
+  if (!peer) doc[req.params.peerId] = ws
+  console.log('opening', req.params.peerId)
+
+  ws.on('message', function(msg) {
+    let value = JSON.parse(msg)
+    if (value.method === 'BYE') {
+      console.log('closing socket', req.params.peerId)
+      delete doc[value.peerId]
+      return
+    }
+    let incomingPeer = value.peerId
+    let doc = documents[req.params.did]
+    if (!doc) {
+      console.error('sad, no doc?')
+      return
+    }
+
+    for (let peerId of Object.keys(doc)) {
+      // dont echo back to themselves
+      if (peerId !== incomingPeer) {
+        let ws = doc[peerId]
+        if (ws) {
+          ws.send(msg)
+        }
+      }
+    }
+    
+  });
+
+  ws.on('error', (err) => {
+    console.log('closing socket', req.params.peerId)
+    delete doc[req.params.peerId] 
+  })
+
+  ws.on('close', () => {
+    console.log('closing socket', req.params.peerId)
+    delete doc[req.params.peerId] 
+  })
+});
 
 module.exports = app

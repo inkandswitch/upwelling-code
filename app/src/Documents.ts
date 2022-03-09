@@ -1,4 +1,4 @@
-import { Upwell } from 'api'
+import { RealTimeDraft, Upwell, Layer } from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
@@ -12,6 +12,7 @@ export class Documents {
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)
   subscriptions = new Map<string, Function>()
+  rtc?: RealTimeDraft
 
   async create(_id?: string): Promise<Upwell> {
     let upwell = Upwell.create({ id: _id })
@@ -22,6 +23,33 @@ export class Documents {
 
   subscribe(id: string, fn: Function) {
     this.subscriptions.set(id, fn)
+  }
+
+  updatePeers(id: string, did: string) {
+    let upwell = this.get(id)
+    let layer = upwell.get(did)
+    
+    if (this.rtc && this.rtc.draft.id === layer.id) {
+      this.rtc.updatePeers()
+    }
+    return this.save(id)
+  }
+
+  upwellChanged(id: string) {
+    return this.sync(id)
+  }
+
+  disconnect() {
+    if (this.rtc) {
+      this.rtc.destroy()
+      this.rtc = undefined
+    }
+  }
+
+  connect(draft: Layer): RealTimeDraft {
+    if (this.rtc) return this.rtc
+    this.rtc = new RealTimeDraft(draft) 
+    return this.rtc
   }
 
   unsubscribe(id: string) {
@@ -64,11 +92,15 @@ export class Documents {
           this.upwells.set(id, ours)
           return resolve(ours)
         } else {
-          let remoteBinary = await this.remote.getItem(id)
-          if (remoteBinary) {
-            let theirs = await this.toUpwell(Buffer.from(remoteBinary))
-            this.upwells.set(id, theirs)
-            return resolve(theirs)
+          try {
+            let remoteBinary = await this.remote.getItem(id)
+            if (remoteBinary) {
+              let theirs = await this.toUpwell(Buffer.from(remoteBinary))
+              this.upwells.set(id, theirs)
+              return resolve(theirs)
+            }
+          } catch (err) {
+            console.error('Could not connect to server')
           }
         }
       }
@@ -85,7 +117,12 @@ export class Documents {
     }
     if (!remoteBinary) {
       let newFile = await inMemory.toFile()
-      await this.remote.setItem(id, newFile)
+      await this.storage.setItem(id, newFile)
+      try {
+        await this.remote.setItem(id, newFile)
+      } catch (err) {
+        console.error('Could not connect to server')
+      }
       return inMemory
     } else {
       // do sync
@@ -93,6 +130,7 @@ export class Documents {
       let inMemoryBuf = await inMemory.toFile()
       if (buf.equals(inMemoryBuf)) {
         // the one we have in memory is up to date
+        await this.storage.setItem(id, inMemoryBuf)
         return inMemory
       }
       // update our local one

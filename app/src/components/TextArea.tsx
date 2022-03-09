@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React from 'react'
+import React, {useEffect}  from 'react'
 import { Layer } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import { HCLColor } from 'd3-color'
@@ -79,6 +79,17 @@ export function TextAreaView(props: Props) {
     setState(editableLayer.text)
     onChange(editableLayer)
   }
+
+  useEffect(() => {
+    editableLayer.subscribe((layer: Layer) => {
+      setState(layer.text)
+    })
+
+    return () => {
+      editableLayer.subscribe(() => {})
+    }
+
+  }, [editableLayer, onChange])
 
   function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
     if (!editableLayer) return console.error('Layer not editable.')
