@@ -17,6 +17,7 @@ export default function withDocument(
     let { id } = props
 
     useEffect(() => {
+      let unmounted = false
       let upwell: Upwell
       async function render() {
         try {
@@ -30,11 +31,14 @@ export default function withDocument(
           if (!upwell) upwell = await documents.create(props.id)
         } finally {
           if (!upwell) throw new Error('could not create upwell')
-          setRoot(upwell.rootLayer)
+          if (!unmounted) setRoot(upwell.rootLayer)
         }
       }
 
       render()
+      return () => {
+        unmounted = true
+      }
     }, [id])
 
     if (!root) return <div>Loading..</div>

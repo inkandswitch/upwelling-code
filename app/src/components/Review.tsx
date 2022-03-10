@@ -31,10 +31,7 @@ export function ReviewView(props: {
       }
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
-      visible.push(root)
-      let [first, ...rest] = visible
-
-      let editsLayer = Layer.mergeWithEdits(first, ...rest)
+      let editsLayer = Layer.mergeWithEdits(root, ...visible)
       let marks = editsLayer.marks.map((m: any) => {
         let attrs = JSON.parse(m.value)
         if (colors) attrs['authorColor'] = colors[attrs.author].toString()

@@ -1,8 +1,6 @@
 import { nanoid } from 'nanoid';
-import init from 'automerge-wasm-pack'
-import { Automerge, loadDoc, create, Value }  from 'automerge-wasm-pack';
+import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
 import { Author } from './Upwell';
-import * as Diff from 'diff';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -27,7 +25,7 @@ export type LayerMetadata = {
   message: string
 }
 
-export type Subscriber = (doc: Layer, heads: Heads) => void 
+export type Subscriber = (doc: Layer) => void 
 
 export class LazyLayer {
   binary: Buffer
@@ -122,6 +120,11 @@ export class Layer {
       parent_id: this.parent_id,
       shared: this.shared
     }
+  }
+
+  receiveSyncMessage(state: SyncState, message: SyncMessage) {
+    if (this.subscriber) this.subscriber(this)
+    this.doc.receiveSyncMessage(state, message)
   }
 
   subscribe(subscriber: Subscriber) {
@@ -253,7 +256,7 @@ export class Layer {
   commit(message: string): Heads {
     let meta: ChangeMetadata = { author: this.author, message }
     let heads = this.doc.commit(JSON.stringify(meta))
-    if (this.subscriber) this.subscriber(this, heads)
+    if (this.subscriber) this.subscriber(this)
     return heads
   }
 }
