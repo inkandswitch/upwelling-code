@@ -14,6 +14,7 @@
     "body-parser": "^1.19.1",
     "cors": "^2.8.5",
     "express": "^4.17.2",
+    "express-ws": "^5.0.2",
     "skipper": "^0.9.1",
     "skipper-s3": "^0.6.0"
   }

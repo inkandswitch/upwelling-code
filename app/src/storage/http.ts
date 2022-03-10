@@ -15,7 +15,6 @@ export default class HTTP {
       if (response.status === 200) return response.arrayBuffer()
       else return null
     } catch (err) {
-      console.error('No saved draft for doc with id=' + id)
       return null
     }
   }
