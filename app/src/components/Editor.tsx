@@ -79,7 +79,9 @@ export function EditorView(props: Props) {
     annotations: marks,
   })
 
+  console.log(atjsonLayer)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+  console.log({ pmdoc: pmDoc })
 
   const [state, setState] = useProseMirror({
     schema,
@@ -96,6 +98,8 @@ export function EditorView(props: Props) {
   }
 
   let dispatchHandler = (transaction: any) => {
+    console.log(transaction)
+    console.log(editableLayer.text)
     for (let step of transaction.steps) {
       console.log(step)
       if (step instanceof ReplaceStep) {
@@ -135,6 +139,7 @@ export function EditorView(props: Props) {
   }
 
   const color = colors[editableLayer.author]
+  console.log(state)
   return (
     <ProseMirror
       state={state}
