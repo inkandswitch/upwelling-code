@@ -42,8 +42,9 @@ export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
 
   let marks = editableLayer.marks.map((m: any) => {
-    let attrs = JSON.parse(m.value)
-    if (colors) attrs['authorColor'] = colors[attrs.author].toString()
+    let attrs: any = {}
+    if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+    if (colors) attrs['authorColor'] = colors[attrs.author]?.toString()
     // I wonder if there's a (good) way to preserve identity of the mark
     // here (id? presumably?) Or I guess just the mark itself?) so that we
     // can do direct actions on the Upwell layer via the atjson annotation
@@ -57,6 +58,7 @@ export function EditorView(props: Props) {
   })
 
   // generate paragraph annotations
+  /*
   let pidx = 0
   while (pidx !== -1) {
     let start = pidx
@@ -70,9 +72,10 @@ export function EditorView(props: Props) {
     })
     if (pidx !== -1) pidx++
   }
+  */
 
   let atjsonLayer = new UpwellSource({
-    content: editableLayer.text.replaceAll('\n', '¶'),
+    content: editableLayer.text, //.replaceAll('\n', '¶'),
     annotations: marks,
   })
 

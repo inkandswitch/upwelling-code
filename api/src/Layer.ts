@@ -249,8 +249,11 @@ export class Layer {
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
     doc.make(ROOT, 'title', '')
-    doc.make(ROOT, 'text', '')
-    return new Layer(id, doc)
+    doc.make(ROOT, 'text', 'hi theredoes this work')
+    let layer = new Layer(id, doc)
+    layer.mark('paragraph', '(0..8)', '')
+    layer.mark('paragraph', '[8..22)', '')
+    return layer
   }
 
   commit(message: string): Heads {
