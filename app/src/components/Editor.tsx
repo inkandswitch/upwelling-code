@@ -57,23 +57,6 @@ export function EditorView(props: Props) {
     }
   })
 
-  // generate paragraph annotations
-  /*
-  let pidx = 0
-  while (pidx !== -1) {
-    let start = pidx
-    pidx = editableLayer.text.indexOf('\n', pidx + 1)
-    let end = pidx === -1 ? editableLayer.text.length : pidx + 1
-    marks.push({
-      start: start,
-      end: end,
-      type: '-upwell-paragraph',
-      attributes: {},
-    })
-    if (pidx !== -1) pidx++
-  }
-  */
-
   let atjsonLayer = new UpwellSource({
     content: editableLayer.text, //.replaceAll('\n', '¶'),
     annotations: marks,
