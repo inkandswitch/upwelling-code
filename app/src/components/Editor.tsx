@@ -105,11 +105,23 @@ export function EditorView(props: Props) {
             console.log(`INSERTING AT ${from}: ${insertedContent}`)
             editableLayer.insertAt(from, insertedContent)
           } else {
-            // STRUCTURE CHANGE. PROSEMIRROR'S API HERE IS LE GARBAGE
-            // DELETE THIS COMMENT BEFORE IT GOES PUBLIC
             // @ts-ignore
-            if (step.slice.content.content.length === 2) {
-              editableLayer.insertAt(from, '\n')
+            if (step.slice.content.content.length === 2 && from === to) {
+              console.log(from, to, editableLayer.marks)
+              let relevantMarks = editableLayer.marks.filter(
+                // @ts-ignore
+                (m) => m.start < from && m.end >= to && m.type === 'paragraph'
+              )
+
+              if (relevantMarks.length != 1)
+                throw new Error(
+                  'unhandled case. only expected one paragraph here.'
+                )
+              let relevantMark = relevantMarks[0]
+              let prevEnd = relevantMark.end
+              console.log('here is the relevant mark', relevantMark)
+              editableLayer.doc.set(relevantMark.id, 'end', to)
+              editableLayer.mark('paragraph', `[${from}..${prevEnd})`, '')
             }
           }
         }
