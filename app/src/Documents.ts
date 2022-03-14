@@ -1,7 +1,8 @@
-import { RealTimeDraft, Upwell, Layer } from 'api'
+import { Author, RealTimeDraft, Upwell, Layer, createAuthorId } from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
+import catNames from 'cat-names'
 
 const STORAGE_URL = process.env.STORAGE_URL
 
@@ -12,11 +13,16 @@ export class Documents {
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)
   subscriptions = new Map<string, Function>()
+  author: Author
   rtc?: RealTimeDraft
 
-  async create(_id?: string): Promise<Upwell> {
-    let upwell = Upwell.create({ id: _id })
-    let id = upwell.id
+  constructor (author: Author) {
+    this.author = author
+  }
+
+  async create(id: string, author: Author): Promise<Upwell> {
+    let upwell = Upwell.create({ id, author })
+    this.author = author
     this.upwells.set(id, upwell)
     return this.save(id)
   }
@@ -58,7 +64,7 @@ export class Documents {
 
   toUpwell(binary: Buffer): Promise<Upwell> {
     let stream = intoStream(binary)
-    return Upwell.deserialize(stream)
+    return Upwell.deserialize(stream, this.author)
   }
 
   get(id: string): Upwell {
@@ -154,10 +160,25 @@ export class Documents {
   }
 }
 
-let documents: Documents
+var documents : Documents
 
-export default function boop(): Documents {
+export default function initialize (): Documents {
   if (documents) return documents
-  documents = new Documents()
+  let author = {
+    id: localStorage.getItem('authorId'),
+    name: localStorage.getItem('authorName')
+  }
+  if (!author.id) {
+    author.id = createAuthorId()
+    localStorage.setItem('authorId', author.id)
+  }
+  if (!author.name) {
+    author.name = catNames.random() 
+    localStorage.setItem('authorName', author.name)
+  }
+  documents = new Documents({
+    id: author.id,
+    name: author.name
+  })
   return documents
 }

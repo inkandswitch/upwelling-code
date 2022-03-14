@@ -5,27 +5,26 @@ import catnames from 'cat-names'
 import DraftView from './components/DraftView'
 import DraftList from './components/DraftTable'
 import withDocument from './components/withDocument'
+import { createAuthorId } from 'api'
+import { nanoid } from 'nanoid'
 require('setimmediate')
 
 let documents = Documents()
 
 export default function App() {
-  let [author, setAuthor] = useState<string>('')
+  let [authorName, setAuthorName] = useState<string>('')
+  let [authorId, setAuthorId] = useState<string>('')
   let [, setLocation] = useLocation()
 
   useEffect(() => {
-    let localName = localStorage.getItem('name')
-    if (!localName || localName === '?') localName = catnames.random()
-    if (localName && author !== localName) {
-      localStorage.setItem('name', localName)
-    }
-    setAuthor(localName)
-  }, [author])
+  }, [authorName, authorId])
 
   async function newUpwell() {
-    let doc = await documents.create()
+    let id = nanoid()
+    let doc = await documents.create(id, documents.author)
     setLocation('/document/' + doc.id + '/drafts')
   }
+
 
   return (
     <>
@@ -35,7 +34,7 @@ export default function App() {
       <Route path="/document/:id/drafts">
         {(params) => {
           let props = {
-            author,
+            author: {id: authorId, name: authorName},
             ...params,
           }
           let Component = withDocument(DraftList, props)
@@ -46,7 +45,7 @@ export default function App() {
       <Route path="/document/:id/draft/:did">
         {(params) => {
           let props = {
-            author,
+            author: {id: authorId, name: authorName},
             ...params,
           }
           let Component = withDocument(DraftView, props)

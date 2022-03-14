@@ -57,7 +57,7 @@ describe('upwell', () => {
   })
 
 
-  it.only('creates layers with authors', async () => {
+  it('creates layers with authors', async () => {
     let first_author: Author = {id: createAuthorId(), name: 'Susan'}
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()

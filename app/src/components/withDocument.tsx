@@ -5,7 +5,8 @@ import Documents from '../Documents'
 let documents = Documents()
 
 type DocumentProps = {
-  id: string
+  id: string,
+  author: Author
 }
 
 export default function withDocument(
@@ -14,7 +15,7 @@ export default function withDocument(
 ) {
   return function () {
     let [root, setRoot] = useState<Layer>()
-    let { id } = props
+    let { id, author } = props
 
     useEffect(() => {
       let unmounted = false
@@ -28,7 +29,7 @@ export default function withDocument(
         try {
           upwell = await documents.sync(id)
         } catch (err) {
-          if (!upwell) upwell = await documents.create(props.id)
+          if (!upwell) upwell = await documents.create(props.id, author)
         } finally {
           if (!upwell) throw new Error('could not create upwell')
           if (!unmounted) setRoot(upwell.rootLayer)
@@ -39,7 +40,7 @@ export default function withDocument(
       return () => {
         unmounted = true
       }
-    }, [id])
+    }, [id, author])
 
     if (!root) return <div>Loading..</div>
     return <WrappedComponent root={root} {...props} />

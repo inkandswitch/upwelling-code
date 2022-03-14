@@ -151,7 +151,7 @@ export default function ListDocuments({
                 justify-content: flex-start;
                 align-items: flex-start;
                 box-shadow: 18px 24px 0px -18px ${colors[
-                    layer.author
+                    layer.authorId
                   ]?.toString() || 'none'} inset;
               `}
             >
@@ -159,7 +159,7 @@ export default function ListDocuments({
               <div>
                 {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
                 <div>
-                  by {layer.author}, {relativeDate(new Date(layer.time))}
+                  by {layer.authorId}, {relativeDate(new Date(layer.time))}
                 </div>
               </div>
             </FileTab>
