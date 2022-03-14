@@ -86,8 +86,7 @@ export class Upwell {
     else return undefined
   }
 
-  createDraft() {
-    let message = 'Magenta'
+  createDraft(message = 'Magenta') {
     let newLayer = this.rootLayer.fork(message, this.author)
     this.add(newLayer)
     return newLayer

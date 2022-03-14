@@ -57,7 +57,7 @@ describe('upwell', () => {
   })
 
 
-  it('creates layers with authors', () => {
+  it.only('creates layers with authors', async () => {
     let first_author: Author = {id: createAuthorId(), name: 'Susan'}
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
@@ -74,8 +74,8 @@ describe('upwell', () => {
 
     let name = 'Started typing on the train'
     let author: Author = {id: createAuthorId(), name: 'Theroux'}
-    let newLayer = doc.fork(name, author)
-    d.add(newLayer)
+    let e = await Upwell.deserialize(d.serialize(), author)
+    let newLayer = e.createDraft(name)
 
     newLayer.insertAt(0, 'H')
     newLayer.deleteAt(1)
@@ -86,6 +86,10 @@ describe('upwell', () => {
     newLayer.deleteAt(4)
     assert.equal(newLayer.text, 'Hola')
     assert.equal(newLayer.authorId, author.id)
+    assert.deepEqual(e.metadata.getAuthors(), {
+      [author.id]: author.name,
+      [first_author.id]: first_author.name
+    })
   })
 
   describe('Layer', () => {

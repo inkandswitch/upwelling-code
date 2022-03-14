@@ -60,6 +60,10 @@ export class UpwellMetadata {
     this.doc.set('/authors', author.id, author.name)
   }
 
+  getAuthors() {
+    return this.doc.materialize('/authors')
+  }
+
   getAuthor(authorId: AuthorId): Author | undefined {
     let authors = this.doc.value(ROOT, 'authors')
     if (authors && authors[0] === 'map') {
@@ -68,7 +72,6 @@ export class UpwellMetadata {
       else return undefined
     }
     else return undefined
-
   }
 
   get id(): string {
