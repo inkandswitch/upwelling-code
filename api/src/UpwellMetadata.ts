@@ -20,7 +20,7 @@ export class UpwellMetadata {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id) 
     doc.set(ROOT, 'main_id', main_id)
-    doc.set(ROOT, 'archived', {})
+    doc.make(ROOT, 'archived', {})
     return new UpwellMetadata(doc)
   }
 

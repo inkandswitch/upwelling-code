@@ -4,6 +4,7 @@ import concat from 'concat-stream'
 import tar from 'tar-stream'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
+import { getRandomDessert } from 'random-desserts'
 import Debug from 'debug';
 
 export type Author = string 
@@ -68,7 +69,7 @@ export class Upwell {
   }
 
   createDraft(author: string) {
-    let message = 'Magenta'
+    let message = getRandomDessert()
     let newLayer = this.rootLayer.fork(message, author)
     this.add(newLayer)
     return newLayer
