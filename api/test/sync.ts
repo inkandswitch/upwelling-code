@@ -43,7 +43,7 @@ describe('save and load', () => {
 
     let newLayers = b.layers()
     assert.equal(newLayers.length, 3)
-    assert.ok(newLayers.find(l => l.author === author))
+    assert.ok(newLayers.find(l => l.authorId === author))
 
     // give binary from b to a 
     binary = await b.serialize()

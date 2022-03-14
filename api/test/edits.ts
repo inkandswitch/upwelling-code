@@ -7,7 +7,7 @@ describe('edits', () => {
   let doc1: Layer, doc2: Layer, doc3: Layer
 
   beforeEach(async () => {
-    let d = await Upwell.create({ author: 'author' })
+    let d = await Upwell.create({ author: {id: nanoid(), name: 'author' }})
     doc1 = (await d.layers())[0]
     doc1.insertAt(0, 'Hello of course')
     doc1.commit('Hello!')

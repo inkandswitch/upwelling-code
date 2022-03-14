@@ -1,6 +1,7 @@
 import { Author, Upwell, Layer, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
+import { nanoid } from 'nanoid';
 
 describe('upwell', () => {
   it('subscribes to document changes', async () => {
@@ -58,7 +59,7 @@ describe('upwell', () => {
 
 
   it('creates layers with authors', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author = {id: nanoid(), name: 'Susan'}
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
     let doc = layers[0]
@@ -73,8 +74,8 @@ describe('upwell', () => {
     assert.equal(d.layers()[0].text, 'Hello')
 
     let name = 'Started typing on the train'
-    let author: Author = 'Theroux'
-    let newLayer = doc.fork(name, author)
+    let author: Author = {id: nanoid(), name: 'Theroux'}
+    let newLayer = doc.fork(name, author.id)
     d.add(newLayer)
 
     newLayer.insertAt(0, 'H')
@@ -85,11 +86,11 @@ describe('upwell', () => {
     newLayer.insertAt(3, 'a')
     newLayer.deleteAt(4)
     assert.equal(newLayer.text, 'Hola')
-    assert.equal(newLayer.author, author)
+    assert.equal(newLayer.authorId, author.id)
   })
 
   describe('Layer', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author =  {id: nanoid(), name: 'Susan'}
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
@@ -108,8 +109,11 @@ describe('upwell', () => {
 
     it('forks', () => {
       let name = 'Started typing on the train'
-      let author: Author = 'Theroux'
-      newLayer = doc.fork(name, author)
+      let author: Author = {
+        id: nanoid(),
+        name: 'Theroux'
+      }
+      newLayer = doc.fork(name, author.id)
       d.add(newLayer)
   
       newLayer.insertAt(5, ' ')
@@ -146,67 +150,62 @@ describe('upwell', () => {
 
   })
 
-  it('makes layers visible and shared',() => {
-    let first_author: Author =  'Susan'
+  it('makes layers visible and shared', async () => {
+    let first_author: Author =  {id: nanoid(), name: 'Susan'}
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
     d.share(doc.id)
     assert.equal(doc.shared, true)
 
-    let serialized = doc.save()
-
-    let inc = Upwell.create({ author: 'Theroux' })
-    inc.add(Layer.load(doc.id, serialized))
+    let inc = await Upwell.deserialize(d.serialize())
+    inc.createDraft({id: nanoid(), name: 'Theroux'})
     let incomingLayers = inc.layers()
     assert.equal(incomingLayers.length, 2)
 
-    let incomingShared = incomingLayers[1]
-    assert.deepEqual(incomingShared.metadata, doc.metadata)
-    assert.equal(incomingShared.author, 'Susan')
+    let incomingShared = incomingLayers[0]
+    assert.equal(inc.getAuthorName(incomingShared.authorId), 'Susan')
     assert.equal(incomingShared.shared, true)
     assert.equal(d.isArchived(incomingShared.id), false)
   })
 
   it('gets root layer', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author =  {id: nanoid(), name: 'Susan'}
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
     let doc = layers[0]
     let root = d.rootLayer
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
-    assert.deepEqual(root.metadata, doc.metadata)
 
     d.add(doc.fork("beep boop", "john"))
 
     root = d.rootLayer
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
-    assert.deepEqual(root.metadata, doc.metadata)
   })
 
   it('maintains keys when multiple documents involved', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author = {id: nanoid(), name:'Susan'}
     let d = Upwell.create({ author: first_author })
 
     let og = d.layers()[0]
 
-    let layer = og.fork('', first_author)
+    let layer = og.fork('', first_author.id)
     d.add(layer)
     d.share(layer.id)
 
-    let boop = layer.fork('', first_author)
+    let boop = layer.fork('', first_author.id)
     d.add(boop)
 
     assert.equal(d.layers().filter(l => l.shared).length, 1)
 
-    boop = boop.fork('', first_author)
+    boop = boop.fork('', first_author.id)
     d.add(boop)
     d.share(boop.id)
 
 
-    boop = boop.fork('', first_author)
+    boop = boop.fork('', first_author.id)
     d.add(boop)
 
     for (let i = 0; i < 100; i++) {

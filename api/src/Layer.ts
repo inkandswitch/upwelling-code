@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
-import { Author } from './Upwell';
+import { AuthorId } from './Upwell';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -14,14 +14,14 @@ const ROOT = '_root'
 
 export type ChangeMetadata = {
   message: string,
-  author: Author
+  authorId: AuthorId
 }
 
 export type Heads = string[];
 export type LayerMetadata = {
   shared: boolean,
   parent_id: string,
-  author: Author,
+  authorId: AuthorId,
   message: string
 }
 
@@ -97,8 +97,8 @@ export class Layer {
     return this._getAutomergeText('text')
   }
 
-  get author(): Author {
-    return this._getValue('author') as Author
+  get authorId(): AuthorId {
+    return this._getValue('author') as AuthorId
   }
 
   get title (): string {
@@ -111,15 +111,6 @@ export class Layer {
 
   set parent_id(value: string) {
     this.doc.set(ROOT, 'parent_id', value)
-  }
-
-  get metadata() : LayerMetadata {
-    return {
-      message: this.message,
-      author: this.author,
-      parent_id: this.parent_id,
-      shared: this.shared
-    }
   }
 
   receiveSyncMessage(state: SyncState, message: SyncMessage) {
@@ -163,7 +154,7 @@ export class Layer {
     return this.doc.save()
   }
 
-  fork(message: string, author: Author): Layer {
+  fork(message: string, author: AuthorId): Layer {
     let id = nanoid()
     let doc = this.doc.fork()
     doc.set(ROOT, 'message', message)
@@ -184,7 +175,7 @@ export class Layer {
     // the original. It might make sense to remove this from here and force the
     // caller to do the fork if this is the behaviour they want in order to
     // parallel Layer.merge() behaviour.
-    let newLayer = ours.fork('Merge', ours.author)
+    let newLayer = ours.fork('Merge', ours.authorId)
     let origHead = newLayer.doc.getHeads()
 
     // Merge all the passed-in layers to this one.
@@ -211,7 +202,7 @@ export class Layer {
           'insert',
           `(${edit.start}..${edit.end})`,
           JSON.stringify({
-            author: layer.author,
+            author: layer.authorId,
             text
           })
         )
@@ -222,7 +213,7 @@ export class Layer {
           'delete',
           `(${edit.pos}..${edit.pos})`,
           JSON.stringify({
-            author: layer.author,
+            author: layer.authorId,
             text: edit.val
           })
         )
@@ -240,11 +231,11 @@ export class Layer {
     return layer
   }
 
-  static create(message: string, author: Author): Layer {
+  static create(message: string, authorId: AuthorId): Layer {
     let doc = create()
     let id = nanoid()
     doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'author', author)
+    doc.set(ROOT, 'author', authorId)
     doc.set(ROOT, 'shared', false, 'boolean')
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
@@ -254,7 +245,7 @@ export class Layer {
   }
 
   commit(message: string): Heads {
-    let meta: ChangeMetadata = { author: this.author, message }
+    let meta: ChangeMetadata = { authorId: this.authorId, message }
     let heads = this.doc.commit(JSON.stringify(meta))
     if (this.subscriber) this.subscriber(this)
     return heads

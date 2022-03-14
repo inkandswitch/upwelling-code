@@ -6,12 +6,17 @@ import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import Debug from 'debug';
 
-export type Author = string 
-export const UNKNOWN_AUTHOR = "Unknown"
+export type AuthorId = string;
+const UNKNOWN_AUTHOR = {id: nanoid(), name: 'Anonymous'}
+
+export type Author = {
+  id: AuthorId,
+  name: string
+}
 
 export type UpwellOptions = {
   id?: string,
-  author?: Author,
+  author: Author,
 }
 
 type MaybeLayer = {
@@ -67,10 +72,17 @@ export class Upwell {
     return Array.from(this._layers.values())
   }
 
-  createDraft(author: string) {
+  getAuthorName(authorId: AuthorId): string | undefined {
+    let author = this.metadata.getAuthor(authorId)
+    if (author) return author.name
+    else return undefined
+  }
+
+  createDraft(author: Author) {
     let message = 'Magenta'
-    let newLayer = this.rootLayer.fork(message, author)
+    let newLayer = this.rootLayer.fork(message, author.id)
     this.add(newLayer)
+    this.metadata.addAuthor(author)
     return newLayer
   }
 
@@ -220,8 +232,9 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    let layer = Layer.create('Document initialized', author)
+    let layer = Layer.create('Document initialized', author.id)
     let metadata = UpwellMetadata.create(id, layer.id)
+    metadata.addAuthor(author)
     let upwell = new Upwell(metadata)
     upwell.add(layer)
 
