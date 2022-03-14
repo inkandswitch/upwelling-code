@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
 import { Author } from './Upwell';
+import { v4 as uuid } from 'uuid'
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -37,6 +38,35 @@ export class LazyLayer {
 
   hydrate() {
     return new Layer(this.id, loadDoc(this.binary))
+  }
+}
+
+export class Block {
+  id: string
+  doc: Automerge
+  type: string
+  start: number
+  end: number
+
+  constructor({ id, doc, type, start, end }) {
+    this.id = id
+    this.doc = doc
+    this.type = type
+    this.start = start
+    this.end = end
+  }
+
+  delete() {
+    console.log('in delete', this.id)
+    let blocksProp = this.doc.value(ROOT, 'blocks')
+    if (!blocksProp || blocksProp[0] !== 'map') throw new Error('no blocks map')
+    let blocksPropId = blocksProp[1]
+    let block = this.doc.value(blocksPropId, this.id)
+    if (block && block[0] === 'map') {
+      let blockProp = block[1]
+      console.log('setting ', blockProp, 'to true!')
+      this.doc.set(blockProp, 'deleted', true, 'boolean')
+    }
   }
 }
 
@@ -159,6 +189,59 @@ export class Layer {
     return this.getMarks()
   }
 
+  insertBlock(position: number, type: string) {
+    let blocksProp = this.doc.value(ROOT, 'blocks')
+    if (!blocksProp || blocksProp[0] !== 'map') throw new Error('no blocks map')
+    let blocksPropId = blocksProp[1]
+    let blockUuid = uuid()
+    let blockObj = this.doc.make(blocksPropId, blockUuid, {}, 'map')
+    this.doc.set(blockObj, 'type', type)
+    this.mark('block', `[${position}..${position}]`, `${blockUuid}`)
+  }
+
+  // TODO refactor this to use materialize or whatever because there is some
+  // nasty hoop-jumping here.
+  get blocks() {
+    let blockMetadataObj = this.doc.value(ROOT, 'blocks')
+    if (!blockMetadataObj || blockMetadataObj[0] !== 'map') throw new Error('no blocks map')
+    let blockMetadataProp = blockMetadataObj[1]
+
+    let getBlockMetadata = (blockId, prop) => {
+      let blockMetadata = this.doc.value(blockMetadataProp, blockId)
+      if (blockMetadata && blockMetadata[0] === 'map') {
+        let blockProp = blockMetadata[1]
+        let val = this.doc.value(blockProp, prop)
+        if (val) return val[1]
+      }
+    }
+
+    let blockMarks = this.marks
+      .filter(m => m.name !== 'block')
+      .filter(m => !getBlockMetadata(m.value, 'deleted'))
+      .sort((m, n) => m.start - n.start)
+    console.log('blockmarks', blockMarks)
+    let blocks: any[] = []
+
+    for (let i = 0; i < blockMarks.length; i++) {
+      let start = blockMarks[i].start
+      let end = i === blockMarks.length - 1 ? this.text.length : blockMarks[i + 1].start
+      let type = getBlockMetadata(blockMarks[i].value, 'type')
+
+      let block = new Block({
+        id: blockMarks[i].value,
+        doc: this.doc,
+        type,
+        start,
+        end
+      })
+
+      if (start < end) blocks.push(block)
+    }
+
+    console.log('blocks?', blocks)
+    return blocks
+  }
+
   save (): Uint8Array {
     return this.doc.save()
   }
@@ -249,10 +332,13 @@ export class Layer {
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
     doc.make(ROOT, 'title', '')
-    doc.make(ROOT, 'text', 'hi theredoes this work')
+    let text = doc.make(ROOT, 'text', ' ')
+    let blocks = doc.make(ROOT, 'blocks', {}, 'map')
+    let initialBlockId = uuid()
+    let initialParagraph = doc.make(blocks, initialBlockId, {}, 'map')
+    doc.set(initialParagraph, 'type', 'paragraph')
+    doc.mark(text, '(0..0]', 'block', initialBlockId)
     let layer = new Layer(id, doc)
-    layer.mark('paragraph', '(0..8)', '')
-    layer.mark('paragraph', '[8..22)', '')
     return layer
   }
 
