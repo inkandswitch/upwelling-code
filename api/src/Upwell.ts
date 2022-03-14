@@ -10,6 +10,16 @@ import { loadDoc } from 'automerge-wasm-pack';
 export type Author = string 
 export const UNKNOWN_AUTHOR = "Unknown"
 
+type ID = string;
+export type Comment = {
+  id: ID;
+  author: Author;
+  comment: string;
+}
+export type Comments = {
+  [key: ID]: Comment;
+}
+
 export type UpwellOptions = {
   id?: string,
   author?: Author,

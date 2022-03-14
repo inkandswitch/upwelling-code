@@ -1,8 +1,9 @@
 import { nanoid } from "nanoid";
 import init from "automerge-wasm-pack";
 import { Automerge, loadDoc, create, Value } from "automerge-wasm-pack";
-import { Author } from "./Upwell";
+import { Author, Comments } from "./Upwell";
 import * as Diff from "diff";
+import { Comment } from ".";
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -26,6 +27,7 @@ export type LayerMetadata = {
   parent_id: string;
   author: Author;
   message: string;
+  comments: Comments;
   archived: boolean;
 };
 
@@ -102,6 +104,15 @@ export class Layer {
     this.doc.set(ROOT, "message", value);
   }
 
+  get comments(): Comments {
+    const commentStr = this._getValue("comments") as string;
+    return JSON.parse(commentStr) as Comments;
+  }
+
+  set comments(value: Comments) {
+    this.doc.set(ROOT, "comments", value);
+  }
+
   get text(): string {
     return this._getAutomergeText("text");
   }
@@ -130,6 +141,7 @@ export class Layer {
     return {
       id: this.id,
       message: this.message,
+      comments: this.comments,
       author: this.author,
       parent_id: this.parent_id,
       archived: this.archived,
@@ -185,11 +197,30 @@ export class Layer {
     else throw new Error("Text field not properly initialized");
   }
 
+  // mark('bold', "(4...8)", true)
   mark(name: string, range: string, value: Value, prop = "text") {
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
     else throw new Error("Text field not properly initialized");
+  }
+
+  // commentAt('this is my comment', "(3...8)")
+  commentAt(comment: string, range: string) {
+    let obj = this.doc.value(ROOT, "map");
+    if (obj && obj[0] === "text") {
+      const id = nanoid();
+      const c: Comment = {
+        id,
+        author: this.author,
+        comment,
+      };
+      // add the comment
+      this.comments = { ...this.comments, c };
+      // register the comment as a mark
+      this.mark("comment", range, id);
+      return c;
+    } else throw new Error("Text field not properly initialized");
   }
 
   getMarks(prop = "text") {
@@ -211,6 +242,7 @@ export class Layer {
     let doc = this.doc.fork();
     doc.set(ROOT, "message", message);
     doc.set(ROOT, "author", author);
+    doc.set(ROOT, "comments", {});
     doc.set(ROOT, "shared", false);
     doc.set(ROOT, "time", Date.now());
     doc.set(ROOT, "archived", false);
