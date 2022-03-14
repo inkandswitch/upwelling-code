@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Upwell, Layer } from 'api'
+import { Upwell, Layer, Author } from 'api'
 import Documents from '../Documents'
 
 let documents = Documents()

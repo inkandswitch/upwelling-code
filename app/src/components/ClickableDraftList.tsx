@@ -124,6 +124,7 @@ export default function ListDocuments({
   colors = {},
 }: Props) {
   let upwell = documents.get(id)
+  let authors = upwell.metadata.getAuthors()
   return (
     <div
       css={css`
@@ -159,7 +160,7 @@ export default function ListDocuments({
               <div>
                 {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
                 <div>
-                  by {layer.authorId}, {relativeDate(new Date(layer.time))}
+                  by {authors[layer.authorId]}, {relativeDate(new Date(layer.time))}
                 </div>
               </div>
             </FileTab>
