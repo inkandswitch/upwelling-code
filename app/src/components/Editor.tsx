@@ -8,7 +8,7 @@ import { useProseMirror, ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap } from 'prosemirror-commands'
 import ProsemirrorRenderer from '../ProsemirrorRenderer'
-import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
+import { ReplaceStep } from 'prosemirror-transform'
 import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
 
@@ -41,9 +41,28 @@ export const textCSS = css`
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
 
-  let marks = editableLayer.marks.map((m: any) => {
+  console.log(editableLayer.marks)
+
+  let marks = editableLayer.marks.filter((m: any) => {
+    return m.type !== 'block'
+  })
+
+  console.log('b-locks', editableLayer.blocks)
+  for (let b of editableLayer.blocks) {
+    b.type = `-upwell-${b.type}`
+    console.log(b)
+    marks.push(b)
+  }
+
+  marks.map((m: any) => {
     let attrs: any = {}
-    if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+    try {
+      if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+    } catch {
+      console.log(
+        'we should really fix the thing where I stuffed mark attrs into a json string lol'
+      )
+    }
     if (colors) attrs['authorColor'] = colors[attrs.author]?.toString()
     // I wonder if there's a (good) way to preserve identity of the mark
     // here (id? presumably?) Or I guess just the mark itself?) so that we
@@ -75,24 +94,62 @@ export function EditorView(props: Props) {
   const viewRef = useRef(null)
 
   let pm2am = (position: number, doc: any): number => {
-    let max = Math.min(position - 1, doc.textContent.length)
+    let origPosition = position
+    position -= 1
+    let correction = 1
+    for (let b of editableLayer.blocks) {
+      console.log('position adjustment?', {
+        orig: origPosition,
+        new: position,
+        blockStart: b.start,
+        correction,
+      })
+      if (b.start === 0) continue
+      if (b.start > position) break
+      if (b.start < position) {
+        position -= 2
+        correction += 2
+      }
+    }
+    let max = Math.min(position, doc.textContent.length)
     let min = Math.max(max, 0)
     return min
   }
 
   let dispatchHandler = (transaction: any) => {
-    console.log(transaction)
+    console.log('le transaction', transaction)
     console.log(editableLayer.text)
+    console.log(
+      'pm position',
+      transaction.curSelection.$anchor.pos,
+      'am position',
+      pm2am(transaction.curSelection.$anchor.pos, state.doc),
+      `-->${
+        editableLayer.text[
+          pm2am(transaction.curSelection.$anchor.pos, state.doc)
+        ]
+      }<--`,
+      editableLayer.text
+    )
     for (let step of transaction.steps) {
       console.log(step)
       if (step instanceof ReplaceStep) {
         let from = pm2am(step.from, transaction.before)
         let to = pm2am(step.to, transaction.before)
-        if (from !== to) {
+        //@ts-ignore
+        console.log('in replacestep', from, to, step.structure)
+        // @ts-ignore
+        if (from !== to && step.structure === false) {
           console.log(
             `DELETING AT ${from}: ${editableLayer.text.substring(from, to)}`
           )
           editableLayer.deleteAt(from, to - from)
+          //@ts-ignore
+        } else if (from === to && step.structure === true) {
+          console.log('I THINK I SHOULD DELETE A BLOCK!', from, to)
+          editableLayer.blocks
+            .filter((b) => from === b.start)
+            .forEach((b) => b.delete())
         }
         if (step.slice) {
           // @ts-ignore
@@ -107,34 +164,28 @@ export function EditorView(props: Props) {
           } else {
             // @ts-ignore
             if (step.slice.content.content.length === 2 && from === to) {
-              console.log(from, to, editableLayer.marks)
-              let relevantMarks = editableLayer.marks.filter(
-                // @ts-ignore
-                (m) => m.start < from && m.end >= to && m.type === 'paragraph'
+              console.log(
+                'have marks',
+                editableLayer.marks,
+                'want to insert new paragraph at ',
+                from
               )
-
-              if (relevantMarks.length != 1)
-                throw new Error(
-                  'unhandled case. only expected one paragraph here.'
-                )
-              let relevantMark = relevantMarks[0]
-              let prevEnd = relevantMark.end
-              console.log('here is the relevant mark', relevantMark)
-              editableLayer.doc.set(relevantMark.id, 'end', to)
-              editableLayer.mark('paragraph', `[${from}..${prevEnd})`, '')
+              editableLayer.insertBlock(from, 'paragraph')
             }
           }
         }
       }
     }
 
+    onChange(editableLayer)
+
     let newState = state.apply(transaction)
     setState(newState)
-    onChange(editableLayer)
   }
 
   const color = colors[editableLayer.author]
-  console.log(state)
+  console.log('state', state)
+  console.log('viewref', viewRef)
   return (
     <ProseMirror
       state={state}
