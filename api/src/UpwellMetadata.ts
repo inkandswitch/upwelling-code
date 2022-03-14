@@ -16,14 +16,16 @@ export class UpwellMetadata {
     return new UpwellMetadata(Automerge.loadDoc(binary))
   }
 
-  static create(id: string, main_id: string): UpwellMetadata {
+  static create(id: string, main_id: string, author: Author): UpwellMetadata {
     debug(`creating metadata ${id}  ${main_id}`)
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id) 
     doc.set(ROOT, 'main_id', main_id)
     doc.set_object(ROOT, 'archived', {})
     doc.set_object(ROOT, 'authors', {})
-    return new UpwellMetadata(doc)
+    let meta = new UpwellMetadata(doc)
+    meta.addAuthor(author)
+    return meta
   }
 
   _getArchivedLayersObj(): Automerge.ObjID {

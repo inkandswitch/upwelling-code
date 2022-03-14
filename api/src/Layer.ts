@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
-import { AuthorId } from './Upwell';
+import { Author, AuthorId } from './Upwell';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -154,11 +154,11 @@ export class Layer {
     return this.doc.save()
   }
 
-  fork(message: string, author: AuthorId): Layer {
+  fork(message: string, author: Author): Layer {
     let id = nanoid()
     let doc = this.doc.fork()
     doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'author', author)
+    doc.set(ROOT, 'author', author.id)
     doc.set(ROOT, 'shared', false)
     doc.set(ROOT, 'time', Date.now())
     doc.set(ROOT, 'archived', false)
@@ -170,12 +170,12 @@ export class Layer {
     this.doc.merge(theirs.doc)
   }
 
-  static mergeWithEdits(ours: Layer, ...theirs: Layer[]) {
+  static mergeWithEdits(author: Author, ours: Layer, ...theirs: Layer[]) {
     // Fork the comparison layer, because we want to create a copy, not modify
     // the original. It might make sense to remove this from here and force the
     // caller to do the fork if this is the behaviour they want in order to
     // parallel Layer.merge() behaviour.
-    let newLayer = ours.fork('Merge', ours.authorId)
+    let newLayer = ours.fork('Merge', author)
     let origHead = newLayer.doc.getHeads()
 
     // Merge all the passed-in layers to this one.
@@ -225,14 +225,18 @@ export class Layer {
     return newLayer
   }
 
-  static load(id: string, binary: Uint8Array): Layer {
-    let doc = loadDoc(binary)
+  static getActorId(authorId: AuthorId) {
+    return authorId
+  }
+
+  static load(id: string, binary: Uint8Array, authorId: AuthorId): Layer {
+    let doc = loadDoc(binary, this.getActorId(authorId))
     let layer = new Layer(id, doc)
     return layer
   }
 
   static create(message: string, authorId: AuthorId): Layer {
-    let doc = create()
+    let doc = create(this.getActorId(authorId))
     let id = nanoid()
     doc.set(ROOT, 'message', message)
     doc.set(ROOT, 'author', authorId)
