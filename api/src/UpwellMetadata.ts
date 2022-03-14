@@ -20,7 +20,7 @@ export class UpwellMetadata {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id) 
     doc.set(ROOT, 'main_id', main_id)
-    doc.set(ROOT, 'archived', {})
+    doc.set_object(ROOT, 'archived', {})
     return new UpwellMetadata(doc)
   }
 
@@ -28,7 +28,7 @@ export class UpwellMetadata {
     let value = this.doc.value(ROOT, 'archived')
     let map;
     if (!value) {
-      map = this.doc.set(ROOT, 'archived', {})
+      map = this.doc.set_object(ROOT, 'archived', {})
     } else if (value[0] === 'map') {
       map = value[1]
     } else {

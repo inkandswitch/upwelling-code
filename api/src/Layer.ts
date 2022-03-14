@@ -248,8 +248,8 @@ export class Layer {
     doc.set(ROOT, 'shared', false, 'boolean')
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
-    doc.make(ROOT, 'title', '')
-    doc.make(ROOT, 'text', '')
+    doc.set_object(ROOT, 'title', '')
+    doc.set_object(ROOT, 'text', '')
     return new Layer(id, doc)
   }
 

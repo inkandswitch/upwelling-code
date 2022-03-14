@@ -13,7 +13,7 @@ describe('upwell', () => {
     assert.lengthOf(d.layers(), 2)
 
     let times = 0
-    doc.subscribe((doc: Layer, heads: Heads) => {
+    doc.subscribe((doc: Layer) => {
       times++
       if (times === 1) assert.equal(doc.text, 'Hello')
       if (times === 2) assert.equal(doc.text, 'Hola')
