@@ -28,7 +28,7 @@ export class Documents {
   updatePeers(id: string, did: string) {
     let upwell = this.get(id)
     let layer = upwell.get(did)
-    
+
     if (this.rtc && this.rtc.draft.id === layer.id) {
       this.rtc.updatePeers()
     }
@@ -48,7 +48,7 @@ export class Documents {
 
   connect(draft: Layer): RealTimeDraft {
     if (this.rtc) return this.rtc
-    this.rtc = new RealTimeDraft(draft) 
+    this.rtc = new RealTimeDraft(draft)
     return this.rtc
   }
 
