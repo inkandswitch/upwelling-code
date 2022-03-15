@@ -1,7 +1,6 @@
 import { nanoid } from 'nanoid';
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
 import { Author } from './Upwell';
-import { v4 as uuid } from 'uuid'
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -38,35 +37,6 @@ export class LazyLayer {
 
   hydrate() {
     return new Layer(this.id, loadDoc(this.binary))
-  }
-}
-
-export class Block {
-  id: string
-  doc: Automerge
-  type: string
-  start: number
-  end: number
-
-  constructor({ id, doc, type, start, end }) {
-    this.id = id
-    this.doc = doc
-    this.type = type
-    this.start = start
-    this.end = end
-  }
-
-  delete() {
-    console.log('in delete', this.id)
-    let blocksProp = this.doc.value(ROOT, 'blocks')
-    if (!blocksProp || blocksProp[0] !== 'map') throw new Error('no blocks map')
-    let blocksPropId = blocksProp[1]
-    let block = this.doc.value(blocksPropId, this.id)
-    if (block && block[0] === 'map') {
-      let blockProp = block[1]
-      console.log('setting ', blockProp, 'to true!')
-      this.doc.set(blockProp, 'deleted', true, 'boolean')
-    }
   }
 }
 
@@ -167,6 +137,12 @@ export class Layer {
     else throw new Error('Text field not properly initialized')
   }
 
+  insertBlock(position: number, type: string) {
+    let text = this.doc.value(ROOT, "text")
+    if (text && text[0] === 'text') this.doc.insert_object(text[1], position, { type })
+    else throw new Error("text not properly initialized")
+  }
+
   deleteAt(position: number, count: number = 1, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, count, '')
@@ -189,56 +165,37 @@ export class Layer {
     return this.getMarks()
   }
 
-  insertBlock(position: number, type: string) {
-    let blocksProp = this.doc.value(ROOT, 'blocks')
-    if (!blocksProp || blocksProp[0] !== 'map') throw new Error('no blocks map')
-    let blocksPropId = blocksProp[1]
-    let blockUuid = uuid()
-    let blockObj = this.doc.make(blocksPropId, blockUuid, {}, 'map')
-    this.doc.set(blockObj, 'type', type)
-    this.mark('block', `[${position}..${position}]`, `${blockUuid}`)
-  }
-
   // TODO refactor this to use materialize or whatever because there is some
   // nasty hoop-jumping here.
   get blocks() {
-    let blockMetadataObj = this.doc.value(ROOT, 'blocks')
-    if (!blockMetadataObj || blockMetadataObj[0] !== 'map') throw new Error('no blocks map')
-    let blockMetadataProp = blockMetadataObj[1]
 
-    let getBlockMetadata = (blockId, prop) => {
-      let blockMetadata = this.doc.value(blockMetadataProp, blockId)
-      if (blockMetadata && blockMetadata[0] === 'map') {
-        let blockProp = blockMetadata[1]
-        let val = this.doc.value(blockProp, prop)
-        if (val) return val[1]
-      }
-    }
-
-    let blockMarks = this.marks
-      .filter(m => m.name !== 'block')
-      .filter(m => !getBlockMetadata(m.value, 'deleted'))
-      .sort((m, n) => m.start - n.start)
-    console.log('blockmarks', blockMarks)
     let blocks: any[] = []
+    let text = this.doc.value(ROOT, "text")
+    if (!text || text[0] !== 'text') throw new Error("text not properly initialized")
 
-    for (let i = 0; i < blockMarks.length; i++) {
-      let start = blockMarks[i].start
-      let end = i === blockMarks.length - 1 ? this.text.length : blockMarks[i + 1].start
-      let type = getBlockMetadata(blockMarks[i].value, 'type')
+    let i = this.text.indexOf('\uFFFC')
+    while (i !== this.text.length) {
 
-      let block = new Block({
-        id: blockMarks[i].value,
-        doc: this.doc,
-        type,
-        start,
-        end
-      })
+      // don't include the block replacement character, since it's just a marker
+      // that the paragraph follows
+      let start = i + 1
 
-      if (start < end) blocks.push(block)
+      // find the next block replacement character; this will be the end of our
+      // block (if there isn't a next block, this block ends at the end of the
+      // text
+      let end = this.text.indexOf('\uFFFC', i + 1)
+      if (end === -1) end = this.text.length
+
+      // get the attributes for this block
+      let attrsObj = this.doc.value(text[1], i)
+      let attrs: any = {}
+      if (attrsObj && attrsObj[0] === 'map') attrs = this.doc.materialize(attrsObj[1])
+      else throw new Error("block properties not initialized, something has gone very wrong")
+      let block = { start, end, ...attrs }
+      blocks.push(block)
+      i = end
     }
 
-    console.log('blocks?', blocks)
     return blocks
   }
 
@@ -331,13 +288,11 @@ export class Layer {
     doc.set(ROOT, 'shared', false, 'boolean')
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
-    doc.make(ROOT, 'title', '')
-    let text = doc.make(ROOT, 'text', ' ')
-    let blocks = doc.make(ROOT, 'blocks', {}, 'map')
-    let initialBlockId = uuid()
-    let initialParagraph = doc.make(blocks, initialBlockId, {}, 'map')
+    doc.set(ROOT, 'title', '')
+    // for prosemirror, we can't have an empty document, so fill some space
+    let text = doc.set_object(ROOT, 'text', ' ')
+    let initialParagraph = doc.insert_object(text, 0, { type: 'paragraph' })
     doc.set(initialParagraph, 'type', 'paragraph')
-    doc.mark(text, '(0..0]', 'block', initialBlockId)
     let layer = new Layer(id, doc)
     return layer
   }
