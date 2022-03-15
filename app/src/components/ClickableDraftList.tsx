@@ -101,8 +101,7 @@ export default function ClickableDraftList({
             >
               {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
               <InfoText>
-                edited {relativeDate(new Date(layer.time))}.<br /> Creator:{' '}
-                {layer.author}
+                {layer.author} created {relativeDate(new Date(layer.time))}
               </InfoText>
             </FileTab>
           )

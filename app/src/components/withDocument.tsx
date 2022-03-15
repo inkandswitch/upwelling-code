@@ -6,7 +6,7 @@ import Documents from '../Documents'
 let documents = Documents()
 
 type DocumentProps = {
-  id: string,
+  id: string
   did?: string
 }
 
@@ -40,7 +40,6 @@ export default function withDocument(
         if (props.did) {
           try {
             upwell.get(props.did)
-            
           } catch (err) {
             setLocation(`/document/${props.id}/draft/latest`)
             console.error(err)
