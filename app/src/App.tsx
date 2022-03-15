@@ -1,31 +1,23 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Route, useLocation } from 'wouter'
 import Documents from './Documents'
-import catnames from 'cat-names'
 import DraftView from './components/DraftView'
 import DraftList from './components/DraftTable'
 import withDocument from './components/withDocument'
+import { nanoid } from 'nanoid'
 require('setimmediate')
 
 let documents = Documents()
 
 export default function App() {
-  let [author, setAuthor] = useState<string>('')
   let [, setLocation] = useLocation()
 
-  useEffect(() => {
-    let localName = localStorage.getItem('name')
-    if (!localName || localName === '?') localName = catnames.random()
-    if (localName && author !== localName) {
-      localStorage.setItem('name', localName)
-    }
-    setAuthor(localName)
-  }, [author])
-
   async function newUpwell() {
-    let doc = await documents.create()
+    let id = nanoid()
+    let doc = await documents.create(id, documents.author)
     setLocation('/document/' + doc.id + '/drafts')
   }
+
 
   return (
     <>
@@ -35,7 +27,7 @@ export default function App() {
       <Route path="/document/:id/drafts">
         {(params) => {
           let props = {
-            author,
+            author: documents.author,
             ...params,
           }
           let Component = withDocument(DraftList, props)
@@ -46,7 +38,7 @@ export default function App() {
       <Route path="/document/:id/draft/:did">
         {(params) => {
           let props = {
-            author,
+            author: documents.author,
             ...params,
           }
 

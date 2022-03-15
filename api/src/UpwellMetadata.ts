@@ -1,5 +1,6 @@
-import * as Automerge from 'automerge-wasm-pack'
-import debug from 'debug'
+import * as Automerge from "automerge-wasm-pack"
+import { Author, AuthorId } from "."
+import debug from "debug"
 
 const ROOT = '_root'
 
@@ -15,13 +16,16 @@ export class UpwellMetadata {
     return new UpwellMetadata(Automerge.loadDoc(binary))
   }
 
-  static create(id: string, main_id: string): UpwellMetadata {
+  static create(id: string, main_id: string, author: Author): UpwellMetadata {
     debug(`creating metadata ${id}  ${main_id}`)
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id)
     doc.set(ROOT, 'main_id', main_id)
     doc.set_object(ROOT, 'archived', {})
-    return new UpwellMetadata(doc)
+    doc.set_object(ROOT, 'authors', {})
+    let meta = new UpwellMetadata(doc)
+    meta.addAuthor(author)
+    return meta
   }
 
   _getArchivedLayersObj(): Automerge.ObjID {
@@ -50,6 +54,24 @@ export class UpwellMetadata {
   archive(id: string) {
     let map = this._getArchivedLayersObj()
     this.doc.set(map, id, true, 'boolean')
+  }
+
+  addAuthor(author: Author) {
+    this.doc.set('/authors', author.id, author.name)
+  }
+
+  getAuthors() {
+    return this.doc.materialize('/authors')
+  }
+
+  getAuthor(authorId: AuthorId): Author | undefined {
+    let authors = this.doc.value(ROOT, 'authors')
+    if (authors && authors[0] === 'map') {
+      let value = this.doc.value(authors[1], authorId)
+      if (value && value[0] === 'str') return {id: authorId, name: value[1]}
+      else return undefined
+    }
+    else return undefined
   }
 
   get id(): string {

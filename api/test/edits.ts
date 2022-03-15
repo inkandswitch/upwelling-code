@@ -1,18 +1,20 @@
-import { Author, Upwell, Layer } from '../src/index'
+import { createAuthorId, Upwell, Layer } from '../src/index'
 import { it } from 'mocha'
 import { assert } from 'chai'
-import { nanoid } from 'nanoid'
 
 describe('edits', () => {
   let doc1: Layer, doc2: Layer, doc3: Layer
+  let author = {id: createAuthorId(), name: 'author' }
+  let author_doc2 = {id: createAuthorId(), name: 'doc2' }
+  let author_doc3 = {id: createAuthorId(), name: 'doc3' }
 
   beforeEach(async () => {
-    let d = await Upwell.create({ author: 'author' })
+    let d = await Upwell.create({ author })
     doc1 = (await d.layers())[0]
     doc1.insertAt(0, 'Hello of course')
     doc1.commit('Hello!')
 
-    doc2 = doc1.fork('Fork layer', 'doc2')
+    doc2 = doc1.fork('Fork layer', author_doc2)
     await d.add(doc2)
 
     doc2.insertAt(5, ' World')
@@ -20,7 +22,7 @@ describe('edits', () => {
     doc2.deleteAt(16, 6)
     doc2.commit('I hope you like my changes!')
 
-    doc3 = doc1.fork('Additional forked layer', 'doc3')
+    doc3 = doc1.fork('Additional forked layer', author_doc3)
     await d.add(doc3)
 
     doc3.insertAt(15, ' NEW LAYER')
@@ -38,7 +40,7 @@ describe('edits', () => {
     let merged: Layer
 
     beforeEach(async () => {
-      merged = Layer.mergeWithEdits(doc1, doc2)
+      merged = Layer.mergeWithEdits(author, doc1, doc2)
     })
 
     describe('with two layers', () => {
@@ -70,7 +72,7 @@ describe('edits', () => {
           return mark.value
         })
 
-        assert.deepEqual([JSON.stringify({ author: 'doc2', text: 'Hey Everybody - World' }), JSON.stringify({ author: 'doc2', text: 'Hello' })], marksValues)
+        assert.deepEqual([JSON.stringify({ author: author_doc2.id, text: 'Hey Everybody - World' }), JSON.stringify({ author: author_doc2.id, text: 'Hello' })], marksValues)
       })
     })
 
@@ -83,7 +85,7 @@ describe('edits', () => {
         // recent root. See parallel merge below for the more realistic scenario.
 
         beforeEach(() => {
-          merged123 = Layer.mergeWithEdits(doc1, doc2, doc3)
+          merged123 = Layer.mergeWithEdits(author, doc1, doc2, doc3)
         })
 
         it('has the correct number of marks', () => {
@@ -98,7 +100,7 @@ describe('edits', () => {
           let marks
 
           beforeEach(() => {
-            marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'doc2')
+            marks = merged123.marks.filter(m => JSON.parse(m.value).author === author_doc2.id)
           })
 
           it('has the correct number of marks', () => {
@@ -158,7 +160,7 @@ describe('edits', () => {
           let marks
 
           beforeEach(() => {
-            marks = merged123.marks.filter(m => JSON.parse(m.value).author === 'doc3')
+            marks = merged123.marks.filter(m => JSON.parse(m.value).author === author_doc3.id)
           })
 
           it('has the correct number of new marks', () => {

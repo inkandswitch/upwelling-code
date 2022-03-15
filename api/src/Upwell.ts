@@ -2,17 +2,23 @@ import { LazyLayer, Layer, Subscriber } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
+import crypto from 'crypto'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import { getRandomDessert } from 'random-desserts'
 import Debug from 'debug';
 
-export type Author = string 
-export const UNKNOWN_AUTHOR = "Unknown"
+export type AuthorId = string;
+const UNKNOWN_AUTHOR = {id: createAuthorId(), name: 'Anonymous'}
+
+export type Author = {
+  id: AuthorId,
+  name: string
+}
 
 export type UpwellOptions = {
   id?: string,
-  author?: Author,
+  author: Author,
 }
 
 type MaybeLayer = {
@@ -24,15 +30,22 @@ const debug = Debug('upwell')
 const LAYER_EXT = '.layer'
 const METADATA_KEY = 'metadata.automerge'
 
+export function createAuthorId() {
+  return crypto.randomBytes(16).toString('hex')
+}
+
 // An Upwell is multiple layers
 export class Upwell {
   _layers: Map<string, Layer> = new Map();
   metadata: UpwellMetadata
+  author: Author 
   subscriber: Function = function noop () {}
   _archived: Map<string, Uint8Array> = new Map()
 
-  constructor(metadata: UpwellMetadata) {
+  constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata
+    this.author = author
+    this.metadata.addAuthor(author)
   }
 
   get id() {
@@ -68,9 +81,14 @@ export class Upwell {
     return Array.from(this._layers.values())
   }
 
-  createDraft(author: string) {
-    let message = getRandomDessert()
-    let newLayer = this.rootLayer.fork(message, author)
+  getAuthorName(authorId: AuthorId): string | undefined {
+    let author = this.metadata.getAuthor(authorId)
+    if (author) return author.name
+    else return undefined
+  }
+
+  createDraft(message = getRandomDessert()) {
+    let newLayer = this.rootLayer.fork(message, this.author)
     this.add(newLayer)
     return newLayer
   }
@@ -85,7 +103,7 @@ export class Upwell {
         let buf = this._archived.get(id)
         if (!buf) console.error('no buf', buf)
         else {
-          let doc = Layer.load(id, buf)
+          let doc = Layer.load(id, buf, this.author.id)
           yield doc
         }
       }
@@ -137,7 +155,7 @@ export class Upwell {
     })
   }
 
-  static deserialize(stream: Readable): Promise<Upwell> {
+  static deserialize(stream: Readable, author: Author): Promise<Upwell> {
     return new Promise<Upwell>((resolve, reject) => {
 
       let unpackFileStream = (stream: any, next: Function) => {
@@ -175,14 +193,14 @@ export class Upwell {
       }
   
       function finish () {
-        let upwell = new Upwell(UpwellMetadata.load(metadata))
+        let upwell = new Upwell(UpwellMetadata.load(metadata), author)
         layers.forEach(item => {
           let { id, binary } = item
           if (upwell.metadata.isArchived(id)) {
             upwell._archived.set(id, binary)
           } else {
             var start = new Date()
-            let layer = Layer.load(id, binary)
+            let layer = Layer.load(id, binary, author.id)
             //@ts-ignore
             var end = new Date() - start
             debug('(loadDoc): execution time %dms', end)
@@ -221,9 +239,9 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    let layer = Layer.create('Document initialized', author)
-    let metadata = UpwellMetadata.create(id, layer.id)
-    let upwell = new Upwell(metadata)
+    let layer = Layer.create('Document initialized', author.id)
+    let metadata = UpwellMetadata.create(id, layer.id, author)
+    let upwell = new Upwell(metadata, author)
     upwell.add(layer)
 
     return upwell

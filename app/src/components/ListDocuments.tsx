@@ -197,6 +197,7 @@ export default function ListDocuments({
   colors = {},
 }: Props) {
   let upwell = documents.get(id)
+  let authors = upwell.metadata.getAuthors()
   return (
     <div
       css={css`
@@ -221,7 +222,7 @@ export default function ListDocuments({
                 e.stopPropagation()
                 onLayerClick(layer)
               }}
-              title={`by ${layer.author}, ${relativeDate(
+              title={`by ${authors[layer.authorId]}, ${relativeDate(
                 new Date(layer.time)
               )}`}
               css={css`
@@ -231,7 +232,7 @@ export default function ListDocuments({
                 align-items: flex-start;
                 ${editableLayer === layer.id ? editableTabStyle : ''}
                 box-shadow: 18px 24px 0px -18px ${colors[
-                  layer.author
+                  layer.authorId
                 ]?.toString() || 'none'} inset;
               `}
             >

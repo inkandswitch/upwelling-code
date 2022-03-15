@@ -13,7 +13,7 @@ type DraftListProps = {
 }
 
 export default function DraftList(props: DraftListProps) {
-  const { id, author } = props
+  const { id } = props
   const [, setLocation] = useLocation()
   let [layers, setLayers] = useState<Layer[]>([])
   let [, setRoot] = useState<Layer>()
@@ -51,7 +51,7 @@ export default function DraftList(props: DraftListProps) {
   }, [id, render])
 
   function createDraft() {
-    let draft = upwell.createDraft(author)
+    let draft = upwell.createDraft()
     let url = `/document/${id}/draft/${draft.id}`
     setLocation(url)
   }

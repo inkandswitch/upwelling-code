@@ -75,6 +75,7 @@ export default function ClickableDraftList({
   colors = {},
 }: Props) {
   let upwell = documents.get(id)
+  let authors = upwell.metadata.getAuthors()
   return (
     <div css={css``}>
       {layers
@@ -95,13 +96,13 @@ export default function ClickableDraftList({
               }}
               css={css`
                 box-shadow: 18px 24px 0px -18px ${colors[
-                    layer.author
+                    layer.authorId
                   ]?.toString() || 'none'} inset;
               `}
             >
               {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
               <InfoText>
-                {layer.author} created {relativeDate(new Date(layer.time))}
+                {authors[layer.authorId]} created {relativeDate(new Date(layer.time))}
               </InfoText>
             </FileTab>
           )

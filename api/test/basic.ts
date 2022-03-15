@@ -1,4 +1,4 @@
-import { Author, Upwell, Layer, Heads } from '../src/index'
+import { createAuthorId, Author, Upwell, Layer } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
 
@@ -8,7 +8,7 @@ describe('upwell', () => {
     let layers = d.layers()
     assert.lengthOf(layers, 1)
 
-    let doc: Layer = layers[0].fork('New layer', 'Susan')
+    let doc: Layer = layers[0].fork('New layer', {id: createAuthorId(), name: 'Susan'})
     d.add(doc)
     assert.lengthOf(d.layers(), 2)
 
@@ -45,20 +45,20 @@ describe('upwell', () => {
     let layers = d.layers()
     let ddoc = layers[0]
     let file = ddoc.save()
-    let edoc = Layer.load(ddoc.id, file)
+    let edoc = Layer.load(ddoc.id, file, createAuthorId())
     e.add(edoc)
 
     ddoc.insertAt(0, Array.from('Upwelling: Contextual Writing'), 'title')
 
     let binary = ddoc.save()
-    let layer = Layer.load(ddoc.id, binary)
+    let layer = Layer.load(ddoc.id, binary, createAuthorId())
     e.add(layer)
     assert.equal(layer.title, ddoc.title)
   })
 
 
-  it('creates layers with authors', () => {
-    let first_author: Author =  'Susan'
+  it('creates layers with authors', async () => {
+    let first_author: Author = {id: createAuthorId(), name: 'Susan'}
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
     let doc = layers[0]
@@ -73,9 +73,9 @@ describe('upwell', () => {
     assert.equal(d.layers()[0].text, 'Hello')
 
     let name = 'Started typing on the train'
-    let author: Author = 'Theroux'
-    let newLayer = doc.fork(name, author)
-    d.add(newLayer)
+    let author: Author = {id: createAuthorId(), name: 'Theroux'}
+    let e = await Upwell.deserialize(d.serialize(), author)
+    let newLayer = e.createDraft(name)
 
     newLayer.insertAt(0, 'H')
     newLayer.deleteAt(1)
@@ -85,11 +85,15 @@ describe('upwell', () => {
     newLayer.insertAt(3, 'a')
     newLayer.deleteAt(4)
     assert.equal(newLayer.text, 'Hola')
-    assert.equal(newLayer.author, author)
+    assert.equal(newLayer.authorId, author.id)
+    assert.deepEqual(e.metadata.getAuthors(), {
+      [author.id]: author.name,
+      [first_author.id]: first_author.name
+    })
   })
 
   describe('Layer', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author =  {id: createAuthorId(), name: 'Susan'}
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
@@ -108,7 +112,10 @@ describe('upwell', () => {
 
     it('forks', () => {
       let name = 'Started typing on the train'
-      let author: Author = 'Theroux'
+      let author: Author = {
+        id: createAuthorId(),
+        name: 'Theroux'
+      }
       newLayer = doc.fork(name, author)
       d.add(newLayer)
   
@@ -146,48 +153,44 @@ describe('upwell', () => {
 
   })
 
-  it('makes layers visible and shared',() => {
-    let first_author: Author =  'Susan'
+  it('makes layers visible and shared', async () => {
+    let first_author: Author =  {id: createAuthorId(), name: 'Susan'}
     let d = Upwell.create({ author: first_author})
     let layers = d.layers()
     let doc = layers[0]
     d.share(doc.id)
     assert.equal(doc.shared, true)
 
-    let serialized = doc.save()
-
-    let inc = Upwell.create({ author: 'Theroux' })
-    inc.add(Layer.load(doc.id, serialized))
+    let author = {id: createAuthorId(), name: 'Theroux'}
+    let inc = await Upwell.deserialize(d.serialize(), author)
+    inc.createDraft()
     let incomingLayers = inc.layers()
     assert.equal(incomingLayers.length, 2)
 
-    let incomingShared = incomingLayers[1]
-    assert.deepEqual(incomingShared.metadata, doc.metadata)
-    assert.equal(incomingShared.author, 'Susan')
+    let incomingShared = incomingLayers[0]
+    assert.equal(inc.getAuthorName(incomingShared.authorId), 'Susan')
     assert.equal(incomingShared.shared, true)
     assert.equal(d.isArchived(incomingShared.id), false)
   })
 
   it('gets root layer', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author =  {id: createAuthorId(), name: 'Susan'}
     let d = Upwell.create({ author: first_author })
     let layers = d.layers()
     let doc = layers[0]
     let root = d.rootLayer
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
-    assert.deepEqual(root.metadata, doc.metadata)
 
-    d.add(doc.fork("beep boop", "john"))
+    d.add(doc.fork("beep boop", {id: createAuthorId(), name: "john"}))
 
     root = d.rootLayer
     assert.deepEqual(root.text, doc.text)
     assert.deepEqual(root.title, doc.title)
-    assert.deepEqual(root.metadata, doc.metadata)
   })
 
   it('maintains keys when multiple documents involved', () => {
-    let first_author: Author =  'Susan'
+    let first_author: Author = {id: createAuthorId(), name:'Susan'}
     let d = Upwell.create({ author: first_author })
 
     let og = d.layers()[0]

@@ -61,14 +61,14 @@ export default function DraftView(props: DraftViewProps) {
       const newAuthorColors = { ...authorColors }
       let changed = false
       layers.forEach((l) => {
-        if (!(l.author in authorColors)) {
-          newAuthorColors[l.author] = deterministicColor(l.author)
+        if (!(l.authorId in authorColors)) {
+          newAuthorColors[l.authorId] = deterministicColor(l.authorId)
           changed = true
         }
       })
       // also add this user in case they haven't made a layer
-      if (!(props.author in authorColors)) {
-        newAuthorColors[props.author] = deterministicColor(props.author)
+      if (!(props.author.id in authorColors)) {
+        newAuthorColors[props.author.id] = deterministicColor(props.author.id)
         changed = true
       }
       if (changed) {
@@ -129,7 +129,7 @@ export default function DraftView(props: DraftViewProps) {
 
   let onTextChange = () => {
     if (rootId === layer.id) {
-      let draft = upwell.createDraft(author)
+      let draft = upwell.createDraft()
       let url = `/document/${id}/draft/${draft.id}`
       setLocation(url)
     } else {
