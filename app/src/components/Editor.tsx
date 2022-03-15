@@ -40,11 +40,9 @@ export const textCSS = css`
 
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
-  console.log('b-locks', editableLayer.blocks)
   let marks = editableLayer.marks
   for (let b of editableLayer.blocks) {
     b.type = `-upwell-${b.type}`
-    console.log(b)
     marks.push(b)
   }
 
@@ -75,9 +73,7 @@ export function EditorView(props: Props) {
     annotations: marks,
   })
 
-  console.log(atjsonLayer)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
-  console.log({ pmdoc: pmDoc })
 
   const [state, setState] = useProseMirror({
     schema,
@@ -107,63 +103,37 @@ export function EditorView(props: Props) {
   }
 
   let dispatchHandler = (transaction: any) => {
-    console.log('le transaction', transaction)
-    console.log(editableLayer.text)
-    console.log(
-      'pm position',
-      transaction.curSelection.$anchor.pos,
-      'am position',
-      prosemirrorToAutomerge(transaction.curSelection.$anchor.pos, state.doc),
-      `-->${
-        editableLayer.text[
-          prosemirrorToAutomerge(
-            transaction.curSelection.$anchor.pos,
-            state.doc
-          )
-        ]
-      }<--`,
-      editableLayer.text
-    )
     for (let step of transaction.steps) {
-      console.log(step)
       if (step instanceof ReplaceStep) {
         let from = prosemirrorToAutomerge(step.from, transaction.before)
         let to = prosemirrorToAutomerge(step.to, transaction.before)
-        //@ts-ignore
-        console.log('in replacestep', from, to, step.structure)
-        // @ts-ignore
+
         if (from !== to) {
-          console.log(
-            `DELETING AT ${from}: ${editableLayer.text.substring(from, to)}`
-          )
           editableLayer.deleteAt(from, to - from)
-          //@ts-ignore
         }
 
         if (step.slice) {
-          // @ts-ignore
-          if (step.structure === false) {
-            // insertion
-            const insertedContent = step.slice.content.textBetween(
-              0,
-              step.slice.content.size
-            )
-            console.log(`INSERTING AT ${from}: ${insertedContent}`)
-            editableLayer.insertAt(from, insertedContent)
-          } else {
-            // @ts-ignore
-            if (step.slice.content.content.length === 2 && from === to) {
-              console.log(
-                //@ts-ignore
-                step.slice.content.content,
-                'have marks',
-                editableLayer.marks,
-                'want to insert new paragraph at ',
-                from
+          let insOffset = from
+          step.slice.content.forEach((node, idx) => {
+            if (node.type.name === 'text' && node.text) {
+              editableLayer.insertAt(insOffset, node.text)
+              insOffset += node.text.length
+            } else if (node.type.name === 'paragraph') {
+              if (idx !== 0)
+                // @ts-ignore
+                editableLayer.insertBlock(insOffset++, node.type.name)
+
+              let nodeText = node.textBetween(0, node.content.size)
+              editableLayer.insertAt(insOffset, nodeText)
+              insOffset += nodeText.length
+            } else {
+              alert(
+                `Hi! We would love to insert that text (and other stuff), but
+                this is a research prototype, and that action hasn't been
+                implemented.`
               )
-              editableLayer.insertBlock(from, 'paragraph')
             }
-          }
+          })
         }
       }
     }
