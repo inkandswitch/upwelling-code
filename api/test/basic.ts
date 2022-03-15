@@ -15,8 +15,8 @@ describe('upwell', () => {
     let times = 0
     doc.subscribe((doc: Layer) => {
       times++
-      if (times === 1) assert.equal(doc.text, 'Hello')
-      if (times === 2) assert.equal(doc.text, 'Hola')
+      if (times === 1) assert.equal(doc.text, 'Hello\ufffc ')
+      if (times === 2) assert.equal(doc.text, 'Hola\ufffc ')
     })
 
     doc.insertAt(0, 'H')
@@ -68,9 +68,9 @@ describe('upwell', () => {
     doc.insertAt(2, 'l')
     doc.insertAt(3, 'l')
     doc.insertAt(4, 'o')
-    assert.equal(doc.text, 'Hello')
+    assert.equal(doc.text, 'Hello\ufffc ')
 
-    assert.equal(d.layers()[0].text, 'Hello')
+    assert.equal(d.layers()[0].text, 'Hello\ufffc ')
 
     let name = 'Started typing on the train'
     let author: Author = {id: createAuthorId(), name: 'Theroux'}
@@ -84,7 +84,7 @@ describe('upwell', () => {
     newLayer.deleteAt(3)
     newLayer.insertAt(3, 'a')
     newLayer.deleteAt(4)
-    assert.equal(newLayer.text, 'Hola')
+    assert.equal(newLayer.text, 'Hola\ufffc ')
     assert.equal(newLayer.authorId, author.id)
     assert.deepEqual(e.metadata.getAuthors(), {
       [author.id]: author.name,
@@ -106,7 +106,7 @@ describe('upwell', () => {
       doc.insertAt(2, 'l')
       doc.insertAt(3, 'l')
       doc.insertAt(4, 'o')
-      assert.equal(doc.text, 'Hello')
+      assert.equal(doc.text, 'Hello\ufffc ')
     })
 
 
@@ -131,7 +131,7 @@ describe('upwell', () => {
 
     it('merged', () => {
       doc.merge(newLayer)
-      assert.equal(doc.text, 'Hello world')
+      assert.equal(doc.text, 'Hello world\ufffc ')
 
       d.add(doc)
       layers = d.layers()

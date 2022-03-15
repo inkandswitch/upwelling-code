@@ -31,9 +31,9 @@ describe('edits', () => {
   })
 
   it('has the correct base documents', () => {
-    assert.equal(doc1.text, 'Hello of course')
-    assert.equal(doc2.text, 'Hey Everybody - World of course')
-    assert.equal(doc3.text, 'NEW LAYER Hello course NEW LAYER')
+    assert.equal(doc1.text, 'Hello of course\ufffc ')
+    assert.equal(doc2.text, 'Hey Everybody - World of course\ufffc ')
+    assert.equal(doc3.text, 'NEW LAYER Hello course NEW LAYER\ufffc ')
   })
 
   describe('mergeWithEdits', () => {
@@ -45,7 +45,7 @@ describe('edits', () => {
 
     describe('with two layers', () => {
       it('has the correct text', () => {
-        assert.equal('Hey Everybody - World of course', merged.text)
+        assert.equal('Hey Everybody - World of course\ufffc ', merged.text)
       })
       it('has the correct number of marks', () => {
         assert.equal(merged.marks.length, 2)
@@ -93,7 +93,7 @@ describe('edits', () => {
         })
 
         it('has the correct text', () => {
-          assert.equal(merged123.text, 'NEW LAYER Hey Everybody - World course NEW LAYER')
+          assert.equal(merged123.text, 'NEW LAYER Hey Everybody - World course NEW LAYER\ufffc ')
         })
 
         describe('marks from doc2', () => {
