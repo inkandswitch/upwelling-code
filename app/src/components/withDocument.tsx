@@ -39,7 +39,7 @@ export default function withDocument(
 
         if (props.did) {
           try {
-            let layer = upwell.get(props.did)
+            upwell.get(props.did)
             
           } catch (err) {
             setLocation(`/document/${props.id}/draft/latest`)
@@ -52,7 +52,7 @@ export default function withDocument(
       return () => {
         unmounted = true
       }
-    }, [id])
+    }, [id, setLocation])
 
     if (!root) return <div>Loading..</div>
     return <WrappedComponent root={root} {...props} />

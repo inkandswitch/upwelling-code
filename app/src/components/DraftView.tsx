@@ -44,13 +44,12 @@ export default function DraftView(props: DraftViewProps) {
   let layer = upwell.get(did)
 
   useEffect(() => {
-    let upwell = documents.get(id)
     documents.connect(layer)
 
     return () => {
       documents.disconnect()
     }
-  }, [id, did])
+  }, [id, did, layer])
 
   const render = useCallback(
     async (upwell: Upwell) => {
