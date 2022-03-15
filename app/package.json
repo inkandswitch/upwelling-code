@@ -190,5 +190,9 @@
   "prettier": {
     "semi": false,
     "singleQuote": true
+  },
+  "engines": {
+    "npm": ">=8.0.0",
+    "node": ">=16.0.0"
   }
 }
