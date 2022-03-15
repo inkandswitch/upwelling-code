@@ -40,14 +40,8 @@ export const textCSS = css`
 
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
-
-  console.log(editableLayer.marks)
-
-  let marks = editableLayer.marks.filter((m: any) => {
-    return m.type !== 'block'
-  })
-
   console.log('b-locks', editableLayer.blocks)
+  let marks = editableLayer.marks
   for (let b of editableLayer.blocks) {
     b.type = `-upwell-${b.type}`
     console.log(b)
@@ -93,25 +87,25 @@ export function EditorView(props: Props) {
 
   const viewRef = useRef(null)
 
-  let pm2am = (position: number, doc: any): number => {
-    let origPosition = position
-    position -= 1
-    let correction = 1
-    for (let b of editableLayer.blocks) {
-      console.log('position adjustment?', {
-        orig: origPosition,
-        new: position,
-        blockStart: b.start,
-        correction,
-      })
-      if (b.start === 0) continue
-      if (b.start > position) break
-      if (b.start < position) {
-        position -= 2
-        correction += 2
-      }
+  let prosemirrorToAutomerge = (position: number, doc: any): number => {
+    let i = 0
+    let precedingBlocks = 0
+    while (i < editableLayer.text.length) {
+      console.log(i, position)
+      i = editableLayer.text.indexOf('\uFFFC', i + 1)
+      precedingBlocks += 1
+      if (i === -1) break
     }
-    let max = Math.min(position, doc.textContent.length)
+
+    // the first prosemirror block isn't alongside a closing tag
+    // off-by-one errors, y'all
+    position -= (precedingBlocks - 1)
+
+    // we always start with a block, so we should never be inserting 
+    // into the document at position 0
+    if (position === 0) throw new Error('this is not right')
+
+    let max = Math.min(position, editableLayer.text.length)
     let min = Math.max(max, 0)
     return min
   }
@@ -123,10 +117,10 @@ export function EditorView(props: Props) {
       'pm position',
       transaction.curSelection.$anchor.pos,
       'am position',
-      pm2am(transaction.curSelection.$anchor.pos, state.doc),
+      prosemirrorToAutomerge(transaction.curSelection.$anchor.pos, state.doc),
       `-->${
         editableLayer.text[
-          pm2am(transaction.curSelection.$anchor.pos, state.doc)
+          prosemirrorToAutomerge(transaction.curSelection.$anchor.pos, state.doc)
         ]
       }<--`,
       editableLayer.text
@@ -134,23 +128,19 @@ export function EditorView(props: Props) {
     for (let step of transaction.steps) {
       console.log(step)
       if (step instanceof ReplaceStep) {
-        let from = pm2am(step.from, transaction.before)
-        let to = pm2am(step.to, transaction.before)
+        let from = prosemirrorToAutomerge(step.from, transaction.before)
+        let to = prosemirrorToAutomerge(step.to, transaction.before)
         //@ts-ignore
         console.log('in replacestep', from, to, step.structure)
         // @ts-ignore
-        if (from !== to && step.structure === false) {
+        if (from !== to) {
           console.log(
             `DELETING AT ${from}: ${editableLayer.text.substring(from, to)}`
           )
           editableLayer.deleteAt(from, to - from)
           //@ts-ignore
-        } else if (from === to && step.structure === true) {
-          console.log('I THINK I SHOULD DELETE A BLOCK!', from, to)
-          editableLayer.blocks
-            .filter((b) => from === b.start)
-            .forEach((b) => b.delete())
         }
+
         if (step.slice) {
           // @ts-ignore
           if (step.structure === false) {
@@ -165,6 +155,8 @@ export function EditorView(props: Props) {
             // @ts-ignore
             if (step.slice.content.content.length === 2 && from === to) {
               console.log(
+                //@ts-ignore
+                step.slice.content.content,
                 'have marks',
                 editableLayer.marks,
                 'want to insert new paragraph at ',
@@ -184,8 +176,12 @@ export function EditorView(props: Props) {
   }
 
   const color = colors[editableLayer.author]
-  console.log('state', state)
-  console.log('viewref', viewRef)
+  // this is a hack because the use-prosemirror lib isn't passing any styling on
+  // to the prosemirror parent div, and there's a bug that prevents input when
+  // the div is either empty or unstyled. there's probably a more elegant way to
+  // fix this, but this works for now.
+  //@ts-ignore
+  setTimeout(() => viewRef.current.view.dom.style.border = '1px solid white', 1000)
   return (
     <ProseMirror
       state={state}
