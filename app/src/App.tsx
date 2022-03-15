@@ -41,6 +41,7 @@ export default function App() {
             author: documents.author,
             ...params,
           }
+
           let Component = withDocument(DraftView, props)
           return <Component />
         }}

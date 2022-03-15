@@ -5,6 +5,7 @@ import tar from 'tar-stream'
 import crypto from 'crypto'
 import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
+import { getRandomDessert } from 'random-desserts'
 import Debug from 'debug';
 
 export type AuthorId = string;
@@ -86,7 +87,7 @@ export class Upwell {
     else return undefined
   }
 
-  createDraft(message = 'Magenta') {
+  createDraft(message = getRandomDessert()) {
     let newLayer = this.rootLayer.fork(message, this.author)
     this.add(newLayer)
     return newLayer
