@@ -38,11 +38,9 @@ export default function DraftList(props: DraftListProps) {
     }
   }, [id, render])
 
-  console.log(author)
   function createLayer() {
     let upwell = documents.get(id)
-    let message = 'Magenta'
-    let newLayer = upwell.rootLayer.fork(message, author)
+    let newLayer = upwell.createDraft(author)
     upwell.add(newLayer)
     let url = `/document/${id}/draft/${newLayer.id}`
     setLocation(url)
