@@ -186,16 +186,7 @@ export function EditorView(props: Props) {
     setState(newState)
   }
 
-  const color = colors[editableLayer.author]
-  // this is a hack because the use-prosemirror lib isn't passing any styling on
-  // to the prosemirror parent div, and there's a bug that prevents input when
-  // the div is either empty or unstyled. there's probably a more elegant way to
-  // fix this, but this works for now.
-  //@ts-ignore
-  setTimeout(
-    () => (viewRef.current.view.dom.style.border = '1px solid white'),
-    1000
-  )
+  const color = colors[editableLayer.authorId]
   return (
     <ProseMirror
       state={state}

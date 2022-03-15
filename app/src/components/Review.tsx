@@ -7,6 +7,9 @@ import UpwellSource from './upwell-source'
 import { Layer } from 'api'
 import { textCSS } from './Editor'
 import { AuthorColorsType } from './ListDocuments'
+import Documents from '../Documents'
+
+let documents = Documents()
 
 type ReviewState = {
   atjsonLayer?: UpwellSource
@@ -31,7 +34,7 @@ export function ReviewView(props: {
       }
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
-      let editsLayer = Layer.mergeWithEdits(root, ...visible)
+      let editsLayer = Layer.mergeWithEdits(documents.author, root, ...visible)
       let marks = editsLayer.marks.map((m: any) => {
         let attrs: any
         try {
