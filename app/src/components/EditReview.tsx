@@ -3,8 +3,8 @@ import { css } from '@emotion/react/macro'
 import React from 'react'
 import { Layer, Author } from 'api'
 import { ReviewView } from './Review'
-import { TextAreaView } from './TextArea'
 import { AuthorColorsType } from './ListDocuments'
+import { EditorView } from './Editor'
 
 // visible 0 or more layers NOT including root
 // root
@@ -20,7 +20,7 @@ type Props = {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, root, visible, onChange, reviewMode, colors } = props
+  const { root, visible, onChange, reviewMode, colors } = props
   console.log('rendering EditReviewView')
   if (!root) {
     console.log('no root')
@@ -34,12 +34,11 @@ export function EditReviewView(props: Props) {
   let component = reviewView
   if (visible.length === 1) {
     let textArea = (
-      <TextAreaView
-        id={id}
+      <EditorView
         colors={colors}
         onChange={onChange}
         editableLayer={visible[0]}
-      ></TextAreaView>
+      ></EditorView>
     )
     component = (
       <React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>

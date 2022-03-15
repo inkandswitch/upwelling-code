@@ -1,7 +1,7 @@
-import * as Automerge from "automerge-wasm-pack"
-import debug from "debug"
+import * as Automerge from 'automerge-wasm-pack'
+import debug from 'debug'
 
-const ROOT = "_root"
+const ROOT = '_root'
 
 export class UpwellMetadata {
   doc: Automerge.Automerge
@@ -18,17 +18,17 @@ export class UpwellMetadata {
   static create(id: string, main_id: string): UpwellMetadata {
     debug(`creating metadata ${id}  ${main_id}`)
     let doc = Automerge.create()
-    doc.set(ROOT, 'id', id) 
+    doc.set(ROOT, 'id', id)
     doc.set(ROOT, 'main_id', main_id)
-    doc.make(ROOT, 'archived', {})
+    doc.set_object(ROOT, 'archived', {})
     return new UpwellMetadata(doc)
   }
 
   _getArchivedLayersObj(): Automerge.ObjID {
     let value = this.doc.value(ROOT, 'archived')
-    let map;
+    let map
     if (!value) {
-      map = this.doc.set(ROOT, 'archived', {})
+      map = this.doc.set_object(ROOT, 'archived', {})
     } else if (value[0] === 'map') {
       map = value[1]
     } else {
@@ -64,8 +64,7 @@ export class UpwellMetadata {
     else return ''
   }
 
-  set main (id: string) {
+  set main(id: string) {
     this.doc.set(ROOT, 'main_id', id)
   }
-
 }

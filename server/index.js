@@ -105,7 +105,11 @@ app.ws('/:did/connect/:peerId', function(ws, req) {
     let value = JSON.parse(msg)
     if (value.method === 'BYE') {
       console.log('closing socket', req.params.peerId)
-      delete doc[value.peerId]
+      try {
+        delete doc[value.peerId]
+      } catch (e) {
+        console.log("HMMM COULDN'T ACCESS DOC", e)
+      }
       return
     }
     let incomingPeer = value.peerId

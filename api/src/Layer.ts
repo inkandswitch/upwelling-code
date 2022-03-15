@@ -137,6 +137,12 @@ export class Layer {
     else throw new Error('Text field not properly initialized')
   }
 
+  insertBlock(position: number, type: string) {
+    let text = this.doc.value(ROOT, "text")
+    if (text && text[0] === 'text') this.doc.insert_object(text[1], position, { type })
+    else throw new Error("text not properly initialized")
+  }
+
   deleteAt(position: number, count: number = 1, prop = 'text') {
     let obj = this.doc.value(ROOT, prop)
     if (obj && obj[0] === 'text') return this.doc.splice(obj[1], position, count, '')
@@ -157,6 +163,40 @@ export class Layer {
 
   get marks () {
     return this.getMarks()
+  }
+
+  // TODO refactor this to use materialize or whatever because there is some
+  // nasty hoop-jumping here.
+  get blocks() {
+
+    let blocks: any[] = []
+    let text = this.doc.value(ROOT, "text")
+    if (!text || text[0] !== 'text') throw new Error("text not properly initialized")
+
+    let i = this.text.indexOf('\uFFFC')
+    while (i !== this.text.length) {
+
+      // don't include the block replacement character, since it's just a marker
+      // that the paragraph follows
+      let start = i + 1
+
+      // find the next block replacement character; this will be the end of our
+      // block (if there isn't a next block, this block ends at the end of the
+      // text
+      let end = this.text.indexOf('\uFFFC', i + 1)
+      if (end === -1) end = this.text.length
+
+      // get the attributes for this block
+      let attrsObj = this.doc.value(text[1], i)
+      let attrs: any = {}
+      if (attrsObj && attrsObj[0] === 'map') attrs = this.doc.materialize(attrsObj[1])
+      else throw new Error("block properties not initialized, something has gone very wrong")
+      let block = { start, end, ...attrs }
+      blocks.push(block)
+      i = end
+    }
+
+    return blocks
   }
 
   save (): Uint8Array {
@@ -248,9 +288,13 @@ export class Layer {
     doc.set(ROOT, 'shared', false, 'boolean')
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
-    doc.make(ROOT, 'title', '')
-    doc.make(ROOT, 'text', '')
-    return new Layer(id, doc)
+    doc.set(ROOT, 'title', '')
+    // for prosemirror, we can't have an empty document, so fill some space
+    let text = doc.set_object(ROOT, 'text', ' ')
+    let initialParagraph = doc.insert_object(text, 0, { type: 'paragraph' })
+    doc.set(initialParagraph, 'type', 'paragraph')
+    let layer = new Layer(id, doc)
+    return layer
   }
 
   commit(message: string): Heads {

@@ -5,7 +5,7 @@ import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
 import { Layer } from 'api'
-import { textCSS } from './TextArea'
+import { textCSS } from './Editor'
 import { AuthorColorsType } from './ListDocuments'
 
 type ReviewState = {
