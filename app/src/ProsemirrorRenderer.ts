@@ -4,10 +4,7 @@ import { schema } from './upwell-pm-schema'
 
 export default class ProsemirrorRenderer extends Renderer {
   *root(): any {
-    let inside = yield
-    console.log(inside)
-    let doc = schema.node('doc', undefined, inside)
-    return doc
+    return schema.node('doc', undefined, yield)
   }
 
   *renderAnnotation(
@@ -19,12 +16,21 @@ export default class ProsemirrorRenderer extends Renderer {
       else return c
     })
 
-    if (annotationChildren.length === 0) annotationChildren = schema.text(' ')
+    if (annotation.type === 'strong' || annotation.type === 'em') {
+      return annotationChildren.map((c: any) => {
+        return c.mark([schema.mark(annotation.type)])
+      })
+    } else if (annotation.type === 'comment') {
+      // TK
+      return annotationChildren
+    } else {
+      if (annotationChildren.length === 0) annotationChildren = schema.text(' ')
 
-    return schema.node(
-      annotation.type,
-      annotation.attributes,
-      annotationChildren
-    )
+      return schema.node(
+        annotation.type,
+        annotation.attributes,
+        annotationChildren
+      )
+    }
   }
 }
