@@ -28,22 +28,25 @@ type DraftViewProps = {
 const AUTOSAVE_INTERVAL = 3000
 
 export default function DraftView(props: DraftViewProps) {
-  const { id, did, author, root } = props
+  let { id, did, author, root } = props
   let [, setLocation] = useLocation()
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [rootId, setRoot] = useState<string>(root.id)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [layers, setLayers] = useState<Layer[]>([])
+  console.log('did', did)
 
   let upwell = documents.get(id)
+  if (props.did === 'latest') {
+    did = upwell.rootLayer.id
+  }
   let layer = upwell.get(did)
 
   useEffect(() => {
     let upwell = documents.get(id)
-    let layer = upwell.get(did)
-
     documents.connect(layer)
+
     return () => {
       documents.disconnect()
     }
@@ -147,13 +150,16 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleUpdateClick = () => {
     let root = upwell.rootLayer
+    let message = layer.message
     layer.merge(root)
+    layer.message = message
     layer.parent_id = root.id
     onChangeMade()
     setReviewMode(false)
   }
 
   let handleMergeClick = () => {
+    upwell.archive(upwell.rootLayer.id)
     upwell.rootLayer = layer
     onChangeMade()
   }

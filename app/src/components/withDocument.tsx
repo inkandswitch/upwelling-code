@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Upwell, Layer } from 'api'
+import { useLocation } from 'wouter'
 import Documents from '../Documents'
 
 let documents = Documents()
 
 type DocumentProps = {
-  id: string
+  id: string,
+  did?: string
 }
 
 export default function withDocument(
@@ -14,6 +16,7 @@ export default function withDocument(
 ) {
   return function () {
     let [root, setRoot] = useState<Layer>()
+    let [, setLocation] = useLocation()
     let { id } = props
 
     useEffect(() => {
@@ -32,6 +35,16 @@ export default function withDocument(
         } finally {
           if (!upwell) throw new Error('could not create upwell')
           if (!unmounted) setRoot(upwell.rootLayer)
+        }
+
+        if (props.did) {
+          try {
+            let layer = upwell.get(props.did)
+            
+          } catch (err) {
+            setLocation(`/document/${props.id}/draft/latest`)
+            console.error(err)
+          }
         }
       }
 

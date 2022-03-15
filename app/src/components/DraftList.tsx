@@ -38,7 +38,6 @@ export default function DraftList(props: DraftListProps) {
     }
   }, [id, render])
 
-  console.log(author)
   function createLayer() {
     let upwell = documents.get(id)
     let newLayer = upwell.createDraft(author)
