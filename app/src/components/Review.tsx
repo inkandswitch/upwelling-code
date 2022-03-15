@@ -33,7 +33,12 @@ export function ReviewView(props: {
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
       let editsLayer = Layer.mergeWithEdits(root, ...visible)
       let marks = editsLayer.marks.map((m: any) => {
-        let attrs = JSON.parse(m.value)
+        let attrs: any
+        try {
+          attrs = JSON.parse(m.value)
+        } catch {
+          console.log('someday we will fix this')
+        }
         if (colors) attrs['authorColor'] = colors[attrs.author].toString()
         // I wonder if there's a (good) way to preserve identity of the mark
         // here (id? presumably?) Or I guess just the mark itself?) so that we
