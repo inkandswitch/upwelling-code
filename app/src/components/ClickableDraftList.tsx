@@ -81,6 +81,7 @@ export default function ClickableDraftList({
         .sort((a, b) => b.time - a.time)
         .map((layer: Layer, index) => {
           const isMerged = upwell.isArchived(layer.id)
+          if (isMerged) return
           return (
             <FileTab
               key={layer.id}
