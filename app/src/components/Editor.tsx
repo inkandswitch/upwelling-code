@@ -39,17 +39,20 @@ export const textCSS = css`
   height: 100%;
   border: 1px solid lightgray;
   border-width: 0 1px 1px 0;
-  padding: 34px;
+  padding: 10px 20px;
   resize: none;
   font-size: 16px;
   line-height: 20px;
-  border-radius: 3px;
   background-color: white;
   overflow: auto;
 
   white-space: pre-line;
 
-  :focus-visible {
+  .ProseMirror {
+    height: 100%;
+
+  }
+  .ProseMirror:focus-visible {
     outline: 0;
   }
 `
