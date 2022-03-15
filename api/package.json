@@ -44,6 +44,7 @@
     "concat-stream": "^2.0.0",
     "debug": "^4.3.3",
     "nanoid": "^3.2.0",
+    "random-desserts": "^0.2.2",
     "sializer": "^0.2.0",
     "stream-browserify": "^3.0.0",
     "tar-stream": "^2.2.0",

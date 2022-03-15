@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, {useEffect}  from 'react'
+import React, { useEffect } from 'react'
 import { Layer } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import { HCLColor } from 'd3-color'
@@ -88,7 +88,6 @@ export function TextAreaView(props: Props) {
     return () => {
       editableLayer.subscribe(() => {})
     }
-
   }, [editableLayer, onChange])
 
   function onPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {

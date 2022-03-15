@@ -12,7 +12,9 @@ import { SyncIndicator } from './SyncIndicator'
 import deterministicColor from '../color'
 import { Button } from './Button'
 import { useLocation } from 'wouter'
-import { TextareaInput } from './Input'
+import Input from './Input'
+import DraftsHistory from './DraftsHistory'
+import A from './A'
 
 let documents = Documents()
 
@@ -26,32 +28,35 @@ type DraftViewProps = {
 const AUTOSAVE_INTERVAL = 3000
 
 export default function DraftView(props: DraftViewProps) {
-  const { id, did, author, root } = props
+  let { id, did, author, root } = props
   let [, setLocation] = useLocation()
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [rootId, setRoot] = useState<string>(root.id)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
+  let [layers, setLayers] = useState<Layer[]>([])
+  console.log('did', did)
 
   let upwell = documents.get(id)
+  if (props.did === 'latest') {
+    did = upwell.rootLayer.id
+  }
   let layer = upwell.get(did)
 
   useEffect(() => {
-    let upwell = documents.get(id)
-    let layer = upwell.get(did)
-
     documents.connect(layer)
+
     return () => {
       documents.disconnect()
     }
-  }, [id, did])
+  }, [id, did, layer])
 
   const render = useCallback(
-    (upwell: Upwell) => {
+    async (upwell: Upwell) => {
       // find the authors
-      let rootId = upwell.rootLayer.id
-      const layers = upwell.layers().filter((l) => l.id !== rootId)
+      const layers = upwell.layers()
       setRoot(upwell.rootLayer.id)
+      setLayers(layers)
 
       const newAuthorColors = { ...authorColors }
       let changed = false
@@ -100,7 +105,8 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   function onChangeMade() {
-    documents.upwellChanged(props.id)
+    documents
+      .upwellChanged(props.id)
       .then((upwell) => {
         render(upwell)
         setSyncState(SYNC_STATE.SYNCED)
@@ -143,13 +149,16 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleUpdateClick = () => {
     let root = upwell.rootLayer
+    let message = layer.message
     layer.merge(root)
+    layer.message = message
     layer.parent_id = root.id
     onChangeMade()
     setReviewMode(false)
   }
 
   let handleMergeClick = () => {
+    upwell.archive(upwell.rootLayer.id)
     upwell.rootLayer = layer
     onChangeMade()
   }
@@ -158,86 +167,110 @@ export default function DraftView(props: DraftViewProps) {
     // this is saving every time text changes, do we want this??????
     onChangeMade()
   }, AUTOSAVE_INTERVAL)
+
+  function createLayer() {
+    let upwell = documents.get(id)
+    let newLayer = upwell.createDraft(author)
+    upwell.add(newLayer)
+    let url = `/document/${id}/draft/${newLayer.id}`
+    setLocation(url)
+  }
+
+  const isLatest = rootId === layer.id
   return (
     <div
-      id="folio"
+      id="draft-view"
       css={css`
         height: 100vh;
         display: flex;
         flex-direction: row;
-        padding: 30px;
         background: url('/wood.png');
       `}
     >
+      <DraftsHistory layers={layers} id={id} />
       <div
-        id="middle"
+        id="folio"
         css={css`
           height: 100%;
           width: 100%;
           display: flex;
           flex-direction: column;
+          padding: 30px;
         `}
       >
         <div
           id="top-bar"
           css={css`
             display: flex;
-            flex-direction: row;
-            justify-content: space-between;
+            flex-direction: column;
             padding-bottom: 20px;
             margin: 10px 0;
+            row-gap: 10px;
+            align-items: flex-start;
           `}
         >
-          <SyncIndicator state={sync_state}></SyncIndicator>
-          <Button onClick={() => setLocation(`/document/${id}/drafts`)}>
-            {' '}
-            Back to Drafts
-          </Button>
-          <TextareaInput
-            css={css`
-              color: white;
-            `}
-            defaultValue={layer.message}
-            onClick={(e) => {
-              e.stopPropagation()
-            }}
-            onChange={(e) => {
-              e.stopPropagation()
-            }}
-            onBlur={(e) => {
-              //@ts-ignore
-              handleFileNameInputBlur(e, layer)
-            }}
-          />
-
           <div>
-            Track changes
-            <button
-              css={css`
-                margin-bottom: 1ex;
-              `}
-              onClick={() => setReviewMode(!reviewMode)}
-            >
-              {reviewMode ? 'on' : 'off'}
-            </button>
-            {rootId === layer.id ? (
-              <div>This is the latest</div>
-            ) : rootId !== layer.parent_id ? (
-              <Button css={css``} onClick={handleUpdateClick}>
-                Update to Latest
-              </Button>
-            ) : (
-              <Button
-                css={css`
-                  background-color: blue;
-                  color: white;
-                `}
-                onClick={handleMergeClick}
-              >
-                Set as Latest
-              </Button>
+            <SyncIndicator state={sync_state}></SyncIndicator>
+            <A href={`/document/${id}/draft/${rootId}`}>Latest</A>
+            {!isLatest && (
+              <>
+                »{' '}
+                <Input
+                  defaultValue={layer.message}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                  }}
+                  onBlur={(e) => {
+                    //@ts-ignore
+                    handleFileNameInputBlur(e, layer)
+                  }}
+                />
+              </>
             )}
           </div>
+          {isLatest ? (
+            <Button onClick={createLayer}>Create Draft</Button>
+          ) : (
+            <div
+              css={css`
+                display: inline-flex;
+                align-items: baseline;
+                column-gap: 30px;
+              `}
+            >
+              <span>
+                Track changes{' '}
+                <button
+                  css={css`
+                    margin-bottom: 1ex;
+                  `}
+                  onClick={() => setReviewMode(!reviewMode)}
+                >
+                  {reviewMode ? 'on' : 'off'}
+                </button>
+              </span>
+              {rootId === layer.id ? (
+                <div>This is the latest</div>
+              ) : rootId !== layer.parent_id ? (
+                <Button css={css``} onClick={handleUpdateClick}>
+                  Update to Latest
+                </Button>
+              ) : (
+                <Button
+                  css={css`
+                    background-color: blue;
+                    color: white;
+                  `}
+                  onClick={handleMergeClick}
+                >
+                  Set as Latest
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <EditReviewView
@@ -248,6 +281,17 @@ export default function DraftView(props: DraftViewProps) {
           reviewMode={reviewMode}
           onChange={onTextChange}
         />
+      </div>
+      <div
+        id="comments"
+        css={css`
+          background: black;
+          color: white;
+          opacity: 0.2;
+          padding: 60px;
+        `}
+      >
+        Comments
       </div>
     </div>
   )

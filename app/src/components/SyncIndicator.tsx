@@ -22,7 +22,7 @@ export function SyncIndicator(props: { state: SYNC_STATE }) {
   return (
     <span
       css={css`
-        position: fixed;
+        position: absolute;
         top: 5px;
         left: 5px;
         font-size: 0.5em;
