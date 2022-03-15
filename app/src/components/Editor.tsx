@@ -89,19 +89,15 @@ export function EditorView(props: Props) {
 
   let prosemirrorToAutomerge = (position: number, doc: any): number => {
     let i = 0
-    let precedingBlocks = 0
-    while (i < editableLayer.text.length) {
-      console.log(i, position)
+    let l = editableLayer.text.length
+
+    while (i < l) {
       i = editableLayer.text.indexOf('\uFFFC', i + 1)
-      precedingBlocks += 1
-      if (i === -1) break
+      if (i >= position || i === -1) break
+      position--
     }
 
-    // the first prosemirror block isn't alongside a closing tag
-    // off-by-one errors, y'all
-    position -= (precedingBlocks - 1)
-
-    // we always start with a block, so we should never be inserting 
+    // we always start with a block, so we should never be inserting
     // into the document at position 0
     if (position === 0) throw new Error('this is not right')
 
@@ -120,7 +116,10 @@ export function EditorView(props: Props) {
       prosemirrorToAutomerge(transaction.curSelection.$anchor.pos, state.doc),
       `-->${
         editableLayer.text[
-          prosemirrorToAutomerge(transaction.curSelection.$anchor.pos, state.doc)
+          prosemirrorToAutomerge(
+            transaction.curSelection.$anchor.pos,
+            state.doc
+          )
         ]
       }<--`,
       editableLayer.text
@@ -181,7 +180,10 @@ export function EditorView(props: Props) {
   // the div is either empty or unstyled. there's probably a more elegant way to
   // fix this, but this works for now.
   //@ts-ignore
-  setTimeout(() => viewRef.current.view.dom.style.border = '1px solid white', 1000)
+  setTimeout(
+    () => (viewRef.current.view.dom.style.border = '1px solid white'),
+    1000
+  )
   return (
     <ProseMirror
       state={state}
