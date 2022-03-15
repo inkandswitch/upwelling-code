@@ -151,6 +151,15 @@ describe('upwell', () => {
       }
     })
 
+    it('can get archived layers from deserialized', async () => {
+      let author = {id: createAuthorId(), name: 'boop'}
+      let f = await Upwell.deserialize(d.serialize(), author)
+      let e = await Upwell.deserialize(f.serialize(), author)
+      let layers = e.getArchivedLayers()
+      let layer = layers.next()
+      assert.ok(layer.value)
+    })
+
   })
 
   it('makes layers visible and shared', async () => {

@@ -222,6 +222,10 @@ export class Upwell {
     let pack = tar.pack()
     let layers = this.layers()
     layers.forEach(writeLayer)
+    let archivedLayers = this.getArchivedLayers()
+    for (const layer of archivedLayers) {
+      writeLayer(layer)
+    }
     
     function writeLayer (layer: Layer) {
       let start = new Date()
