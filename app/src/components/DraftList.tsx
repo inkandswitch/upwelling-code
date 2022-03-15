@@ -40,7 +40,7 @@ export default function DraftList(props: DraftListProps) {
 
   function createLayer() {
     let upwell = documents.get(id)
-    let newLayer = upwell.createDraft(author)
+    let newLayer = upwell.createDraft()
     upwell.add(newLayer)
     let url = `/document/${id}/draft/${newLayer.id}`
     setLocation(url)

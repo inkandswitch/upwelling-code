@@ -87,7 +87,8 @@ export class Upwell {
     else return undefined
   }
 
-  createDraft(message = getRandomDessert()) {
+  createDraft(message?: string) {
+    if (!message) message = getRandomDessert() as string
     let newLayer = this.rootLayer.fork(message, this.author)
     this.add(newLayer)
     return newLayer
