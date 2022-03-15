@@ -206,7 +206,6 @@ export default function DraftView(props: DraftViewProps) {
             padding-bottom: 20px;
             margin: 10px 0;
             row-gap: 10px;
-            align-items: flex-start;
           `}
         >
           <div>
@@ -231,46 +230,51 @@ export default function DraftView(props: DraftViewProps) {
               </>
             )}
           </div>
-          {isLatest ? (
-            <Button onClick={createLayer}>Create Draft</Button>
-          ) : (
-            <div
-              css={css`
-                display: inline-flex;
-                align-items: baseline;
-                column-gap: 30px;
-              `}
-            >
-              <span>
-                Track changes{' '}
-                <button
+          <div
+            css={css`
+              display: inline-flex;
+              align-items: baseline;
+              column-gap: 30px;
+              justify-content: space-between;
+            `}
+          >
+            {isLatest ? (
+              <Button onClick={createLayer}>Create Draft</Button>
+            ) : (
+              <>
+                <span
                   css={css`
-                    margin-bottom: 1ex;
+                    gap: 20px;
+                    display: flex;
                   `}
-                  onClick={() => setReviewMode(!reviewMode)}
                 >
-                  {reviewMode ? 'on' : 'off'}
-                </button>
-              </span>
-              {rootId === layer.id ? (
-                <div>This is the latest</div>
-              ) : rootId !== layer.parent_id ? (
-                <Button css={css``} onClick={handleUpdateClick}>
-                  Update to Latest
-                </Button>
-              ) : (
-                <Button
-                  css={css`
-                    background-color: blue;
-                    color: white;
-                  `}
-                  onClick={handleMergeClick}
-                >
-                  Set as Latest
-                </Button>
-              )}
-            </div>
-          )}
+                  <Button
+                    disabled={rootId !== layer.parent_id}
+                    onClick={handleMergeClick}
+                  >
+                    Merge to document
+                  </Button>
+                  <Button
+                    disabled={rootId === layer.parent_id}
+                    onClick={handleUpdateClick}
+                  >
+                    Update from current
+                  </Button>
+                </span>
+                <span>
+                  view changes{' '}
+                  <Button
+                    css={css`
+                      margin-bottom: 1ex;
+                    `}
+                    onClick={() => setReviewMode(!reviewMode)}
+                  >
+                    {reviewMode ? 'on' : 'off'}
+                  </Button>
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         <EditReviewView
