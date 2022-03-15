@@ -6,9 +6,13 @@ import { AuthorColorsType } from './ListDocuments'
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { baseKeymap } from 'prosemirror-commands'
+import { MarkType } from 'prosemirror-model'
+import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
+import { history, redo, undo } from 'prosemirror-history'
+import { EditorState, Transaction } from 'prosemirror-state'
+import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
+
 import ProsemirrorRenderer from '../ProsemirrorRenderer'
-import { ReplaceStep } from 'prosemirror-transform'
 import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
 
@@ -16,6 +20,18 @@ type Props = {
   editableLayer: Layer
   onChange: any
   colors?: AuthorColorsType
+}
+
+const toggleBold = toggleMarkCommand(schema.marks.strong)
+const toggleItalic = toggleMarkCommand(schema.marks.em)
+
+function toggleMarkCommand(mark: MarkType): Command {
+  return (
+    state: EditorState,
+    dispatch: ((tr: Transaction) => void) | undefined
+  ) => {
+    return toggleMark(mark)(state, dispatch)
+  }
 }
 
 export const textCSS = css`
@@ -40,7 +56,11 @@ export const textCSS = css`
 
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
-  let marks = editableLayer.marks
+  let marks = editableLayer.marks.map((m: any) => {
+    m.type = `-upwell-${m.type}`
+    return m
+  })
+
   for (let b of editableLayer.blocks) {
     b.type = `-upwell-${b.type}`
     marks.push(b)
@@ -75,11 +95,23 @@ export function EditorView(props: Props) {
 
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
 
-  const [state, setState] = useProseMirror({
+  const opts: Parameters<typeof useProseMirror>[0] = {
     schema,
     doc: pmDoc,
-    plugins: [keymap({ ...baseKeymap })],
-  })
+    plugins: [
+      history(),
+      keymap({
+        ...baseKeymap,
+        'Mod-z': undo,
+        'Mod-y': redo,
+        'Mod-Shift-z': redo,
+        'Mod-b': toggleBold,
+        'Mod-i': toggleItalic,
+      }),
+    ],
+  }
+
+  const [state, setState] = useProseMirror(opts)
 
   const viewRef = useRef(null)
 
@@ -135,6 +167,13 @@ export function EditorView(props: Props) {
             }
           })
         }
+      } else if (step instanceof AddMarkStep) {
+        let from = prosemirrorToAutomerge(step.from, transaction.before)
+        let to = prosemirrorToAutomerge(step.to, transaction.before)
+
+        editableLayer.mark(step.mark.type.name, `(${from}..${to})`, '')
+      } else if (step instanceof RemoveMarkStep) {
+        // TK not implemented because automerge doesn't support removing marks yet
       }
     }
 
