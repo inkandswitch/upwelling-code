@@ -104,9 +104,9 @@ describe('save and load', () => {
 
       deserialized = await Upwell.deserialize(stream, author)
       assert.equal(deserialized.layers().length, NUM / 2 + 1)
-      let generator = deserialized.getArchivedLayers()
-      let archived = 0
-      for (const layer of generator) {
+      let archived  = 0
+      let layer
+      while (layer = deserialized.history(archived)) {
         archived++
         assert.equal(upwell.isArchived(layer.id), true)
       }

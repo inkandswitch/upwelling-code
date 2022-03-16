@@ -39,9 +39,6 @@ export default function DraftView(props: DraftViewProps) {
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [layers, setLayers] = useState<Layer[]>([])
   let [history, setHistory] = useState<Layer[]>([])
-  let [historyGenerator] = useState<Generator<Layer, any, unknown>>(
-    upwell.getArchivedLayers()
-  )
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
 
   if (props.did === 'latest') {
@@ -50,26 +47,17 @@ export default function DraftView(props: DraftViewProps) {
   let layer = upwell.get(did)
 
   const getHistory = useCallback(() => {
-    if (noMoreHistory) return
-
+    console.log('boop')
     const moreHistory: Layer[] = [...history]
-    for (let i = 0; i < HISTORY_FETCH_SIZE; i++) {
-      const { value, done } = historyGenerator.next()
-      if (done) {
-        setNoMoreHistory(true)
-        setHistory(moreHistory)
-        return
-      } else {
-        moreHistory.push(value)
-      }
+    for (let i = history.length; i < history.length + HISTORY_FETCH_SIZE; i++) {
+      let value = upwell.history(i)
+      console.log('got value', value, i)
+      if (value) moreHistory.push(value)
+      else setNoMoreHistory(true)
     }
     setHistory(moreHistory)
-  }, [history, historyGenerator, noMoreHistory])
-
-  useEffect(() => {
-    // initial history fetch
-    getHistory()
-  }, []) // gave up on fixing this ts warning
+    console.log('setting history', moreHistory)
+  }, [upwell, history])
 
   useEffect(() => {
     documents.connect(layer)
@@ -84,6 +72,7 @@ export default function DraftView(props: DraftViewProps) {
       const layers = upwell.layers()
       setRoot(upwell.rootLayer.id)
       setLayers(layers)
+      if (history.length === 0) getHistory()
 
       // find the authors
       const newAuthorColors = { ...authorColors }
@@ -105,7 +94,7 @@ export default function DraftView(props: DraftViewProps) {
         })
       }
     },
-    [authorColors, setAuthorColors, props.author]
+    [getHistory, history.length, authorColors, setAuthorColors, props.author]
   )
 
   /*
@@ -177,9 +166,7 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleUpdateClick = () => {
     let root = upwell.rootLayer
-    let message = layer.message
     layer.merge(root)
-    layer.message = message
     layer.parent_id = root.id
     onChangeMade()
     setReviewMode(false)
