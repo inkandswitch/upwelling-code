@@ -1,9 +1,10 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
-import { useState } from 'react'
+import { MouseEventHandler, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import Documents from '../Documents'
+import { Button } from './Button'
 import ClickableDraftList from './ClickableDraftList'
 
 let documents = Documents()
@@ -46,11 +47,13 @@ type Props = {
   layers: Layer[]
   archivedLayers?: Layer[]
   id: string
+  onGetMoreClick?: MouseEventHandler<HTMLButtonElement>
 }
 export default function DraftsHistory({
   layers,
   archivedLayers = [],
   id,
+  onGetMoreClick,
 }: Props) {
   const upwell = documents.get(id)
   const [, setLocation] = useLocation()
@@ -96,18 +99,15 @@ export default function DraftsHistory({
         />
       ) : (
         <>
-          <div
-            css={css`
-              padding: 10px;
-            `}
-          >
-            Put history here!
-          </div>
           <ClickableDraftList
             id={id}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
             layers={archivedLayers}
           />
+
+          {onGetMoreClick && (
+            <Button onClick={onGetMoreClick}>load more</Button>
+          )}
         </>
       )}
     </div>

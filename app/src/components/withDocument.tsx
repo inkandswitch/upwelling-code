@@ -6,7 +6,7 @@ import Documents from '../Documents'
 let documents = Documents()
 
 type DocumentProps = {
-  id: string,
+  id: string
   author: Author
   did?: string
 }

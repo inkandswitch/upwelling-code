@@ -26,21 +26,50 @@ type DraftViewProps = {
 }
 
 const AUTOSAVE_INTERVAL = 3000
+const HISTORY_FETCH_SIZE = 5
 
 export default function DraftView(props: DraftViewProps) {
   let { id, did, author, root } = props
+  let upwell = documents.get(id)
+
   let [, setLocation] = useLocation()
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [rootId, setRoot] = useState<string>(root.id)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [layers, setLayers] = useState<Layer[]>([])
+  let [history, setHistory] = useState<Layer[]>([])
+  let [historyGenerator] = useState<Generator<Layer, any, unknown>>(
+    upwell.getArchivedLayers()
+  )
+  let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
 
-  let upwell = documents.get(id)
   if (props.did === 'latest') {
     did = upwell.rootLayer.id
   }
   let layer = upwell.get(did)
+
+  const getHistory = useCallback(() => {
+    if (noMoreHistory) return
+
+    const moreHistory: Layer[] = [...history]
+    for (let i = 0; i < HISTORY_FETCH_SIZE; i++) {
+      const { value, done } = historyGenerator.next()
+      if (done) {
+        setNoMoreHistory(true)
+        setHistory(moreHistory)
+        return
+      } else {
+        moreHistory.push(value)
+      }
+    }
+    setHistory(moreHistory)
+  }, [history, historyGenerator, noMoreHistory])
+
+  useEffect(() => {
+    // initial history fetch
+    getHistory()
+  }, []) // gave up on fixing this ts warning
 
   useEffect(() => {
     documents.connect(layer)
@@ -51,12 +80,12 @@ export default function DraftView(props: DraftViewProps) {
   }, [id, did, layer])
 
   const render = useCallback(
-    async (upwell: Upwell) => {
-      // find the authors
+    (upwell: Upwell) => {
       const layers = upwell.layers()
       setRoot(upwell.rootLayer.id)
       setLayers(layers)
 
+      // find the authors
       const newAuthorColors = { ...authorColors }
       let changed = false
       layers.forEach((l) => {
@@ -186,7 +215,12 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
-      <DraftsHistory layers={layers} id={id} />
+      <DraftsHistory
+        layers={layers}
+        id={id}
+        archivedLayers={history}
+        onGetMoreClick={noMoreHistory ? undefined : getHistory}
+      />
       <div
         id="folio"
         css={css`

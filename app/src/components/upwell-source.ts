@@ -1,7 +1,6 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
-import { Layer, UpwellMetadata } from 'api'
-import { EditorView } from './Editor'
+import { Layer } from 'api'
 
 export class Insertion extends InlineAnnotation<{
   author?: string

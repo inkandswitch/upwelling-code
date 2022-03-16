@@ -18,7 +18,6 @@ export default function App() {
     setLocation('/document/' + doc.id + '/draft/latest')
   }
 
-
   return (
     <>
       {/* <div id="topbar">

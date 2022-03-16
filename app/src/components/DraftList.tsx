@@ -13,7 +13,7 @@ type DraftListProps = {
 }
 
 export default function DraftList(props: DraftListProps) {
-  const { id, author } = props
+  const { id } = props
   const [, setLocation] = useLocation()
   let [layers, setLayers] = useState<Layer[]>([])
   let [, setRoot] = useState<Layer>()
