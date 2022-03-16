@@ -6,7 +6,7 @@ import { AuthorColorsType } from './ListDocuments'
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { MarkType } from 'prosemirror-model'
+import { MarkType, Slice } from 'prosemirror-model'
 import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState, Transaction } from 'prosemirror-state'
@@ -88,7 +88,13 @@ export function EditorView(props: Props) {
     editableLayer.subscribe(() => {
       let atjsonLayer = UpwellSource.fromRaw(editableLayer)
       let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
-      setState(getState(pmDoc))
+      let transaction = state.tr.replace(
+        0,
+        state.doc.content.size,
+        new Slice(pmDoc.content, 0, 0)
+      )
+      let newState = state.apply(transaction)
+      setState(newState)
     })
     return () => {
       editableLayer.subscribe(() => {})
