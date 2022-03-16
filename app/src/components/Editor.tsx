@@ -59,37 +59,41 @@ export const textCSS = css`
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
 
+  function getState(pmDoc: any) {
+    const opts: Parameters<typeof useProseMirror>[0] = {
+      schema,
+      doc: pmDoc,
+      plugins: [
+        history(),
+        keymap({
+          ...baseKeymap,
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo,
+          'Mod-b': toggleBold,
+          'Mod-i': toggleItalic,
+        }),
+      ],
+    }
+    return opts
+  }
+
   let atjsonLayer = UpwellSource.fromRaw(editableLayer)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+  const [state, setState] = useProseMirror(getState(pmDoc))
+
+  const viewRef = useRef(null)
 
   useEffect(() => {
     editableLayer.subscribe(() => {
-      console.log('got changes')
+      let atjsonLayer = UpwellSource.fromRaw(editableLayer)
+      let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+      setState(getState(pmDoc))
     })
     return () => {
       editableLayer.subscribe(() => {})
     }
-  }, [editableLayer, atjsonLayer])
-
-  const opts: Parameters<typeof useProseMirror>[0] = {
-    schema,
-    doc: pmDoc,
-    plugins: [
-      history(),
-      keymap({
-        ...baseKeymap,
-        'Mod-z': undo,
-        'Mod-y': redo,
-        'Mod-Shift-z': redo,
-        'Mod-b': toggleBold,
-        'Mod-i': toggleItalic,
-      }),
-    ],
-  }
-
-  const [state, setState] = useProseMirror(opts)
-
-  const viewRef = useRef(null)
+  }, [])
 
   let prosemirrorToAutomerge = (position: number, doc: any): number => {
     let i = 0
