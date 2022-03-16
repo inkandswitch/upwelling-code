@@ -60,6 +60,8 @@ export default function DraftView(props: DraftViewProps) {
   }, [upwell, history])
 
   useEffect(() => {
+    let upwell = documents.get(id)
+    let layer = upwell.get(did)
     documents.connect(layer)
 
     return () => {
@@ -191,6 +193,7 @@ export default function DraftView(props: DraftViewProps) {
     setLocation(url)
   }
 
+  let layer = upwell.get(did)
   const isLatest = rootId === layer.id
   return (
     <div

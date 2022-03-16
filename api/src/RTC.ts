@@ -28,7 +28,7 @@ export class RealTimeDraft {
 
   retry() {
     this.retries++
-    if (this.retries > MAX_RETRIES) return
+    if (this.retries > MAX_RETRIES) return console.log('MAX RETRIES', this.retries)
     this.timeout = setTimeout(() => {
       console.log('Retrying')
       this.ws = this.connect();
