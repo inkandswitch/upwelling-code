@@ -26,6 +26,7 @@ export type LayerMetadata = {
   message: string
 }
 
+
 export type Subscriber = (doc: Layer) => void 
 
 export class LazyLayer {
@@ -44,11 +45,13 @@ export class LazyLayer {
 export class Layer {
   id: string
   doc: Automerge
+  comments: Comments
   private subscriber?: Subscriber 
 
   constructor(id: string, doc: Automerge) {
     this.id = id
     this.doc = doc
+    this.comments = new Comments(doc, 'comments')
   }
 
   private _getAutomergeText(prop: string): string {
