@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
 import { Author, AuthorId } from './Upwell';
-import { createAuthorId } from '.';
+import { Comments, createAuthorId } from '.';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -26,6 +26,7 @@ export type LayerMetadata = {
   message: string
 }
 
+
 export type Subscriber = (doc: Layer) => void 
 
 export class LazyLayer {
@@ -44,11 +45,13 @@ export class LazyLayer {
 export class Layer {
   id: string
   doc: Automerge
+  comments: Comments
   private subscriber?: Subscriber 
 
   constructor(id: string, doc: Automerge) {
     this.id = id
     this.doc = doc
+    this.comments = new Comments(doc, 'comments')
   }
 
   private _getAutomergeText(prop: string): string {
@@ -285,6 +288,7 @@ export class Layer {
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
     doc.set_object(ROOT, 'title', '')
+    doc.set_object(ROOT, 'comments', {}) 
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, 'text', ' ')
     let initialParagraph = doc.insert_object(text, 0, { type: 'paragraph' })
