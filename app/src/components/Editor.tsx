@@ -50,7 +50,6 @@ export const textCSS = css`
 
   .ProseMirror {
     height: 100%;
-
   }
   .ProseMirror:focus-visible {
     outline: 0;
@@ -59,43 +58,8 @@ export const textCSS = css`
 
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
-  let marks = editableLayer.marks.map((m: any) => {
-    m.type = `-upwell-${m.type}`
-    return m
-  })
 
-  for (let b of editableLayer.blocks) {
-    b.type = `-upwell-${b.type}`
-    marks.push(b)
-  }
-
-  marks.map((m: any) => {
-    let attrs: any = {}
-    try {
-      if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
-    } catch {
-      console.log(
-        'we should really fix the thing where I stuffed mark attrs into a json string lol'
-      )
-    }
-    if (colors) attrs['authorColor'] = colors[attrs.author]?.toString()
-    // I wonder if there's a (good) way to preserve identity of the mark
-    // here (id? presumably?) Or I guess just the mark itself?) so that we
-    // can do direct actions on the Upwell layer via the atjson annotation
-    // as a proxy.
-    return {
-      start: m.start,
-      end: m.end,
-      type: `-upwell-${m.type}`,
-      attributes: attrs,
-    }
-  })
-
-  let atjsonLayer = new UpwellSource({
-    content: editableLayer.text, //.replaceAll('\n', '¶'),
-    annotations: marks,
-  })
-
+  let atjsonLayer = UpwellSource.fromRaw(editableLayer)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
 
   const opts: Parameters<typeof useProseMirror>[0] = {

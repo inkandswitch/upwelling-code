@@ -35,7 +35,6 @@ export default function DraftView(props: DraftViewProps) {
   let [rootId, setRoot] = useState<string>(root.id)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [layers, setLayers] = useState<Layer[]>([])
-  console.log('did', did)
 
   let upwell = documents.get(id)
   if (props.did === 'latest') {

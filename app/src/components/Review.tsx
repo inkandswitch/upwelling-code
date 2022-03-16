@@ -20,7 +20,7 @@ export function ReviewView(props: {
   visible: Layer[]
   colors?: AuthorColorsType
 }) {
-  const { root, visible, colors } = props
+  const { root, visible } = props
 
   let updateAtjsonState = useCallback(
     async function () {
@@ -35,47 +35,11 @@ export function ReviewView(props: {
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
       let editsLayer = Layer.mergeWithEdits(documents.author, root, ...visible)
-      let marks = editsLayer.marks.map((m: any) => {
-        let attrs: any
-        try {
-          attrs = JSON.parse(m.value)
-        } catch {
-          console.log('someday we will fix this')
-        }
-        if (colors) attrs['authorColor'] = colors[attrs.author].toString()
-        // I wonder if there's a (good) way to preserve identity of the mark
-        // here (id? presumably?) Or I guess just the mark itself?) so that we
-        // can do direct actions on the Upwell layer via the atjson annotation
-        // as a proxy.
-        return {
-          start: m.start,
-          end: m.end,
-          type: `-upwell-${m.type}`,
-          attributes: attrs,
-        }
-      })
+      let atjsonLayer = UpwellSource.fromRaw(editsLayer)
 
-      // generate paragraph annotations
-      let pidx = 0
-      while (pidx !== -1) {
-        let start = pidx
-        pidx = editsLayer.text.indexOf('\n', pidx + 1)
-        let end = pidx === -1 ? editsLayer.text.length : pidx
-        marks.push({
-          start: start,
-          end: end,
-          type: '-upwell-paragraph',
-          attributes: {},
-        })
-      }
-
-      let atjsonLayer = new UpwellSource({
-        content: editsLayer.text,
-        annotations: marks,
-      })
-      setState({ atjsonLayer: atjsonLayer })
+      setState({ atjsonLayer })
     },
-    [root, visible, colors]
+    [root, visible]
   )
 
   useEffect(() => {
