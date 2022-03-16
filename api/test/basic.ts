@@ -69,8 +69,9 @@ describe('upwell', () => {
     doc.insertAt(3, 'l')
     doc.insertAt(4, 'o')
     assert.equal(doc.text, 'Hello\ufffc ')
-
     assert.equal(d.layers()[0].text, 'Hello\ufffc ')
+    
+    d.setLatest(doc)
 
     let name = 'Started typing on the train'
     let author: Author = {id: createAuthorId(), name: 'Theroux'}
@@ -107,17 +108,13 @@ describe('upwell', () => {
       doc.insertAt(3, 'l')
       doc.insertAt(4, 'o')
       assert.equal(doc.text, 'Hello\ufffc ')
+      d.setLatest(doc)
     })
 
 
     it('forks', () => {
       let name = 'Started typing on the train'
-      let author: Author = {
-        id: createAuthorId(),
-        name: 'Theroux'
-      }
-      newLayer = doc.fork(name, author)
-      d.add(newLayer)
+      newLayer = d.createDraft(name)
   
       newLayer.insertAt(5, ' ')
       newLayer.insertAt(6, 'w')
@@ -140,11 +137,10 @@ describe('upwell', () => {
 
     it('can be archived', async () => {
       d.archive(newLayer.id)
-      let layers = await d.getArchivedLayers()
-      let layer = layers.next()
-      assert.ok(layer.value)
-      if (layer.value) {
-        assert.equal(d.isArchived(layer.value.id), true)
+      let layer = d.history.get(0)
+      assert.ok(layer)
+      if (layer) {
+        assert.equal(d.isArchived(layer.id), true)
         let root = d.rootLayer
         assert.equal(root.id, rootId)
         assert.equal(doc.id, rootId)
@@ -155,9 +151,8 @@ describe('upwell', () => {
       let author = {id: createAuthorId(), name: 'boop'}
       let f = await Upwell.deserialize(d.serialize(), author)
       let e = await Upwell.deserialize(f.serialize(), author)
-      let layers = e.getArchivedLayers()
-      let layer = layers.next()
-      assert.ok(layer.value)
+      let layer = e.history.get(0)
+      assert.ok(layer)
     })
 
   })

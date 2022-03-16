@@ -1,5 +1,3 @@
-import { LazyLayer, Layer, Subscriber } from './Layer';
-import { UpwellMetadata } from './UpwellMetadata';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
 import crypto from 'crypto'
@@ -7,9 +5,13 @@ import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import { getRandomDessert } from 'random-desserts'
 import Debug from 'debug';
+import History from './History';
+import { Layer } from './Layer';
+import { UpwellMetadata } from './UpwellMetadata';
 
 export type AuthorId = string;
-const UNKNOWN_AUTHOR = {id: createAuthorId(), name: 'Anonymous'}
+export const UNKNOWN_AUTHOR = {id: createAuthorId(), name: 'Anonymous'}
+export const SPECIAL_ROOT_DOCUMENT = 'UPWELL_ROOT@@@'
 
 export type Author = {
   id: AuthorId,
@@ -22,9 +24,10 @@ export type UpwellOptions = {
 }
 
 type MaybeLayer = {
-  id: string,
+  id: LayerId,
   binary: Uint8Array
 }
+export type LayerId = string 
 
 const debug = Debug('upwell')
 const LAYER_EXT = '.layer'
@@ -40,7 +43,7 @@ export class Upwell {
   metadata: UpwellMetadata
   author: Author 
   subscriber: Function = function noop () {}
-  _archived: Map<string, Uint8Array> = new Map()
+  _archived: Map<string, Uint8Array | Layer> = new Map()
 
   constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata
@@ -54,9 +57,11 @@ export class Upwell {
 
   get rootLayer() {
     let rootId = this.metadata.main
-    let root = this.layers().find(l => l.id === rootId)
-    if (!root) throw new Error('No root?')
-    return root
+    return this.get(rootId)
+  }
+
+  get history(): History {
+    return new History(this)
   }
 
   set rootLayer(layer: Layer) {
@@ -87,6 +92,12 @@ export class Upwell {
     else return undefined
   }
 
+  setLatest(layer) {
+    layer.commit(layer.message)
+    this.archive(layer.id)
+    this.rootLayer = layer
+  }
+
   createDraft(message?: string) {
     if (!message) message = getRandomDessert() as string
     let newLayer = this.rootLayer.fork(message, this.author)
@@ -94,22 +105,6 @@ export class Upwell {
     return newLayer
   }
 
-  *getArchivedLayers(): Generator<Layer> {
-    let archivedObj = this.metadata._getArchivedLayersObj()
-    let archived = this.metadata.doc.keys(archivedObj)
-    for (let i = 0; i < archived.length; i++) {
-      let id = archived[i]
-      let value = this.metadata.doc.value(archivedObj, id)
-      if (value && value[0] === 'boolean') {
-        let buf = this._archived.get(id)
-        if (!buf) console.error('no buf', buf)
-        else {
-          let doc = Layer.load(id, buf, this.author.id)
-          yield doc
-        }
-      }
-    }
-  }
 
   add(layer: Layer): void {
     this.set(layer.id, layer)
@@ -128,19 +123,30 @@ export class Upwell {
   }
 
   archive(id: string): void {
-    this.metadata.archive(id)
-    this.subscriber()
+    if (this.isArchived(id)) return
     let doc = this.get(id)
-    this._archived.set(id, doc.save())
+    this.metadata.archive(id)
+    this._layers.delete(id)
+    this._archived.set(id, doc)
+    this.subscriber()
   }
 
   set(id: string, layer: Layer) {
     return this._layers.set(id, layer)
   }
 
+  _coerceLayer(id, buf: Layer | Uint8Array) : Layer {
+    if (buf?.constructor.name === 'Uint8Array') return Layer.load(id, buf as Uint8Array, this.author.id)
+    else return buf as Layer
+  }
+
   get(id: string): Layer { 
     let layer = this._layers.get(id)
-    if (!layer) throw new Error('No layer with id=' + id)
+    if (!layer) {
+      let maybe = this._archived.get(id)
+      if (!maybe) throw new Error('No layer with id=' + id)
+      else return this._coerceLayer(id, maybe)
+    }
     return layer
   }
 
@@ -219,36 +225,40 @@ export class Upwell {
   }
 
   serialize(): tar.Pack {
+    let start = Date.now()
     let pack = tar.pack()
     let layers = this.layers()
-    layers.forEach(writeLayer)
-    let archivedLayers = this.getArchivedLayers()
-    for (const layer of archivedLayers) {
-      writeLayer(layer)
-    }
+    layers.forEach((layer: Layer) => {
+      writeLayer(layer.id, layer.save())
+  })
+    let archived = Array.from(this._archived.keys())
+    archived.forEach(id  => {
+      let buf = this._archived.get(id)
+      if (!buf) return console.error('no buf')
+      else if (buf.constructor.name === 'Uint8Array') writeLayer(id, buf as Uint8Array)
+      else writeLayer(id, (buf as Layer).save())
+    })
     
-    function writeLayer (layer: Layer) {
-      let start = new Date()
-      let binary = layer.save()
-      //@ts-ignore
-      var end = new Date() - start
-      debug('(save): execution time %dms', end)
-      pack.entry({ name: `${layer.id}.${LAYER_EXT}`}, Buffer.from(binary))
+    function writeLayer (id, binary: Uint8Array) {
+      pack.entry({ name: `${id}.${LAYER_EXT}`}, Buffer.from(binary))
     }
 
     pack.entry({ name: METADATA_KEY }, Buffer.from(this.metadata.doc.save()))
     pack.finalize()
+    let end = Date.now() - start
+    debug('(serialize): execution time %dms', end)
     return pack
   }
 
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    let layer = Layer.create('Document initialized', author.id)
+    let layer = Layer.create(SPECIAL_ROOT_DOCUMENT, author.id)
     let metadata = UpwellMetadata.create(id, layer.id, author)
     let upwell = new Upwell(metadata, author)
     upwell.add(layer)
-
+    upwell.archive(layer.id) // root is always archived
+    upwell.createDraft() // always create an initial draft
     return upwell
   }
 
@@ -273,4 +283,3 @@ export class Upwell {
     this.subscriber()
   }
 }
-

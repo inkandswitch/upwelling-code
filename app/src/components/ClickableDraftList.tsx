@@ -81,14 +81,12 @@ export default function ClickableDraftList({
       {layers
         .sort((a, b) => b.time - a.time)
         .map((layer: Layer, index) => {
-          const isMerged = upwell.isArchived(layer.id)
-          if (isMerged) return <div></div>
           return (
             <FileTab
+              id={layer.id}
               key={layer.id}
               index={index}
               isBottom={isBottom}
-              isMerged={isMerged}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -100,9 +98,10 @@ export default function ClickableDraftList({
                   ]?.toString() || 'none'} inset;
               `}
             >
-              {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
+              {layer.message}
               <InfoText>
-                {authors[layer.authorId]} created {relativeDate(new Date(layer.time))}
+                {authors[layer.authorId]} created{' '}
+                {relativeDate(new Date(layer.time))}
               </InfoText>
             </FileTab>
           )

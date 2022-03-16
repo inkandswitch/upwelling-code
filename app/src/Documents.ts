@@ -16,7 +16,7 @@ export class Documents {
   author: Author
   rtc?: RealTimeDraft
 
-  constructor (author: Author) {
+  constructor(author: Author) {
     this.author = author
   }
 
@@ -48,6 +48,7 @@ export class Documents {
   disconnect() {
     if (this.rtc) {
       this.rtc.destroy()
+      console.log('disconnecting')
       this.rtc = undefined
     }
   }
@@ -160,25 +161,25 @@ export class Documents {
   }
 }
 
-var documents : Documents
+var documents: Documents
 
-export default function initialize (): Documents {
+export default function initialize(): Documents {
   if (documents) return documents
   let author = {
     id: localStorage.getItem('authorId'),
-    name: localStorage.getItem('authorName')
+    name: localStorage.getItem('authorName'),
   }
   if (!author.id) {
     author.id = createAuthorId()
     localStorage.setItem('authorId', author.id)
   }
   if (!author.name) {
-    author.name = catNames.random() 
+    author.name = catNames.random()
     localStorage.setItem('authorName', author.name)
   }
   documents = new Documents({
     id: author.id,
-    name: author.name
+    name: author.name,
   })
   return documents
 }
