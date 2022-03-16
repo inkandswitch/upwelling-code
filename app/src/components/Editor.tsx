@@ -10,7 +10,9 @@ import { MarkType } from 'prosemirror-model'
 import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState, Transaction } from 'prosemirror-state'
+import { EditorView } from 'prosemirror-view'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
+import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 
 import ProsemirrorRenderer from '../ProsemirrorRenderer'
 import UpwellSource from './upwell-source'
@@ -56,7 +58,7 @@ export const textCSS = css`
   }
 `
 
-export function EditorView(props: Props) {
+export function Editor(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
 
   let atjsonLayer = UpwellSource.fromRaw(editableLayer)
@@ -66,6 +68,32 @@ export function EditorView(props: Props) {
     schema,
     doc: pmDoc,
     plugins: [
+      contextMenu([
+        {
+          view: () => {
+            let commentButton = document.createElement('button')
+            commentButton.innerText = 'comment'
+            return commentButton
+          },
+
+          handleClick: (e: any, view: EditorView) => {
+            let { from, to } = view.state.selection
+            let comment_id = 'abc123'
+            let comment = {
+              id: comment_id,
+              author: '0decafbad', //author.id,
+              message: 'peanuts',
+              children: [],
+              state: 0, //CommentState.OPEN
+            }
+
+            editableLayer.comments.insert(comment)
+
+            editableLayer.mark('comment', `[${from}..${to}]`, comment_id)
+            console.log(`i would like to comment from ${from} to ${to}`)
+          },
+        },
+      ]),
       history(),
       keymap({
         ...baseKeymap,

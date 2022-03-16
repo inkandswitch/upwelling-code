@@ -4,7 +4,7 @@ import React from 'react'
 import { Layer, Author } from 'api'
 import { ReviewView } from './Review'
 import { AuthorColorsType } from './ListDocuments'
-import { EditorView } from './Editor'
+import { Editor } from './Editor'
 
 // visible 0 or more layers NOT including root
 // root
@@ -34,11 +34,11 @@ export function EditReviewView(props: Props) {
   let component = reviewView
   if (visible.length === 1) {
     let textArea = (
-      <EditorView
+      <Editor
         colors={colors}
         onChange={onChange}
         editableLayer={visible[0]}
-      ></EditorView>
+      ></Editor>
     )
     component = (
       <React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
