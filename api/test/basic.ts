@@ -69,8 +69,9 @@ describe('upwell', () => {
     doc.insertAt(3, 'l')
     doc.insertAt(4, 'o')
     assert.equal(doc.text, 'Hello\ufffc ')
-
     assert.equal(d.layers()[0].text, 'Hello\ufffc ')
+    
+    d.setLatest(doc)
 
     let name = 'Started typing on the train'
     let author: Author = {id: createAuthorId(), name: 'Theroux'}
@@ -107,17 +108,13 @@ describe('upwell', () => {
       doc.insertAt(3, 'l')
       doc.insertAt(4, 'o')
       assert.equal(doc.text, 'Hello\ufffc ')
+      d.setLatest(doc)
     })
 
 
     it('forks', () => {
       let name = 'Started typing on the train'
-      let author: Author = {
-        id: createAuthorId(),
-        name: 'Theroux'
-      }
-      newLayer = doc.fork(name, author)
-      d.add(newLayer)
+      newLayer = d.createDraft(name)
   
       newLayer.insertAt(5, ' ')
       newLayer.insertAt(6, 'w')

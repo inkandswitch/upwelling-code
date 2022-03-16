@@ -173,9 +173,7 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   let handleMergeClick = () => {
-    layer.commit(layer.message)
-    upwell.archive(layer.id)
-    upwell.rootLayer = layer
+    upwell.setLatest(layer)
     onChangeMade()
   }
 

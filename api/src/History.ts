@@ -6,11 +6,12 @@ export default class History {
 
   constructor(upwell: Upwell) {
     this.upwell = upwell
-    this.list = upwell.metadata.doc.materialize('/archived').reverse()
+    // Remove the first document which is the root layer.
+    this.list = upwell.metadata.doc.materialize('/archived').slice(1).reverse()
   }
 
-  length() {
-    return this.list.length
+  get length() {
+    return this.list.length 
   }
   
   get(index: number) {

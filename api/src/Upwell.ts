@@ -10,7 +10,8 @@ import { Layer } from './Layer';
 import { UpwellMetadata } from './UpwellMetadata';
 
 export type AuthorId = string;
-const UNKNOWN_AUTHOR = {id: createAuthorId(), name: 'Anonymous'}
+export const UNKNOWN_AUTHOR = {id: createAuthorId(), name: 'Anonymous'}
+export const SPECIAL_ROOT_DOCUMENT = 'UPWELL_ROOT@@@'
 
 export type Author = {
   id: AuthorId,
@@ -91,6 +92,12 @@ export class Upwell {
     else return undefined
   }
 
+  setLatest(layer) {
+    layer.commit(layer.message)
+    this.archive(layer.id)
+    this.rootLayer = layer
+  }
+
   createDraft(message?: string) {
     if (!message) message = getRandomDessert() as string
     let newLayer = this.rootLayer.fork(message, this.author)
@@ -119,9 +126,9 @@ export class Upwell {
     if (this.isArchived(id)) return
     let doc = this.get(id)
     this.metadata.archive(id)
-    this.subscriber()
     this._layers.delete(id)
     this._archived.set(id, doc)
+    this.subscriber()
   }
 
   set(id: string, layer: Layer) {
@@ -246,11 +253,12 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    let layer = Layer.create('Document initialized', author.id)
+    let layer = Layer.create(SPECIAL_ROOT_DOCUMENT, author.id)
     let metadata = UpwellMetadata.create(id, layer.id, author)
     let upwell = new Upwell(metadata, author)
     upwell.add(layer)
-
+    upwell.archive(layer.id) // root is always archived
+    upwell.createDraft() // always create an initial draft
     return upwell
   }
 
