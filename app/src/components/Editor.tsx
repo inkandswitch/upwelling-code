@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import React, { useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Layer } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
@@ -61,6 +61,15 @@ export function EditorView(props: Props) {
 
   let atjsonLayer = UpwellSource.fromRaw(editableLayer)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+
+  useEffect(() => {
+    editableLayer.subscribe(() => {
+      console.log('got changes')
+    })
+    return () => {
+      editableLayer.subscribe(() => {})
+    }
+  }, [editableLayer, atjsonLayer])
 
   const opts: Parameters<typeof useProseMirror>[0] = {
     schema,
