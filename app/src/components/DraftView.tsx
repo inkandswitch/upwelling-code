@@ -30,8 +30,6 @@ const HISTORY_FETCH_SIZE = 5
 
 export default function DraftView(props: DraftViewProps) {
   let { id, did, author, root } = props
-  let upwell = documents.get(id)
-
   let [, setLocation] = useLocation()
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
@@ -40,41 +38,40 @@ export default function DraftView(props: DraftViewProps) {
   let [layers, setLayers] = useState<Layer[]>([])
   let [history, setHistory] = useState<Layer[]>([])
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
+  let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)
 
-  if (props.did === 'latest') {
-    did = upwell.rootLayer.id
-  }
+  let upwell = documents.get(id)
+  if (props.did === 'latest') did = upwell.rootLayer.id
   let layer = upwell.get(did)
 
   const getHistory = useCallback(() => {
-    console.log('boop')
-    const moreHistory: Layer[] = [...history]
-    for (let i = history.length; i < history.length + HISTORY_FETCH_SIZE; i++) {
-      let value = upwell.history(i)
-      console.log('got value', value, i)
+    let upwell = documents.get(id)
+    const moreHistory: Layer[] = []
+    for (let i = 0; i < fetchSize; i++) {
+      let value = upwell.history.get(i)
       if (value) moreHistory.push(value)
-      else setNoMoreHistory(true)
     }
+    setNoMoreHistory(upwell.history.length <= fetchSize)
     setHistory(moreHistory)
-    console.log('setting history', moreHistory)
-  }, [upwell, history])
+  }, [id, fetchSize])
 
   useEffect(() => {
     let upwell = documents.get(id)
     let layer = upwell.get(did)
     documents.connect(layer)
+    console.log('connecting')
 
     return () => {
       documents.disconnect()
     }
-  }, [id, did, layer])
+  }, [id, did])
 
   const render = useCallback(
     (upwell: Upwell) => {
       const layers = upwell.layers()
       setRoot(upwell.rootLayer.id)
       setLayers(layers)
-      if (history.length === 0) getHistory()
+      getHistory()
 
       // find the authors
       const newAuthorColors = { ...authorColors }
@@ -96,9 +93,8 @@ export default function DraftView(props: DraftViewProps) {
         })
       }
     },
-    [getHistory, history.length, authorColors, setAuthorColors, props.author]
+    [getHistory, authorColors, setAuthorColors, props.author]
   )
-
   /*
   useEffect(() => {
     let interval = setInterval(() => {
@@ -168,14 +164,17 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleUpdateClick = () => {
     let root = upwell.rootLayer
+    let message = layer.message
     layer.merge(root)
+    layer.message = message
     layer.parent_id = root.id
     onChangeMade()
     setReviewMode(false)
   }
 
   let handleMergeClick = () => {
-    upwell.archive(upwell.rootLayer.id)
+    layer.commit(layer.message)
+    upwell.archive(layer.id)
     upwell.rootLayer = layer
     onChangeMade()
   }
@@ -193,7 +192,6 @@ export default function DraftView(props: DraftViewProps) {
     setLocation(url)
   }
 
-  let layer = upwell.get(did)
   const isLatest = rootId === layer.id
   return (
     <div
@@ -209,7 +207,13 @@ export default function DraftView(props: DraftViewProps) {
         layers={layers}
         id={id}
         archivedLayers={history}
-        onGetMoreClick={noMoreHistory ? undefined : getHistory}
+        onGetMoreClick={
+          noMoreHistory
+            ? undefined
+            : () => {
+                setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
+              }
+        }
       />
       <div
         id="folio"

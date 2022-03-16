@@ -98,7 +98,7 @@ export default function ClickableDraftList({
                   ]?.toString() || 'none'} inset;
               `}
             >
-              {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
+              {layer.message}
               <InfoText>
                 {authors[layer.authorId]} created{' '}
                 {relativeDate(new Date(layer.time))}

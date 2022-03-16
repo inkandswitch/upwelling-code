@@ -140,7 +140,7 @@ describe('upwell', () => {
 
     it('can be archived', async () => {
       d.archive(newLayer.id)
-      let layer = d.history(0)
+      let layer = d.history.get(0)
       assert.ok(layer)
       if (layer) {
         assert.equal(d.isArchived(layer.id), true)
@@ -154,7 +154,7 @@ describe('upwell', () => {
       let author = {id: createAuthorId(), name: 'boop'}
       let f = await Upwell.deserialize(d.serialize(), author)
       let e = await Upwell.deserialize(f.serialize(), author)
-      let layer = e.history(0)
+      let layer = e.history.get(0)
       assert.ok(layer)
     })
 

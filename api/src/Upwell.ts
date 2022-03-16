@@ -1,5 +1,3 @@
-import { LazyLayer, Layer, Subscriber } from './Layer';
-import { UpwellMetadata } from './UpwellMetadata';
 import concat from 'concat-stream'
 import tar from 'tar-stream'
 import crypto from 'crypto'
@@ -7,6 +5,9 @@ import { nanoid } from 'nanoid';
 import { Readable }  from 'stream';
 import { getRandomDessert } from 'random-desserts'
 import Debug from 'debug';
+import History from './History';
+import { Layer } from './Layer';
+import { UpwellMetadata } from './UpwellMetadata';
 
 export type AuthorId = string;
 const UNKNOWN_AUTHOR = {id: createAuthorId(), name: 'Anonymous'}
@@ -22,9 +23,10 @@ export type UpwellOptions = {
 }
 
 type MaybeLayer = {
-  id: string,
+  id: LayerId,
   binary: Uint8Array
 }
+export type LayerId = string 
 
 const debug = Debug('upwell')
 const LAYER_EXT = '.layer'
@@ -55,6 +57,10 @@ export class Upwell {
   get rootLayer() {
     let rootId = this.metadata.main
     return this.get(rootId)
+  }
+
+  get history(): History {
+    return new History(this)
   }
 
   set rootLayer(layer: Layer) {
@@ -92,17 +98,6 @@ export class Upwell {
     return newLayer
   }
 
-  history(index: number): Layer | undefined {
-    let archivedObj = this.metadata._getArchivedLayersObj()
-    let archived = this.metadata.doc.keys(archivedObj).reverse()
-    let id = archived[index]
-    let value = this.metadata.doc.value(archivedObj, id)
-    if (value && value[0] === 'boolean') {
-      let buf = this._archived.get(id)
-      if (!buf) return undefined
-      else return this._coerceLayer(id, buf)
-    }
-  }
 
   add(layer: Layer): void {
     this.set(layer.id, layer)
@@ -121,9 +116,10 @@ export class Upwell {
   }
 
   archive(id: string): void {
+    if (this.isArchived(id)) return
+    let doc = this.get(id)
     this.metadata.archive(id)
     this.subscriber()
-    let doc = this.get(id)
     this._layers.delete(id)
     this._archived.set(id, doc)
   }

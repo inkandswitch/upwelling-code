@@ -106,7 +106,7 @@ describe('save and load', () => {
       assert.equal(deserialized.layers().length, NUM / 2 + 1)
       let archived  = 0
       let layer
-      while (layer = deserialized.history(archived)) {
+      while (layer = deserialized.history.get(archived)) {
         archived++
         assert.equal(upwell.isArchived(layer.id), true)
       }
