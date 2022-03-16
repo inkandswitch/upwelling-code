@@ -1,5 +1,5 @@
 import { AuthorId } from './Upwell';
-import { Collection } from './db';
+import { Collection } from './Collection';
 
 export type CommentId = string
 export enum CommentState {

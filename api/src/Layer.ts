@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
 import { Author, AuthorId } from './Upwell';
-import { createAuthorId } from '.';
+import { Comments, createAuthorId } from '.';
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
