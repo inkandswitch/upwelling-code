@@ -1,8 +1,8 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
-import { MouseEventHandler, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'wouter'
 import Documents from '../Documents'
 import { Button } from './Button'
@@ -48,32 +48,17 @@ export const TabWrapper = (props: any) => (
 
 type Props = {
   layers: Layer[]
-  archivedLayers?: Layer[]
+  epoch: number
   id: string
-  onGetMoreClick?: MouseEventHandler<HTMLButtonElement>
+  goToDraft: Function
 }
-export default function DraftsHistory({ layers, id }: Props) {
+export default function DraftsHistory({ epoch, layers, id, goToDraft }: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(true)
   let [archivedLayers, setHistory] = useState<Layer[]>([])
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)
-
-  const getHistory = useCallback(() => {
-    let upwell = documents.get(id)
-    const moreHistory: Layer[] = []
-    for (let i = 0; i < fetchSize; i++) {
-      let value = upwell.history.get(i)
-      if (value) moreHistory.push(value)
-    }
-    setNoMoreHistory(upwell.history.length <= fetchSize)
-    setHistory(moreHistory)
-  }, [id, fetchSize])
-
-  function goToDraft(did: string) {
-    window.location.hash = did
-  }
 
   function handleTabClick(tab: Tab) {
     return () => {
@@ -82,8 +67,15 @@ export default function DraftsHistory({ layers, id }: Props) {
   }
 
   useEffect(() => {
-    getHistory()
-  }, [getHistory])
+    let upwell = documents.get(id)
+    const moreHistory: Layer[] = []
+    for (let i = 0; i < fetchSize; i++) {
+      let value = upwell.history.get(i)
+      if (value) moreHistory.push(value)
+    }
+    setNoMoreHistory(upwell.history.length <= fetchSize)
+    setHistory(moreHistory)
+  }, [id, fetchSize, epoch])
 
   function onGetMoreClick() {
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)

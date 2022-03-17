@@ -1,12 +1,12 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React from 'react'
-import { Upwell, Layer, Comment, CommentState } from 'api'
+import { Upwell, LayerMetadata, Comment, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
 type CommentViewProps = {
   upwell: Upwell
-  layer: Layer
+  layer: LayerMetadata
   comment: Comment
   mark: { start: number; end: number }
   colors?: AuthorColorsType
@@ -17,7 +17,8 @@ export function CommentView(props: CommentViewProps) {
   let authorName = upwell.getAuthorName(comment.author)
 
   let archiveComment = () => {
-    layer.comments.archive(comment)
+    let draft = upwell.get(layer.id)
+    draft.comments.archive(comment)
   }
 
   return (
@@ -61,7 +62,7 @@ export function CommentView(props: CommentViewProps) {
 }
 
 type CommentSidebarProps = {
-  layer: Layer
+  layer: LayerMetadata
   upwell: Upwell
   colors?: AuthorColorsType
   onChange: () => void
@@ -69,13 +70,14 @@ type CommentSidebarProps = {
 
 export default function CommentSidebar(props: CommentSidebarProps) {
   let { upwell, layer, colors } = props
-  let comments = layer.comments.objects()
+  let draft = upwell.get(layer.id)
+  let comments = draft.comments.objects()
 
   let commentObjs = Object.keys(comments)
     .map((id) => {
       let comment = comments[id]
 
-      let mark = layer.marks.find(
+      let mark = draft.marks.find(
         (m: any) => m.type === 'comment' && m.value === id
       )
 

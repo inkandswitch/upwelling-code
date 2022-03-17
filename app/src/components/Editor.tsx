@@ -1,12 +1,12 @@
 /** @jsxImportSource @emotion/react */
 //import React, { useEffect, useRef, useState } from 'react'
-import React, { useRef } from 'react'
-import { Layer, Author } from 'api'
+import React, { useState, useRef } from 'react'
+import { Upwell, Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
-import { useProseMirror, ProseMirror } from 'use-prosemirror'
+import { ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
 //import { MarkType, Slice } from 'prosemirror-model'
 import { MarkType } from 'prosemirror-model'
@@ -22,7 +22,8 @@ import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
 
 type Props = {
-  editableLayer: Layer
+  upwell: Upwell
+  editableLayerId: string
   author: Author
   onChange: any
   colors: AuthorColorsType
@@ -94,10 +95,10 @@ let prosemirrorToAutomerge = (
 }
 
 export function Editor(props: Props) {
-  let { editableLayer, onChange, author, colors } = props
+  let { upwell, editableLayerId, onChange, author, colors } = props
 
   function getState(pmDoc: any) {
-    const opts: Parameters<typeof useProseMirror>[0] = {
+    return EditorState.create({
       schema,
       doc: pmDoc,
       plugins: [
@@ -115,6 +116,7 @@ export function Editor(props: Props) {
               contextMenu: HTMLDivElement,
               buttonEl: HTMLButtonElement
             ) => {
+              let editableLayer = upwell.get(editableLayerId)
               let { from, to } = prosemirrorToAutomerge(
                 view.state.selection,
                 editableLayer
@@ -135,13 +137,13 @@ export function Editor(props: Props) {
           'Mod-i': toggleItalic,
         }),
       ],
-    }
-    return opts
+    })
   }
 
+  let editableLayer = upwell.get(editableLayerId)
   let atjsonLayer = UpwellSource.fromRaw(editableLayer, colors)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
-  const [state, setState] = useProseMirror(getState(pmDoc))
+  const [state, setState] = useState<EditorState>(getState(pmDoc))
   //const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
 
   const viewRef = useRef(null)

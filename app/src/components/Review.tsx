@@ -4,7 +4,7 @@ import { css } from '@emotion/react/macro'
 import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
-import { Layer } from 'api'
+import { Upwell, Layer } from 'api'
 import { textCSS } from './Editor'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
@@ -16,16 +16,14 @@ type ReviewState = {
 }
 
 export function ReviewView(props: {
-  root?: Layer
-  visible: Layer[]
+  upwell: Upwell
+  visible: string[]
   colors?: AuthorColorsType
 }) {
-  const { root, visible } = props
+  const { upwell, visible } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      if (!root) return
-
       if (!visible.length) {
         let atjsonLayer = new UpwellSource({
           content: '',
@@ -36,12 +34,17 @@ export function ReviewView(props: {
       }
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
-      let editsLayer = Layer.mergeWithEdits(documents.author, root, ...visible)
+      let rest = visible.map((id) => upwell.get(id))
+      let editsLayer = Layer.mergeWithEdits(
+        documents.author,
+        upwell.rootLayer,
+        ...rest
+      )
       let atjsonLayer = UpwellSource.fromRaw(editsLayer)
 
       setState({ atjsonLayer })
     },
-    [root, visible]
+    [upwell, visible]
   )
 
   useEffect(() => {

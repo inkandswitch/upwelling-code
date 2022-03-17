@@ -1,4 +1,4 @@
-import { Author, RealTimeDraft, Upwell, Layer, createAuthorId } from 'api'
+import { Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
@@ -53,8 +53,10 @@ export class Documents {
     }
   }
 
-  connect(draft: Layer): RealTimeDraft {
+  connect(id: string, did: string): RealTimeDraft {
     if (this.rtc) return this.rtc
+    let upwell = this.get(id)
+    let draft = upwell.get(did)
     this.rtc = new RealTimeDraft(draft)
     return this.rtc
   }
