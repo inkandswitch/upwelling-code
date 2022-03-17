@@ -4,7 +4,7 @@ import React from 'react'
 import { Layer, Author } from 'api'
 import { ReviewView } from './Review'
 import { AuthorColorsType } from './ListDocuments'
-import { EditorView } from './Editor'
+import { Editor } from './Editor'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -19,11 +19,11 @@ type Props = {
   onChange: any
   author: Author
   reviewMode: boolean
-  colors?: AuthorColorsType
+  colors: AuthorColorsType
 }
 
 export function EditReviewView(props: Props) {
-  const { id, root, visible, onChange, reviewMode, colors } = props
+  const { id, root, visible, onChange, reviewMode, colors, author } = props
 
   let upwell = documents.get(id)
   // visible.length === 0 or visible.length > 1
@@ -33,11 +33,12 @@ export function EditReviewView(props: Props) {
   let component = reviewView
   if (visible.length === 1 && !upwell.isArchived(visible[0].id)) {
     let textArea = (
-      <EditorView
+      <Editor
+        author={author}
         colors={colors}
         onChange={onChange}
         editableLayer={visible[0]}
-      ></EditorView>
+      ></Editor>
     )
     component = (
       <React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>

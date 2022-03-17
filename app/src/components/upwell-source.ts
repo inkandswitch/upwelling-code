@@ -1,6 +1,7 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
 import { Layer } from 'api'
+import { AuthorColorsType } from './ListDocuments'
 
 export class Insertion extends InlineAnnotation<{
   author?: string
@@ -44,16 +45,21 @@ export default class UpwellSource extends Document {
   static schema = [Comment, Deletion, Emphasis, Insertion, Paragraph, Strong]
 
   // This converts an upwell/automerge layer to an atjson document.
-  static fromRaw(layer: Layer) {
+  static fromRaw(layer: Layer, colors?: AuthorColorsType) {
     // first convert marks to annotations
     let marks = layer.marks.map((m: any) => {
       let attrs: any = {}
-      try {
-        if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
-      } catch {
-        console.log(
-          'we should really fix the thing where I stuffed mark attrs into a json string lol'
-        )
+      if (m.type === 'comment') {
+        attrs = layer.comments.get(m.value)
+        if (colors) attrs.authorColor = colors[attrs.author]
+      } else {
+        try {
+          if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+        } catch {
+          console.log(
+            'we should really fix the thing where I stuffed mark attrs into a json string lol'
+          )
+        }
       }
 
       // I wonder if there's a (good) way to preserve the automerge identity of
