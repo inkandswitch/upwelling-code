@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Link } from 'wouter'
 import Documents from '../Documents'
 import { Button } from './Button'
-import ClickableDraftList from './ClickableDraftList'
+import ClickableDraftList, { AuthorColorsType } from './ClickableDraftList'
 
 let documents = Documents()
 
@@ -46,13 +46,38 @@ export const TabWrapper = (props: any) => (
   />
 )
 
+// only get the layers you can see:
+// - your private layers
+// - shared layers
+function getYourLayers(layers: Layer[], rootId: string) {
+  const yourId = documents.author.id
+
+  return layers.filter((l) => {
+    return (
+      // keep it if it isn't the root layer
+      l.id !== rootId ||
+      // keep it if it's someone else's layer and it's shared
+      (l.id !== yourId && l.shared)
+    )
+  })
+}
+
 type Props = {
   layers: Layer[]
   epoch: number
   id: string
+  did: string
   goToDraft: Function
+  colors?: AuthorColorsType
 }
-export default function DraftsHistory({ epoch, layers, id, goToDraft }: Props) {
+export default function DraftsHistory({
+  epoch,
+  layers,
+  id,
+  did,
+  goToDraft,
+  colors = {},
+}: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(true)
@@ -79,6 +104,16 @@ export default function DraftsHistory({ epoch, layers, id, goToDraft }: Props) {
 
   function onGetMoreClick() {
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
+  }
+
+  const handleShareClick = (layer: Layer) => {
+    if (
+      // eslint-disable-next-line no-restricted-globals
+      confirm("Do you want to share your layer? it can't be unshared.")
+    ) {
+      let upwell = documents.get(id)
+      upwell.share(layer.id)
+    }
   }
 
   return (
@@ -148,8 +183,11 @@ export default function DraftsHistory({ epoch, layers, id, goToDraft }: Props) {
               width: 206px;
             `}
             id={id}
+            did={did}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-            layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
+            onShareClick={handleShareClick}
+            layers={getYourLayers(layers, upwell.rootLayer.id)}
+            colors={colors}
           />
         ) : (
           <>
@@ -158,8 +196,10 @@ export default function DraftsHistory({ epoch, layers, id, goToDraft }: Props) {
                 width: 206px;
               `}
               id={id}
+              did={did}
               onLayerClick={(layer: Layer) => goToDraft(layer.id)}
               layers={archivedLayers}
+              colors={colors}
             />
 
             {!noMoreHistory && (
