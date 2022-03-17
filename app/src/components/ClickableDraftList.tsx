@@ -65,7 +65,8 @@ type Props = {
   layers: Layer[]
   isBottom?: boolean
   colors?: AuthorColorsType
-}
+} & React.ClassAttributes<HTMLDivElement> &
+  React.HTMLAttributes<HTMLDivElement>
 
 export default function ClickableDraftList({
   onLayerClick,
@@ -73,11 +74,12 @@ export default function ClickableDraftList({
   layers,
   isBottom = false,
   colors = {},
+  ...props
 }: Props) {
   let upwell = documents.get(id)
   let authors = upwell.metadata.getAuthors()
   return (
-    <div css={css``}>
+    <div {...props}>
       {layers
         .sort((a, b) => b.time - a.time)
         .map((layer: Layer, index) => {

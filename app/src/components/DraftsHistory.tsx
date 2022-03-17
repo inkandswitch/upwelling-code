@@ -69,34 +69,39 @@ export default function DraftsHistory({
   }
 
   return (
-    <>
-      <Button
-        css={css`
-          font-size: 24px;
-          color: gray;
-          top: 30px;
-          left: 30px;
-          background: transparent;
-          position: absolute;
-          z-index: 100;
-        `}
-        onClick={() => setExpanded(true)}
-      >
-        »
-      </Button>
+    <div
+      css={css`
+        display: flex;
+        flex-direction: row;
+      `}
+    >
+      {!isExpanded && (
+        <Button
+          css={css`
+            font-size: 24px;
+            color: #00000080;
+            top: 30px;
+            left: 14px;
+            background: transparent;
+            position: absolute;
+            z-index: 100;
+          `}
+          onClick={() => setExpanded(true)}
+        >
+          »
+        </Button>
+      )}
       <div
         id="sidebar"
         css={css`
           background: white;
           margin: 30px;
           align-self: flex-start;
-          width: 300px;
           align-items: center;
           border-bottom: 3px solid transparent;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          ${isExpanded ? 'flex: 1;' : 'flex: 0; '}
           overflow: hidden;
-          max-width: 300px;
-          transition: max-width 0.3s ease-out;
-          ${!isExpanded ? `max-width: 0;` : ''}
           z-index: 101;
         `}
       >
@@ -116,7 +121,7 @@ export default function DraftsHistory({
           <Button
             css={css`
               font-size: 24px;
-              color: gray;
+              color: #00000052;
             `}
             onClick={() => setExpanded(false)}
           >
@@ -125,6 +130,9 @@ export default function DraftsHistory({
         </TabWrapper>
         {tab === Tab.DRAFTS ? (
           <ClickableDraftList
+            css={css`
+              width: 206px;
+            `}
             id={id}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
             layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
@@ -132,6 +140,9 @@ export default function DraftsHistory({
         ) : (
           <>
             <ClickableDraftList
+              css={css`
+                width: 206px;
+              `}
               id={id}
               onLayerClick={(layer: Layer) => goToDraft(layer.id)}
               layers={archivedLayers}
@@ -143,6 +154,6 @@ export default function DraftsHistory({
           </>
         )}
       </div>
-    </>
+    </div>
   )
 }
