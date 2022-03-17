@@ -13,7 +13,6 @@ import deterministicColor from '../color'
 import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
-import A from './A'
 import CommentSidebar from './CommentSidebar'
 
 let documents = Documents()

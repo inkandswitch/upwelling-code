@@ -51,9 +51,7 @@ export default class UpwellSource extends Document {
       let attrs: any = {}
       if (m.type === 'comment') {
         attrs = layer.comments.get(m.value)
-        console.log(colors, attrs)
         if (colors) attrs.authorColor = colors[attrs.author]
-        console.log(attrs)
       } else {
         try {
           if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)

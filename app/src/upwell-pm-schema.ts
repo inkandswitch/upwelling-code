@@ -13,14 +13,14 @@ export const nodes = {
 let comment: MarkSpec = {
   attrs: {
     id: {},
-    authorColor: { default: 'green' },
+    authorColor: { default: 'rgba(0,255,0,0.5)' },
+    class: {},
   },
   inclusive: false,
   toDOM(node: any) {
-    console.log('node attrs?', node.attrs)
-    let { id, authorColor } = node.attrs
+    let { id, authorColor, class: cssClass } = node.attrs
     let style = `background-color: ${authorColor}`
-    return ['span', { id, style }, 0]
+    return ['span', { id, style, class: cssClass }, 0]
   },
 }
 

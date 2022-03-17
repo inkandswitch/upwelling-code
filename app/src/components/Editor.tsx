@@ -94,8 +94,6 @@ let prosemirrorToAutomerge = (
 export function Editor(props: Props) {
   let { editableLayer, onChange, author, colors } = props
 
-  console.trace('in editor with colors?', colors)
-
   function getState(pmDoc: any) {
     const opts: Parameters<typeof useProseMirror>[0] = {
       schema,
@@ -142,10 +140,13 @@ export function Editor(props: Props) {
   let atjsonLayer = UpwellSource.fromRaw(editableLayer, colors)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
   const [state, setState] = useProseMirror(getState(pmDoc))
-  const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
+  //const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
 
   const viewRef = useRef(null)
 
+  /*
+   * this was breaking things badly in strange ways, so just commenting out for the moment.
+   *
   useEffect(() => {
     editableLayer.subscribe((doc: Layer) => {
       let change: any = doc.getChanges(heads)
@@ -156,12 +157,13 @@ export function Editor(props: Props) {
 
       let atjsonLayer = UpwellSource.fromRaw(doc)
       let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+
+      let { selection } = state
+
       // TODO: transform automerge to prosemirror transaction
-      let transaction = state.tr.replace(
-        0,
-        state.doc.content.size,
-        new Slice(pmDoc.content, 0, 0)
-      )
+      let transaction = state.tr
+        .replace(0, state.doc.content.size, new Slice(pmDoc.content, 0, 0))
+        .setSelection(selection)
       let newState = state.apply(transaction)
       setState(newState)
       setHeads(doc.doc.getHeads())
@@ -170,6 +172,7 @@ export function Editor(props: Props) {
       editableLayer.subscribe(() => {})
     }
   })
+  */
 
   let dispatchHandler = (transaction: any) => {
     for (let step of transaction.steps) {
