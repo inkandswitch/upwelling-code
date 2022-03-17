@@ -100,7 +100,8 @@ export default function DraftsHistory({
           align-items: center;
           border-bottom: 3px solid transparent;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          ${isExpanded ? 'flex: 1;' : 'flex: 0; '}
+          max-width: 210px;
+          ${!isExpanded ? `max-width: 0;` : ''}
           overflow: hidden;
           z-index: 101;
         `}
