@@ -15,9 +15,8 @@ export default function App() {
   async function newUpwell() {
     let id = nanoid()
     let doc = await documents.create(id, documents.author)
-    setLocation('/document/' + doc.id + '/draft/latest')
+    setLocation('/document/' + doc.id + '#' + doc.layers()[0].id)
   }
-
 
   return (
     <>
@@ -35,7 +34,7 @@ export default function App() {
         }}
       </Route>
 
-      <Route path="/document/:id/draft/:did">
+      <Route path="/document/:id">
         {(params) => {
           let props = {
             author: documents.author,

@@ -1,9 +1,10 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
-import { useState } from 'react'
-import { Link, useLocation } from 'wouter'
+import { MouseEventHandler, useState } from 'react'
+import { Link } from 'wouter'
 import Documents from '../Documents'
+import { Button } from './Button'
 import ClickableDraftList from './ClickableDraftList'
 
 let documents = Documents()
@@ -46,70 +47,114 @@ type Props = {
   layers: Layer[]
   archivedLayers?: Layer[]
   id: string
+  onGetMoreClick?: MouseEventHandler<HTMLButtonElement>
 }
 export default function DraftsHistory({
   layers,
   archivedLayers = [],
   id,
+  onGetMoreClick,
 }: Props) {
   const upwell = documents.get(id)
-  const [, setLocation] = useLocation()
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
+  const [isExpanded, setExpanded] = useState<boolean>(true)
 
   function goToDraft(did: string) {
-    let url = `/document/${id}/draft/${did}`
-    setLocation(url)
+    window.location.hash = did
   }
   function handleTabClick(tab: Tab) {
     return () => {
       setTab(tab)
     }
   }
+
   return (
     <div
-      id="sidebar"
       css={css`
-        background: white;
-        margin: 30px;
-        align-self: flex-start;
+        display: flex;
+        flex-direction: row;
       `}
     >
-      <TabWrapper>
-        <SidebarTab
-          onClick={handleTabClick(Tab.DRAFTS)}
-          isActive={tab === Tab.DRAFTS}
+      {!isExpanded && (
+        <Button
+          css={css`
+            font-size: 24px;
+            color: #00000080;
+            top: 30px;
+            left: 14px;
+            background: transparent;
+            position: absolute;
+            z-index: 100;
+          `}
+          onClick={() => setExpanded(true)}
         >
-          Drafts
-        </SidebarTab>
-        <SidebarTab
-          onClick={handleTabClick(Tab.HISTORY)}
-          isActive={tab === Tab.HISTORY}
-        >
-          History
-        </SidebarTab>
-      </TabWrapper>
-      {tab === Tab.DRAFTS ? (
-        <ClickableDraftList
-          id={id}
-          onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-          layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
-        />
-      ) : (
-        <>
-          <div
-            css={css`
-              padding: 10px;
-            `}
+          »
+        </Button>
+      )}
+      <div
+        id="sidebar"
+        css={css`
+          background: white;
+          margin: 30px;
+          align-self: flex-start;
+          align-items: center;
+          border-bottom: 3px solid transparent;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          max-width: 210px;
+          ${!isExpanded ? `max-width: 0;` : ''}
+          overflow: hidden;
+          z-index: 101;
+        `}
+      >
+        <TabWrapper>
+          <SidebarTab
+            onClick={handleTabClick(Tab.DRAFTS)}
+            isActive={tab === Tab.DRAFTS}
           >
-            Put history here!
-          </div>
+            Drafts
+          </SidebarTab>
+          <SidebarTab
+            onClick={handleTabClick(Tab.HISTORY)}
+            isActive={tab === Tab.HISTORY}
+          >
+            History
+          </SidebarTab>
+          <Button
+            css={css`
+              font-size: 24px;
+              color: #00000052;
+            `}
+            onClick={() => setExpanded(false)}
+          >
+            «
+          </Button>
+        </TabWrapper>
+        {tab === Tab.DRAFTS ? (
           <ClickableDraftList
+            css={css`
+              width: 206px;
+            `}
             id={id}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-            layers={archivedLayers}
+            layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
           />
-        </>
-      )}
+        ) : (
+          <>
+            <ClickableDraftList
+              css={css`
+                width: 206px;
+              `}
+              id={id}
+              onLayerClick={(layer: Layer) => goToDraft(layer.id)}
+              layers={archivedLayers}
+            />
+
+            {onGetMoreClick && (
+              <Button onClick={onGetMoreClick}>load more</Button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

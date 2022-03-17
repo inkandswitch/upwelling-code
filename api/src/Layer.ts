@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
+import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState, decodeChange } from 'automerge-wasm-pack'
 import { Author, AuthorId } from './Upwell'
 import { Comments, createAuthorId, CommentState } from '.'
 
@@ -104,6 +104,10 @@ export class Layer {
     return this._getValue('author') as AuthorId
   }
 
+  set title(value: string) {
+    this.doc.set(ROOT, 'title', value)
+  }
+
   get title(): string {
     return this._getAutomergeText('title')
   }
@@ -117,12 +121,16 @@ export class Layer {
   }
 
   receiveSyncMessage(state: SyncState, message: SyncMessage) {
-    if (this.subscriber) this.subscriber(this)
     this.doc.receiveSyncMessage(state, message)
+    if (this.subscriber) this.subscriber(this)
   }
 
   subscribe(subscriber: Subscriber) {
     this.subscriber = subscriber
+  }
+
+  getChanges(heads: Heads) {
+    return this.doc.getChanges(heads).map(decodeChange)
   }
 
   insertAt(position: number, value: string | Array<string>, prop = 'text') {
@@ -226,6 +234,7 @@ export class Layer {
 
   merge(theirs: Layer) {
     this.doc.merge(theirs.doc)
+    if (this.subscriber) this.subscriber(this)
   }
 
   static mergeWithEdits(author: Author, ours: Layer, ...theirs: Layer[]) {
@@ -301,7 +310,7 @@ export class Layer {
     doc.set(ROOT, 'shared', false, 'boolean')
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
-    doc.set_object(ROOT, 'title', '')
+    doc.set(ROOT, 'title', '')
     doc.set_object(ROOT, 'comments', {})
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, 'text', ' ')

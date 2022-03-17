@@ -5,6 +5,9 @@ import { Layer, Author } from 'api'
 import { ReviewView } from './Review'
 import { AuthorColorsType } from './ListDocuments'
 import { Editor } from './Editor'
+import Documents from '../Documents'
+
+let documents = Documents()
 
 // visible 0 or more layers NOT including root
 // root
@@ -20,19 +23,15 @@ type Props = {
 }
 
 export function EditReviewView(props: Props) {
-  const { root, visible, onChange, reviewMode, colors, author } = props
-  console.log('rendering EditReviewView')
-  if (!root) {
-    console.log('no root')
-    return <div></div>
-  }
+  const { id, root, visible, onChange, reviewMode, colors, author } = props
 
+  let upwell = documents.get(id)
   // visible.length === 0 or visible.length > 1
   let reviewView = (
     <ReviewView root={root} visible={visible} colors={colors}></ReviewView>
   )
   let component = reviewView
-  if (visible.length === 1) {
+  if (visible.length === 1 && !upwell.isArchived(visible[0].id)) {
     let textArea = (
       <Editor
         author={author}

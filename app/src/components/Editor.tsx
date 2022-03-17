@@ -1,12 +1,13 @@
 /** @jsxImportSource @emotion/react */
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
+import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { MarkType } from 'prosemirror-model'
+import { MarkType, Slice } from 'prosemirror-model'
 import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState, Transaction } from 'prosemirror-state'
@@ -17,14 +18,15 @@ import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import ProsemirrorRenderer from '../ProsemirrorRenderer'
 import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
-import { HCLColor } from 'd3-color'
 
 type Props = {
   editableLayer: Layer
   author: Author
   onChange: any
-  colors?: AuthorColorsType
+  colors: AuthorColorsType
 }
+
+let documents = Documents()
 
 const toggleBold = toggleMarkCommand(schema.marks.strong)
 const toggleItalic = toggleMarkCommand(schema.marks.em)
@@ -94,52 +96,80 @@ export function Editor(props: Props) {
 
   console.trace('in editor with colors?', colors)
 
-  let atjsonLayer = UpwellSource.fromRaw(editableLayer, colors)
-  let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+  function getState(pmDoc: any) {
+    const opts: Parameters<typeof useProseMirror>[0] = {
+      schema,
+      doc: pmDoc,
+      plugins: [
+        contextMenu([
+          {
+            view: () => {
+              let commentButton = document.createElement('button')
+              commentButton.innerText = '💬'
+              return commentButton
+            },
 
-  const opts: Parameters<typeof useProseMirror>[0] = {
-    schema,
-    doc: pmDoc,
-    plugins: [
-      contextMenu([
-        {
-          view: () => {
-            let commentButton = document.createElement('button')
-            commentButton.innerText = '💬'
-            return commentButton
+            handleClick: (
+              e: any,
+              view: EditorView,
+              contextMenu: HTMLDivElement,
+              buttonEl: HTMLButtonElement
+            ) => {
+              let { from, to } = prosemirrorToAutomerge(
+                view.state.selection,
+                editableLayer
+              )
+              let message = prompt('what is your comment')
+              editableLayer.insertComment(from, to, message!, author.id)
+              contextMenu.style.display = 'none'
+            },
           },
-
-          handleClick: (
-            e: any,
-            view: EditorView,
-            contextMenu: HTMLDivElement,
-            buttonEl: HTMLButtonElement
-          ) => {
-            let { from, to } = prosemirrorToAutomerge(
-              view.state.selection,
-              editableLayer
-            )
-            let message = prompt('what is your comment')
-            editableLayer.insertComment(from, to, message!, author.id)
-            contextMenu.style.display = 'none'
-          },
-        },
-      ]),
-      history(),
-      keymap({
-        ...baseKeymap,
-        'Mod-z': undo,
-        'Mod-y': redo,
-        'Mod-Shift-z': redo,
-        'Mod-b': toggleBold,
-        'Mod-i': toggleItalic,
-      }),
-    ],
+        ]),
+        history(),
+        keymap({
+          ...baseKeymap,
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo,
+          'Mod-b': toggleBold,
+          'Mod-i': toggleItalic,
+        }),
+      ],
+    }
+    return opts
   }
 
-  const [state, setState] = useProseMirror(opts)
+  let atjsonLayer = UpwellSource.fromRaw(editableLayer, colors)
+  let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+  const [state, setState] = useProseMirror(getState(pmDoc))
+  const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
 
   const viewRef = useRef(null)
+
+  useEffect(() => {
+    editableLayer.subscribe((doc: Layer) => {
+      let change: any = doc.getChanges(heads)
+      if (change.length) {
+        let [authorId] = change[0].actor.split('0000')
+        if (authorId === documents.author.id) return
+      }
+
+      let atjsonLayer = UpwellSource.fromRaw(doc)
+      let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+      // TODO: transform automerge to prosemirror transaction
+      let transaction = state.tr.replace(
+        0,
+        state.doc.content.size,
+        new Slice(pmDoc.content, 0, 0)
+      )
+      let newState = state.apply(transaction)
+      setState(newState)
+      setHeads(doc.doc.getHeads())
+    })
+    return () => {
+      editableLayer.subscribe(() => {})
+    }
+  })
 
   let dispatchHandler = (transaction: any) => {
     for (let step of transaction.steps) {
@@ -183,14 +213,11 @@ export function Editor(props: Props) {
     }
 
     onChange(editableLayer)
-
     let newState = state.apply(transaction)
     setState(newState)
   }
 
-  let color: HCLColor | string
-  if (colors) color = colors[editableLayer.authorId]
-  else color = 'black'
+  let color = colors[editableLayer.authorId]
   return (
     <ProseMirror
       state={state}

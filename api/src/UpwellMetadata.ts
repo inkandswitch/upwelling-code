@@ -21,7 +21,7 @@ export class UpwellMetadata {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id)
     doc.set(ROOT, 'main_id', main_id)
-    doc.set_object(ROOT, 'archived', {})
+    doc.set_object(ROOT, 'archived', [])
     doc.set_object(ROOT, 'authors', {})
     let meta = new UpwellMetadata(doc)
     meta.addAuthor(author)
@@ -32,8 +32,8 @@ export class UpwellMetadata {
     let value = this.doc.value(ROOT, 'archived')
     let map
     if (!value) {
-      map = this.doc.set_object(ROOT, 'archived', {})
-    } else if (value[0] === 'map') {
+      map = this.doc.set_object(ROOT, 'archived', [])
+    } else if (value[0] === 'list') {
       map = value[1]
     } else {
       throw new Error('Archived property not a map')
@@ -42,18 +42,19 @@ export class UpwellMetadata {
   }
 
   isArchived(id: string): boolean {
-    let map = this._getArchivedLayersObj()
-    let maybe = this.doc.value(map, id)
-    if (maybe && maybe[0] === 'boolean') {
-      return maybe[1]
+    let list = this.doc.materialize('/archived')
+    if (list) {
+      let val = list.find(_id => _id === id) !== undefined
+      return val
     } else {
       return false
     }
   }
 
   archive(id: string) {
-    let map = this._getArchivedLayersObj()
-    this.doc.set(map, id, true, 'boolean')
+    let list = this._getArchivedLayersObj()
+    let len = this.doc.length(list)
+    this.doc.insert(list, len, id)
   }
 
   addAuthor(author: Author) {

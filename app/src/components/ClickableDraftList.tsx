@@ -65,7 +65,8 @@ type Props = {
   layers: Layer[]
   isBottom?: boolean
   colors?: AuthorColorsType
-}
+} & React.ClassAttributes<HTMLDivElement> &
+  React.HTMLAttributes<HTMLDivElement>
 
 export default function ClickableDraftList({
   onLayerClick,
@@ -73,22 +74,20 @@ export default function ClickableDraftList({
   layers,
   isBottom = false,
   colors = {},
+  ...props
 }: Props) {
   let upwell = documents.get(id)
   let authors = upwell.metadata.getAuthors()
   return (
-    <div css={css``}>
+    <div {...props}>
       {layers
         .sort((a, b) => b.time - a.time)
         .map((layer: Layer, index) => {
-          const isMerged = upwell.isArchived(layer.id)
-          if (isMerged) return <div></div>
           return (
             <FileTab
               key={layer.id}
               index={index}
               isBottom={isBottom}
-              isMerged={isMerged}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -100,9 +99,10 @@ export default function ClickableDraftList({
                   ]?.toString() || 'none'} inset;
               `}
             >
-              {layer.id === upwell.rootLayer.id ? 'Latest' : layer.message}
+              {layer.message}
               <InfoText>
-                {authors[layer.authorId]} created {relativeDate(new Date(layer.time))}
+                {authors[layer.authorId]} created{' '}
+                {relativeDate(new Date(layer.time))}
               </InfoText>
             </FileTab>
           )
