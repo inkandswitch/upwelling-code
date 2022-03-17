@@ -18,7 +18,7 @@ type Props = {
   visible: string[]
   onChange: any
   author: Author
-  epoch: string
+  epoch: number
   reviewMode: boolean
   colors: AuthorColorsType
 }
