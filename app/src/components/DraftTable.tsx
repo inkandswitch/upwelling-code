@@ -68,7 +68,6 @@ export default function DraftList(props: DraftListProps) {
       </div>
       <ClickableDraftList
         id={id}
-        did={''}
         onLayerClick={(layer: Layer) => goToDraft(layer.id)}
         layers={layers.filter((l) => !upwell.isArchived(l.id))}
       />
