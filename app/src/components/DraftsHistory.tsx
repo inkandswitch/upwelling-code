@@ -1,4 +1,5 @@
 /** @jsxImportSource @emotion/react */
+import { useEffect, useCallback } from 'react'
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
 import { MouseEventHandler, useState } from 'react'
@@ -8,6 +9,8 @@ import { Button } from './Button'
 import ClickableDraftList from './ClickableDraftList'
 
 let documents = Documents()
+
+const HISTORY_FETCH_SIZE = 5
 
 enum Tab {
   DRAFTS,
@@ -49,23 +52,41 @@ type Props = {
   id: string
   onGetMoreClick?: MouseEventHandler<HTMLButtonElement>
 }
-export default function DraftsHistory({
-  layers,
-  archivedLayers = [],
-  id,
-  onGetMoreClick,
-}: Props) {
+export default function DraftsHistory({ layers, id }: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(true)
+  let [archivedLayers, setHistory] = useState<Layer[]>([])
+  let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
+  let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)
+
+  const getHistory = useCallback(() => {
+    let upwell = documents.get(id)
+    const moreHistory: Layer[] = []
+    for (let i = 0; i < fetchSize; i++) {
+      let value = upwell.history.get(i)
+      if (value) moreHistory.push(value)
+    }
+    setNoMoreHistory(upwell.history.length <= fetchSize)
+    setHistory(moreHistory)
+  }, [id, fetchSize])
 
   function goToDraft(did: string) {
     window.location.hash = did
   }
+
   function handleTabClick(tab: Tab) {
     return () => {
       setTab(tab)
     }
+  }
+
+  useEffect(() => {
+    getHistory()
+  }, [getHistory])
+
+  function onGetMoreClick() {
+    setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
   }
 
   return (
@@ -149,7 +170,7 @@ export default function DraftsHistory({
               layers={archivedLayers}
             />
 
-            {onGetMoreClick && (
+            {!noMoreHistory && (
               <Button onClick={onGetMoreClick}>load more</Button>
             )}
           </>
