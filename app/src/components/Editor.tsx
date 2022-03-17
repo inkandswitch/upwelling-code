@@ -6,7 +6,7 @@ import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
-import ProseMirror from './ProseMirror'
+import { ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
 //import { MarkType, Slice } from 'prosemirror-model'
 import { MarkType } from 'prosemirror-model'
