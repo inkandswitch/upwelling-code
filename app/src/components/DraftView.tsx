@@ -15,6 +15,7 @@ import { useLocation } from 'wouter'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
 import A from './A'
+import CommentSidebar from './CommentSidebar'
 
 let documents = Documents()
 
@@ -136,6 +137,10 @@ export default function DraftView(props: DraftViewProps) {
       debouncedOnTextChange()
       setSyncState(SYNC_STATE.LOADING)
     }
+  }
+
+  let onCommentChange = () => {
+    console.log('comment change!')
   }
 
   /*
@@ -281,6 +286,7 @@ export default function DraftView(props: DraftViewProps) {
           visible={[layer]}
           id={id}
           author={author}
+          colors={authorColors}
           reviewMode={reviewMode}
           onChange={onTextChange}
         />
@@ -288,13 +294,18 @@ export default function DraftView(props: DraftViewProps) {
       <div
         id="comments"
         css={css`
-          background: black;
+          width: 20vw;
+          background: rgba(0, 0, 0, 0.2);
           color: white;
-          opacity: 0.2;
-          padding: 60px;
+          padding: 10px;
         `}
       >
-        Comments
+        <CommentSidebar
+          layer={layer}
+          onChange={onCommentChange}
+          upwell={upwell}
+          colors={authorColors}
+        />
       </div>
     </div>
   )

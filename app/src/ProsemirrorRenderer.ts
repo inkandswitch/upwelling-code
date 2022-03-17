@@ -22,7 +22,15 @@ export default class ProsemirrorRenderer extends Renderer {
       })
     } else if (annotation.type === 'comment') {
       // TK
-      return annotationChildren
+      return annotationChildren.map((c: any) => {
+        console.log('comment anntoation', annotation)
+        return c.mark([
+          schema.mark('comment', {
+            id: annotation.id,
+            authorColor: annotation.attributes.authorColor,
+          }),
+        ])
+      })
     } else {
       if (annotationChildren.length === 0) annotationChildren = schema.text(' ')
 

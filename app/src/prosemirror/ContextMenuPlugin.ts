@@ -19,9 +19,9 @@ class ContextMenu {
 
     for (let button of buttons) {
       let buttonEl = button.view()
-      buttonEl.addEventListener('click', (e: any) =>
-        button.handleClick(e, view)
-      )
+      buttonEl.addEventListener('click', (e: any) => {
+        button.handleClick(e, view, this.contextMenu, buttonEl)
+      })
       this.contextMenu.appendChild(buttonEl)
     }
 
@@ -36,8 +36,9 @@ class ContextMenu {
       lastState &&
       lastState.doc.eq(state.doc) &&
       lastState.selection.eq(state.selection)
-    )
+    ) {
       return
+    }
 
     // Hide the menu if the selection is empty
     if (state.selection.empty) {
@@ -45,27 +46,19 @@ class ContextMenu {
       return
     }
 
+    this.contextMenu.style.display = 'block'
+
     // Otherwise, reposition it and update its content
-    this.contextMenu.style.display = ''
     let { from, to } = state.selection
     // These are in screen coordinates
     let start = view.coordsAtPos(from),
       end = view.coordsAtPos(to)
-    // The box in which the menu is positioned, to use as base
-    if (!this.contextMenu.offsetParent) {
-      this.contextMenu.style.display = 'none'
-      this.contextMenu.style.position = 'relative'
-      return
-    }
-    let box = this.contextMenu.offsetParent.getBoundingClientRect()
     // Find a center-ish x position from the selection endpoints (when
     // crossing lines, end may be more to the left)
-    let left =
-      Math.max((start.left + end.left) / 2, start.left + 3) -
-      this.contextMenu.getBoundingClientRect().width / 2
-    this.contextMenu.style.left = left - box.left + 'px'
-    this.contextMenu.style.bottom = box.bottom - start.top + 5 + 'px'
-    this.contextMenu.style.position = 'absolute'
+    this.contextMenu.style.position = 'fixed'
+    let left = (start.left + end.left) / 2 - this.contextMenu.clientWidth / 2
+    this.contextMenu.style.left = left + 'px'
+    this.contextMenu.style.bottom = window.innerHeight - start.top + 5 + 'px'
   }
 
   destroy() {

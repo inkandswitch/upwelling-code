@@ -1,7 +1,7 @@
-import { nanoid } from 'nanoid';
+import { nanoid } from 'nanoid'
 import init, { Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
-import { Author, AuthorId } from './Upwell';
-import { Comments, createAuthorId } from '.';
+import { Author, AuthorId } from './Upwell'
+import { Comments, createAuthorId, CommentState } from '.'
 
 export async function loadForTheFirstTimeLoL() {
   return new Promise<void>((resolve, reject) => {
@@ -14,27 +14,26 @@ export async function loadForTheFirstTimeLoL() {
 const ROOT = '_root'
 
 export type ChangeMetadata = {
-  message: string,
+  message: string
   authorId: AuthorId
 }
 
-export type Heads = string[];
+export type Heads = string[]
 export type LayerMetadata = {
-  shared: boolean,
-  parent_id: string,
-  authorId: AuthorId,
+  shared: boolean
+  parent_id: string
+  authorId: AuthorId
   message: string
 }
 
-
-export type Subscriber = (doc: Layer) => void 
+export type Subscriber = (doc: Layer) => void
 
 export class LazyLayer {
   binary: Buffer
   id: string
   constructor(id: string, binary: Buffer) {
     this.binary = binary
-    this.id = id 
+    this.id = id
   }
 
   hydrate() {
@@ -46,7 +45,7 @@ export class Layer {
   id: string
   doc: Automerge
   comments: Comments
-  private subscriber?: Subscriber 
+  private subscriber?: Subscriber
 
   constructor(id: string, doc: Automerge) {
     this.id = id
@@ -65,19 +64,19 @@ export class Layer {
     if (value && value[0]) return value[1]
   }
 
-  get shared () {
-    return this._getValue('shared') as boolean;
+  get shared() {
+    return this._getValue('shared') as boolean
   }
 
-  set shared (value: boolean) {
+  set shared(value: boolean) {
     this.doc.set(ROOT, 'shared', value)
   }
 
-  get version () {
-    return this._getValue('version') as string;
+  get version() {
+    return this._getValue('version') as string
   }
 
-  set version (value: string) {
+  set version(value: string) {
     this.doc.set(ROOT, 'version', value)
   }
 
@@ -85,19 +84,19 @@ export class Layer {
     return this._getValue('time') as number
   }
 
-  set time(value: number){
-    this.doc.set(ROOT, 'time', value) 
+  set time(value: number) {
+    this.doc.set(ROOT, 'time', value)
   }
 
-  get message (): string {
-    return this._getValue('message') as string;
+  get message(): string {
+    return this._getValue('message') as string
   }
 
   set message(value: string) {
     this.doc.set(ROOT, 'message', value)
   }
 
-  get text (): string {
+  get text(): string {
     return this._getAutomergeText('text')
   }
 
@@ -105,7 +104,7 @@ export class Layer {
     return this._getValue('author') as AuthorId
   }
 
-  get title (): string {
+  get title(): string {
     return this._getAutomergeText('title')
   }
 
@@ -133,9 +132,26 @@ export class Layer {
   }
 
   insertBlock(position: number, type: string) {
-    let text = this.doc.value(ROOT, "text")
+    let text = this.doc.value(ROOT, 'text')
     if (text && text[0] === 'text') this.doc.insert_object(text[1], position, { type })
-    else throw new Error("text not properly initialized")
+    else throw new Error('text not properly initialized')
+  }
+
+  insertComment(from: number, to: number, message: string, authorId: string): string {
+    let comment_id = nanoid()
+    let comment = {
+      id: comment_id,
+      author: authorId,
+      message,
+      children: [],
+      state: CommentState.OPEN
+    }
+
+    this.comments.insert(comment)
+
+    this.mark('comment', `[${from}..${to}]`, comment_id)
+
+    return comment_id
   }
 
   deleteAt(position: number, count: number = 1, prop = 'text') {
@@ -156,21 +172,19 @@ export class Layer {
     else throw new Error('Text field not properly initialized')
   }
 
-  get marks () {
+  get marks() {
     return this.getMarks()
   }
 
   // TODO refactor this to use materialize or whatever because there is some
   // nasty hoop-jumping here.
   get blocks() {
-
     let blocks: any[] = []
-    let text = this.doc.value(ROOT, "text")
-    if (!text || text[0] !== 'text') throw new Error("text not properly initialized")
+    let text = this.doc.value(ROOT, 'text')
+    if (!text || text[0] !== 'text') throw new Error('text not properly initialized')
 
     let i = this.text.indexOf('\uFFFC')
     while (i !== this.text.length) {
-
       // don't include the block replacement character, since it's just a marker
       // that the paragraph follows
       let start = i + 1
@@ -185,7 +199,7 @@ export class Layer {
       let attrsObj = this.doc.value(text[1], i)
       let attrs: any = {}
       if (attrsObj && attrsObj[0] === 'map') attrs = this.doc.materialize(attrsObj[1])
-      else throw new Error("block properties not initialized, something has gone very wrong")
+      else throw new Error('block properties not initialized, something has gone very wrong')
       let block = { start, end, ...attrs }
       blocks.push(block)
       i = end
@@ -194,7 +208,7 @@ export class Layer {
     return blocks
   }
 
-  save (): Uint8Array {
+  save(): Uint8Array {
     return this.doc.save()
   }
 
@@ -288,7 +302,7 @@ export class Layer {
     doc.set(ROOT, 'time', Date.now(), 'timestamp')
     doc.set(ROOT, 'archived', false, 'boolean')
     doc.set_object(ROOT, 'title', '')
-    doc.set_object(ROOT, 'comments', {}) 
+    doc.set_object(ROOT, 'comments', {})
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, 'text', ' ')
     let initialParagraph = doc.insert_object(text, 0, { type: 'paragraph' })

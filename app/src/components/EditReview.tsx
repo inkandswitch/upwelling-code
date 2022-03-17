@@ -16,11 +16,11 @@ type Props = {
   onChange: any
   author: Author
   reviewMode: boolean
-  colors?: AuthorColorsType
+  colors: AuthorColorsType
 }
 
 export function EditReviewView(props: Props) {
-  const { root, visible, onChange, reviewMode, colors } = props
+  const { root, visible, onChange, reviewMode, colors, author } = props
   console.log('rendering EditReviewView')
   if (!root) {
     console.log('no root')
@@ -35,6 +35,7 @@ export function EditReviewView(props: Props) {
   if (visible.length === 1) {
     let textArea = (
       <Editor
+        author={author}
         colors={colors}
         onChange={onChange}
         editableLayer={visible[0]}

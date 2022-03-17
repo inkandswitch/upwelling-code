@@ -1,9 +1,9 @@
-import { AuthorId } from './Upwell';
-import { Collection } from './Collection';
+import { AuthorId } from './Upwell'
+import { Collection } from './Collection'
 
 export type CommentId = string
 export enum CommentState {
-  OPEN, 
+  OPEN,
   CLOSED,
   CHILD
 }
@@ -17,12 +17,14 @@ export type Comment = {
 }
 
 export class Comments extends Collection<Comment> {
-    addChild(parent: Comment, child: Comment) {
-      this.insert(child)
-      let path = `/${this.name}/${parent.id}/children`
-      let len = this.doc.length(path)
-      this.doc.insert(path, len, child.id)
-    }
-  
+  archive(comment: Comment) {
+    this.doc.set(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
   }
-  
+
+  addChild(parent: Comment, child: Comment) {
+    this.insert(child)
+    let path = `/${this.name}/${parent.id}/children`
+    let len = this.doc.length(path)
+    this.doc.insert(path, len, child.id)
+  }
+}
