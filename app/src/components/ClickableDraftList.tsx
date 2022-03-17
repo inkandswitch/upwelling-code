@@ -90,6 +90,8 @@ export default function ClickableDraftList({
       {layers
         .sort((a, b) => b.time - a.time)
         .map((layer: Layer, index) => {
+          if (documents.author.id !== layer.authorId && !layer.shared)
+            return <div></div>
           return (
             <FileTab
               key={layer.id}
