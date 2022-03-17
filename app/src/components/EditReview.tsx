@@ -11,7 +11,7 @@ import { EditorView } from './Editor'
 
 type Props = {
   id: string
-  root?: Layer
+  root: Layer
   visible: Layer[]
   onChange: any
   author: Author

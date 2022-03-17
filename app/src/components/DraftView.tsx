@@ -11,17 +11,14 @@ import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
 import deterministicColor from '../color'
 import { Button } from './Button'
-import { useLocation } from 'wouter'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
-import A from './A'
 
 let documents = Documents()
 
 type DraftViewProps = {
   id: string
-  did: string
-  root?: Layer
+  root: Layer
   author: Author
 }
 
@@ -29,19 +26,18 @@ const AUTOSAVE_INTERVAL = 3000
 const HISTORY_FETCH_SIZE = 5
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, did, author, root } = props
-  let [, setLocation] = useLocation()
+  let { id, author, root } = props
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
-  let [rootId, setRoot] = useState<string>(root?.id || '')
   let [reviewMode, setReviewMode] = useState<boolean>(false)
+  let [did, setDraftId] = useState<string>(window.location.hash.slice(1))
   let [layers, setLayers] = useState<Layer[]>([])
   let [history, setHistory] = useState<Layer[]>([])
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)
 
   let upwell = documents.get(id)
-  if (props.did === 'latest') did = upwell.rootLayer.id
+  if (did === 'latest') did = upwell.rootLayer.id
   let layer = upwell.get(did)
 
   const getHistory = useCallback(() => {
@@ -59,7 +55,6 @@ export default function DraftView(props: DraftViewProps) {
     let upwell = documents.get(id)
     let layer = upwell.get(did)
     documents.connect(layer)
-    console.log('connecting')
 
     return () => {
       documents.disconnect()
@@ -69,7 +64,6 @@ export default function DraftView(props: DraftViewProps) {
   const render = useCallback(
     (upwell: Upwell) => {
       const layers = upwell.layers()
-      setRoot(upwell.rootLayer.id)
       setLayers(layers)
       getHistory()
 
@@ -109,6 +103,18 @@ export default function DraftView(props: DraftViewProps) {
   }, [id, render])
   */
 
+  useEffect(() => {
+    function handler() {
+      setDraftId(window.location.hash.slice(1))
+      let upwell = documents.get(id)
+      render(upwell)
+    }
+    window.addEventListener('hashchange', handler)
+    return () => {
+      window.removeEventListener('hashchange', handler)
+    }
+  }, [id, render])
+
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>,
     l: Layer
@@ -144,9 +150,6 @@ export default function DraftView(props: DraftViewProps) {
 
   let onTextChange = () => {
     if (rootId === layer.id) {
-      let draft = upwell.createDraft()
-      let url = `/document/${id}/draft/${draft.id}`
-      setLocation(url)
     } else {
       documents.updatePeers(id, did)
       debouncedOnTextChange()
@@ -174,8 +177,7 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleMergeClick = () => {
     upwell.setLatest(layer)
-    let url = `/document/${id}/draft/latest`
-    setLocation(url)
+    window.location.hash = 'latest'
     onChangeMade()
   }
 
@@ -188,10 +190,10 @@ export default function DraftView(props: DraftViewProps) {
     let upwell = documents.get(id)
     let newLayer = upwell.createDraft()
     upwell.add(newLayer)
-    let url = `/document/${id}/draft/${newLayer.id}`
-    setLocation(url)
+    window.location.hash = newLayer.id
   }
 
+  let rootId = upwell.rootLayer.id
   const isLatest = rootId === layer.id
   return (
     <div
@@ -237,7 +239,7 @@ export default function DraftView(props: DraftViewProps) {
         >
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
-            <A href={`/document/${id}/draft/${rootId}`}>Latest</A>
+            <a href={`/document/${id}#latest`}>Latest</a>
             {!isLatest && (
               <>
                 »{' '}

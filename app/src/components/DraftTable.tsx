@@ -52,12 +52,12 @@ export default function DraftList(props: DraftListProps) {
 
   function createDraft() {
     let draft = upwell.createDraft()
-    let url = `/document/${id}/draft/${draft.id}`
+    let url = `/document/${id}#${draft.id}`
     setLocation(url)
   }
 
   function goToDraft(did: string) {
-    let url = `/document/${id}/draft/${did}`
+    let url = `/document/${id}#${did}`
     setLocation(url)
   }
 

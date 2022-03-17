@@ -37,15 +37,6 @@ export default function withDocument(
           if (!upwell) throw new Error('could not create upwell')
           if (!unmounted) setRoot(upwell.rootLayer)
         }
-
-        if (props.did) {
-          try {
-            upwell.get(props.did)
-          } catch (err) {
-            setLocation(`/document/${props.id}/draft/latest`)
-            console.error(err)
-          }
-        }
       }
 
       render()
@@ -53,6 +44,7 @@ export default function withDocument(
         unmounted = true
       }
     }, [id, author, setLocation])
+    if (!root) return <div></div>
 
     return <WrappedComponent root={root} {...props} />
   }

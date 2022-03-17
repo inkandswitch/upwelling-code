@@ -2,7 +2,7 @@
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
 import { MouseEventHandler, useState } from 'react'
-import { Link, useLocation } from 'wouter'
+import { Link } from 'wouter'
 import Documents from '../Documents'
 import { Button } from './Button'
 import ClickableDraftList from './ClickableDraftList'
@@ -56,12 +56,10 @@ export default function DraftsHistory({
   onGetMoreClick,
 }: Props) {
   const upwell = documents.get(id)
-  const [, setLocation] = useLocation()
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
 
   function goToDraft(did: string) {
-    let url = `/document/${id}/draft/${did}`
-    setLocation(url)
+    window.location.hash = did
   }
   function handleTabClick(tab: Tab) {
     return () => {
