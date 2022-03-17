@@ -146,14 +146,6 @@ export default function DraftView(props: DraftViewProps) {
     console.log('comment change!')
   }
 
-  /*
-  let handleShareClick = () => {
-    let upwell = documents.get(id)
-    upwell.share(l.id)
-    onChangeMade()
-  }
-  */
-
   let handleUpdateClick = () => {
     let root = upwell.rootLayer
     let message = layer.message
@@ -194,7 +186,7 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
-      <DraftsHistory layers={layers} id={id} />
+      <DraftsHistory layers={layers} id={id} colors={authorColors} />
       <div
         id="folio"
         css={css`

@@ -2,11 +2,11 @@
 import { useEffect, useCallback } from 'react'
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
-import { MouseEventHandler, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'wouter'
 import Documents from '../Documents'
 import { Button } from './Button'
-import ClickableDraftList from './ClickableDraftList'
+import ClickableDraftList, { AuthorColorsType } from './ClickableDraftList'
 
 let documents = Documents()
 
@@ -48,11 +48,10 @@ export const TabWrapper = (props: any) => (
 
 type Props = {
   layers: Layer[]
-  archivedLayers?: Layer[]
   id: string
-  onGetMoreClick?: MouseEventHandler<HTMLButtonElement>
+  colors?: AuthorColorsType
 }
-export default function DraftsHistory({ layers, id }: Props) {
+export default function DraftsHistory({ layers, id, colors = {} }: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(true)
@@ -87,6 +86,16 @@ export default function DraftsHistory({ layers, id }: Props) {
 
   function onGetMoreClick() {
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
+  }
+
+  const handleShareClick = (layer: Layer) => {
+    if (
+      // eslint-disable-next-line no-restricted-globals
+      confirm("Do you want to share your layer? it can't be unshared.")
+    ) {
+      let upwell = documents.get(id)
+      upwell.share(layer.id)
+    }
   }
 
   return (
@@ -157,7 +166,9 @@ export default function DraftsHistory({ layers, id }: Props) {
             `}
             id={id}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
+            onShareClick={handleShareClick}
             layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
+            colors={colors}
           />
         ) : (
           <>
@@ -168,6 +179,7 @@ export default function DraftsHistory({ layers, id }: Props) {
               id={id}
               onLayerClick={(layer: Layer) => goToDraft(layer.id)}
               layers={archivedLayers}
+              colors={colors}
             />
 
             {!noMoreHistory && (
