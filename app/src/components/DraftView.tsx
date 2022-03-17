@@ -125,6 +125,17 @@ export default function DraftView(props: DraftViewProps) {
     upwell.set(l.id, l)
     onChangeMade()
   }
+  const handleFileTitleInputBlur = (
+    e: React.FocusEvent<HTMLInputElement, Element>,
+    l: Layer
+  ) => {
+    let upwell = documents.get(id)
+    l.title = e.target.value
+    console.log(l.title, e.target.value, '@@') // l.title will always be undefined. why??
+    upwell.set(l.id, l)
+
+    onChangeMade()
+  }
 
   function onChangeMade() {
     documents
@@ -244,12 +255,30 @@ export default function DraftView(props: DraftViewProps) {
         >
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
-            <a href={`/document/${id}#latest`}>Latest</a>
+            {isLatest ? (
+              <Input
+                placeholder={'document name'}
+                defaultValue={layer.title}
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+                onChange={(e) => {
+                  e.stopPropagation()
+                }}
+                onBlur={(e) => {
+                  //@ts-ignore
+                  handleFileTitleInputBlur(e, layer)
+                }}
+              />
+            ) : (
+              <a href={`/document/${id}#latest`}>{layer.title || 'Latest'}</a>
+            )}
             {!isLatest && (
               <>
                 {' '}
                 »{' '}
                 <Input
+                  placeholder={'layer name'}
                   defaultValue={layer.message}
                   onClick={(e) => {
                     e.stopPropagation()
