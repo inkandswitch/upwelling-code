@@ -51,7 +51,7 @@ describe("upwell", () => {
     let edoc = Layer.load(ddoc.id, file, createAuthorId());
     e.add(edoc);
 
-    ddoc.insertAt(0, Array.from("Upwelling: Contextual Writing"), "title");
+    ddoc.title = "Upwelling: Contextual Writing";
 
     let binary = ddoc.save();
     let layer = Layer.load(ddoc.id, binary, createAuthorId());

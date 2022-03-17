@@ -21,7 +21,7 @@ let documents = Documents()
 type DraftViewProps = {
   id: string
   did: string
-  root: Layer
+  root?: Layer
   author: Author
 }
 
@@ -33,7 +33,7 @@ export default function DraftView(props: DraftViewProps) {
   let [, setLocation] = useLocation()
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
-  let [rootId, setRoot] = useState<string>(root.id)
+  let [rootId, setRoot] = useState<string>(root?.id || '')
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [layers, setLayers] = useState<Layer[]>([])
   let [history, setHistory] = useState<Layer[]>([])
@@ -274,13 +274,13 @@ export default function DraftView(props: DraftViewProps) {
                   `}
                 >
                   <Button
-                    disabled={rootId !== layer.parent_id}
+                    disabled={!rootId || rootId !== layer.parent_id}
                     onClick={handleMergeClick}
                   >
                     Merge to document
                   </Button>
                   <Button
-                    disabled={rootId === layer.parent_id}
+                    disabled={!rootId || rootId === layer.parent_id}
                     onClick={handleUpdateClick}
                   >
                     Update from current

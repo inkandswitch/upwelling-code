@@ -112,6 +112,10 @@ export class Layer {
     return this._getValue("author") as AuthorId;
   }
 
+  set title(value: string) {
+    this.doc.set(ROOT, "title", value);
+  }
+
   get title(): string {
     return this._getAutomergeText("title");
   }
@@ -307,7 +311,7 @@ export class Layer {
     doc.set(ROOT, "shared", false, "boolean");
     doc.set(ROOT, "time", Date.now(), "timestamp");
     doc.set(ROOT, "archived", false, "boolean");
-    doc.set_object(ROOT, "title", "");
+    doc.set(ROOT, "title", "");
     doc.set_object(ROOT, "comments", {});
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, "text", " ");
