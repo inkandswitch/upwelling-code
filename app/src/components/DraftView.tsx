@@ -164,6 +164,7 @@ export default function DraftView(props: DraftViewProps) {
     let layer = upwell.get(did)
     upwell.setLatest(layer)
     setLayer(upwell.rootLayer.materialize())
+    setEpoch(Date.now())
     onChangeMade()
   }
 
@@ -198,7 +199,12 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
-      <DraftsHistory goToDraft={goToDraft} layers={layers} id={id} />
+      <DraftsHistory
+        epoch={epoch}
+        goToDraft={goToDraft}
+        layers={layers}
+        id={id}
+      />
       <div
         id="folio"
         css={css`
