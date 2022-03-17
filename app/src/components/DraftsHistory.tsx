@@ -46,6 +46,22 @@ export const TabWrapper = (props: any) => (
   />
 )
 
+// only get the layers you can see:
+// - your private layers
+// - shared layers
+function getYourLayers(layers: Layer[], rootId: string) {
+  const yourId = documents.author.id
+
+  return layers.filter((l) => {
+    return (
+      // keep it if it isn't the root layer
+      l.id !== rootId ||
+      // keep it if it's someone else's layer and it's shared
+      (l.id !== yourId && l.shared)
+    )
+  })
+}
+
 type Props = {
   layers: Layer[]
   id: string
