@@ -174,6 +174,8 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleMergeClick = () => {
     upwell.setLatest(layer)
+    let url = `/document/${id}/draft/latest`
+    setLocation(url)
     onChangeMade()
   }
 
