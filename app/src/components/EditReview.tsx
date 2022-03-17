@@ -18,12 +18,14 @@ type Props = {
   visible: string[]
   onChange: any
   author: Author
+  epoch: string
   reviewMode: boolean
   colors: AuthorColorsType
 }
 
 export function EditReviewView(props: Props) {
-  const { id, did, visible, onChange, reviewMode, colors, author } = props
+  const { id, did, epoch, visible, onChange, reviewMode, colors, author } =
+    props
   let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
 
@@ -33,7 +35,7 @@ export function EditReviewView(props: Props) {
     let editableLayer = upwell.get(did)
     setText(editableLayer.text)
     setImmediate(() => setText(undefined))
-  }, [id, did])
+  }, [id, did, epoch])
 
   if (text) return <div>{text}</div>
 

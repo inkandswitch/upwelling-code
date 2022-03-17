@@ -32,6 +32,7 @@ export default function DraftView(props: DraftViewProps) {
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
+  let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
   let did = getDraftHash()
   let maybeLayer
@@ -155,6 +156,7 @@ export default function DraftView(props: DraftViewProps) {
     setLayer(draft.materialize())
     onChangeMade()
     setReviewMode(false)
+    setEpoch(Date.now())
   }
 
   let handleMergeClick = () => {
@@ -220,7 +222,7 @@ export default function DraftView(props: DraftViewProps) {
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
             <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
-              Latest
+              View Original
             </Button>
             {!isLatest && (
               <>
@@ -291,6 +293,7 @@ export default function DraftView(props: DraftViewProps) {
 
         <EditReviewView
           did={did}
+          epoch={epoch}
           visible={[layer.id]}
           id={id}
           author={author}
