@@ -242,6 +242,7 @@ export default function DraftView(props: DraftViewProps) {
             <a href={`/document/${id}#latest`}>Latest</a>
             {!isLatest && (
               <>
+                {' '}
                 »{' '}
                 <Input
                   defaultValue={layer.message}
