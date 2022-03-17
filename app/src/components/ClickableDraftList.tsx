@@ -6,6 +6,8 @@ import { Layer } from 'api'
 import relativeDate from 'relative-date'
 import { HCLColor } from 'd3-color'
 import Documents from '../Documents'
+import { IconButton } from './Button'
+import { ReactComponent as Share } from '../components/icons/Share.svg'
 
 let documents = Documents()
 
@@ -34,6 +36,7 @@ export const FileTab = ({
     css={css`
       border-top: 1px solid lightgray;
       padding: 10px;
+      padding-left: 16px;
       cursor: pointer;
 
       &:hover {
@@ -61,7 +64,9 @@ const InfoText = (props: any) => (
 
 type Props = {
   onLayerClick: Function
+  onShareClick?: Function
   id: string
+  did: string
   layers: Layer[]
   isBottom?: boolean
   colors?: AuthorColorsType
@@ -70,8 +75,10 @@ type Props = {
 
 export default function ClickableDraftList({
   onLayerClick,
+  onShareClick,
   id,
   layers,
+  did,
   isBottom = false,
   colors = {},
   ...props
@@ -94,16 +101,34 @@ export default function ClickableDraftList({
                 onLayerClick(layer)
               }}
               css={css`
-                box-shadow: 18px 24px 0px -18px ${colors[
-                    layer.authorId
-                  ]?.toString() || 'none'} inset;
+                display: flex;
+                flex-direction: row;
+                column-gap: 10px;
+                justify-content: space-between;
+
+                box-shadow: 9px 0 0 0
+                  ${(did === layer.id && colors[layer.authorId]?.toString()) ||
+                  'none'}
+                  inset;
               `}
             >
-              {layer.message}
-              <InfoText>
-                {authors[layer.authorId]} created{' '}
-                {relativeDate(new Date(layer.time))}
-              </InfoText>
+              <div>
+                {layer.message}
+                <InfoText>
+                  {authors[layer.authorId]} created{' '}
+                  {relativeDate(new Date(layer.time))}
+                </InfoText>
+              </div>
+              {!layer.shared && onShareClick && (
+                <IconButton
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onShareClick(layer)
+                  }}
+                  icon={Share}
+                ></IconButton>
+              )}
             </FileTab>
           )
         })}
