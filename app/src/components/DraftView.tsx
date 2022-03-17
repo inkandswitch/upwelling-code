@@ -81,11 +81,10 @@ export default function DraftView(props: DraftViewProps) {
     }
   }, [id, authorColors, setAuthorColors, props.author])
 
-  /*
   useEffect(() => {
     let interval = setInterval(() => {
-      documents.sync(id).then((upwell) => {
-        render(upwell)
+      documents.sync(id).then(() => {
+        render()
         setSyncState(SYNC_STATE.SYNCED)
       })
     }, 2000)
@@ -93,7 +92,6 @@ export default function DraftView(props: DraftViewProps) {
       clearInterval(interval)
     }
   }, [id, render])
-  */
 
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
@@ -107,11 +105,9 @@ export default function DraftView(props: DraftViewProps) {
     documents
       .upwellChanged(props.id)
       .then(() => {
-        render()
         setSyncState(SYNC_STATE.SYNCED)
       })
       .catch((err) => {
-        render()
         setSyncState(SYNC_STATE.OFFLINE)
         console.error('failed to sync', err)
       })
@@ -141,7 +137,6 @@ export default function DraftView(props: DraftViewProps) {
     console.log('comment change!')
   }
 
-  console.log('rendering?')
   /*
   let handleShareClick = () => {
     let upwell = documents.get(id)
@@ -224,9 +219,9 @@ export default function DraftView(props: DraftViewProps) {
         >
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
-            <button onClick={() => goToDraft(upwell.rootLayer.id)}>
+            <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
               Latest
-            </button>
+            </Button>
             {!isLatest && (
               <>
                 {' '}
@@ -295,6 +290,7 @@ export default function DraftView(props: DraftViewProps) {
         </div>
 
         <EditReviewView
+          did={did}
           visible={[layer.id]}
           id={id}
           author={author}

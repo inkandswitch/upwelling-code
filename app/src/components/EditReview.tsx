@@ -14,6 +14,7 @@ let documents = Documents()
 
 type Props = {
   id: string
+  did: string
   visible: string[]
   onChange: any
   author: Author
@@ -22,17 +23,17 @@ type Props = {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, visible, onChange, reviewMode, colors, author } = props
+  const { id, did, visible, onChange, reviewMode, colors, author } = props
   let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
 
   useEffect(() => {
-    if (visible.length === 1) {
-      let editableLayer = upwell.get(visible[0])
-      setText(editableLayer.text)
-      setImmediate(() => setText(undefined))
-    }
-  }, [upwell, visible])
+    console.log('effect triggered')
+    let upwell = documents.get(id)
+    let editableLayer = upwell.get(did)
+    setText(editableLayer.text)
+    setImmediate(() => setText(undefined))
+  }, [id, did])
 
   if (text) return <div>{text}</div>
 

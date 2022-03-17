@@ -26,7 +26,7 @@ export default function withDocument(
       async function render() {
         try {
           upwell = await documents.open(id)
-          console.log('got upwell', upwell.layers())
+          if (!unmounted) setRoot(upwell.rootLayer)
         } catch (err) {}
 
         try {
