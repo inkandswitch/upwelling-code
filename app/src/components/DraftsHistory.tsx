@@ -3,7 +3,7 @@ import { useEffect, useCallback } from 'react'
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
 import { MouseEventHandler, useState } from 'react'
-import { Link } from 'wouter'
+import { useLocation, Link } from 'wouter'
 import Documents from '../Documents'
 import { Button } from './Button'
 import ClickableDraftList from './ClickableDraftList'
@@ -50,9 +50,9 @@ type Props = {
   layers: Layer[]
   archivedLayers?: Layer[]
   id: string
-  onGetMoreClick?: MouseEventHandler<HTMLButtonElement>
+  goToDraft: Function
 }
-export default function DraftsHistory({ layers, id }: Props) {
+export default function DraftsHistory({ layers, id, goToDraft }: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(true)
@@ -70,10 +70,6 @@ export default function DraftsHistory({ layers, id }: Props) {
     setNoMoreHistory(upwell.history.length <= fetchSize)
     setHistory(moreHistory)
   }, [id, fetchSize])
-
-  function goToDraft(did: string) {
-    window.location.hash = did
-  }
 
   function handleTabClick(tab: Tab) {
     return () => {

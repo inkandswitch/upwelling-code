@@ -1,9 +1,10 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
+import { useLocation } from 'wouter'
 //@ts-ignore
 import debounce from 'lodash.debounce'
-import { Upwell, Layer, Author } from 'api'
+import { LayerMetadata, Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -26,54 +27,60 @@ type DraftViewProps = {
 const AUTOSAVE_INTERVAL = 3000
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author, root } = props
+  let { id, author } = props
+  let [, setLocation] = useLocation()
   let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
-  let [did, setDraftId] = useState<string>(window.location.hash.slice(1))
+  let upwell = documents.get(id)
+  let did = getDraftHash()
+  let maybeLayer
+  try {
+    maybeLayer = upwell.get(did)
+  } catch (err) {
+    maybeLayer = upwell.rootLayer
+  }
+  let [layer, setLayer] = useState<LayerMetadata>(maybeLayer.materialize())
   let [layers, setLayers] = useState<Layer[]>([])
 
-  let upwell = documents.get(id)
-  if (did === 'latest') did = upwell.rootLayer.id
-  let layer = upwell.get(did)
+  function getDraftHash() {
+    return window.location.hash.replace('#', '')
+  }
 
   useEffect(() => {
-    let upwell = documents.get(id)
-    let layer = upwell.get(did)
-    documents.connect(layer)
+    documents.connect(id, layer.id)
 
     return () => {
       documents.disconnect()
     }
-  }, [id, did])
+  }, [id, layer.id])
 
-  const render = useCallback(
-    (upwell: Upwell) => {
-      const layers = upwell.layers()
-      setLayers(layers)
+  const render = useCallback(() => {
+    let upwell = documents.get(id)
+    const layers = upwell.layers()
+    setLayers(layers)
 
-      // find the authors
-      const newAuthorColors = { ...authorColors }
-      let changed = false
-      layers.forEach((l) => {
-        if (!(l.authorId in authorColors)) {
-          newAuthorColors[l.authorId] = deterministicColor(l.authorId)
-          changed = true
-        }
-      })
-      // also add this user in case they haven't made a layer
-      if (!(props.author.id in authorColors)) {
-        newAuthorColors[props.author.id] = deterministicColor(props.author.id)
+    // find the authors
+    const newAuthorColors = { ...authorColors }
+    let changed = false
+    layers.forEach((l) => {
+      if (!(l.authorId in authorColors)) {
+        newAuthorColors[l.authorId] = deterministicColor(l.authorId)
         changed = true
       }
-      if (changed) {
-        setAuthorColors((prevState: any) => {
-          return { ...prevState, ...newAuthorColors }
-        })
-      }
-    },
-    [authorColors, setAuthorColors, props.author]
-  )
+    })
+    // also add this user in case they haven't made a layer
+    if (!(props.author.id in authorColors)) {
+      newAuthorColors[props.author.id] = deterministicColor(props.author.id)
+      changed = true
+    }
+    if (changed) {
+      setAuthorColors((prevState: any) => {
+        return { ...prevState, ...newAuthorColors }
+      })
+    }
+  }, [id, authorColors, setAuthorColors, props.author])
+
   /*
   useEffect(() => {
     let interval = setInterval(() => {
@@ -88,50 +95,38 @@ export default function DraftView(props: DraftViewProps) {
   }, [id, render])
   */
 
-  useEffect(() => {
-    function handler() {
-      setDraftId(window.location.hash.slice(1))
-      let upwell = documents.get(id)
-      render(upwell)
-    }
-    window.addEventListener('hashchange', handler)
-    return () => {
-      window.removeEventListener('hashchange', handler)
-    }
-  }, [id, render])
-
   const handleFileNameInputBlur = (
-    e: React.FocusEvent<HTMLInputElement, Element>,
-    l: Layer
+    e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let upwell = documents.get(id)
-    l.message = e.target.value
-    upwell.set(l.id, l)
+    let draft = upwell.get(layer.id)
+    draft.message = e.target.value
     onChangeMade()
   }
 
   function onChangeMade() {
     documents
       .upwellChanged(props.id)
-      .then((upwell) => {
-        render(upwell)
+      .then(() => {
+        render()
         setSyncState(SYNC_STATE.SYNCED)
       })
       .catch((err) => {
+        render()
         setSyncState(SYNC_STATE.OFFLINE)
         console.error('failed to sync', err)
       })
   }
 
   useEffect(() => {
+    let upwell = documents.get(id)
     upwell.subscribe(() => {
-      render(upwell)
+      render()
     })
-    render(upwell)
+    render()
     return () => {
       upwell.unsubscribe()
     }
-  }, [upwell, render])
+  }, [id, render])
 
   let onTextChange = () => {
     if (rootId === layer.id) {
@@ -146,6 +141,7 @@ export default function DraftView(props: DraftViewProps) {
     console.log('comment change!')
   }
 
+  console.log('rendering?')
   /*
   let handleShareClick = () => {
     let upwell = documents.get(id)
@@ -157,16 +153,20 @@ export default function DraftView(props: DraftViewProps) {
   let handleUpdateClick = () => {
     let root = upwell.rootLayer
     let message = layer.message
-    layer.merge(root)
-    layer.message = message
-    layer.parent_id = root.id
+    let draft = upwell.get(layer.id)
+    draft.merge(root)
+    draft.message = message
+    draft.parent_id = root.id
+    setLayer(draft.materialize())
     onChangeMade()
     setReviewMode(false)
   }
 
   let handleMergeClick = () => {
+    let upwell = documents.get(id)
+    let layer = upwell.get(did)
     upwell.setLatest(layer)
-    window.location.hash = 'latest'
+    setLayer(upwell.rootLayer.materialize())
     onChangeMade()
   }
 
@@ -178,8 +178,15 @@ export default function DraftView(props: DraftViewProps) {
   function createLayer() {
     let upwell = documents.get(id)
     let newLayer = upwell.createDraft()
-    upwell.add(newLayer)
-    window.location.hash = newLayer.id
+    goToDraft(newLayer.id)
+    onChangeMade()
+  }
+
+  function goToDraft(did: string) {
+    let layer = upwell.get(did).materialize()
+    setLayer(layer)
+    render()
+    setLocation(`/document/${id}#${layer.id}`)
   }
 
   let rootId = upwell.rootLayer.id
@@ -194,7 +201,7 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
-      <DraftsHistory layers={layers} id={id} />
+      <DraftsHistory goToDraft={goToDraft} layers={layers} id={id} />
       <div
         id="folio"
         css={css`
@@ -217,13 +224,15 @@ export default function DraftView(props: DraftViewProps) {
         >
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
-            <a href={`/document/${id}#latest`}>Latest</a>
+            <button onClick={() => goToDraft(upwell.rootLayer.id)}>
+              Latest
+            </button>
             {!isLatest && (
               <>
                 {' '}
                 »{' '}
                 <Input
-                  defaultValue={layer.message}
+                  value={layer.message}
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
@@ -232,7 +241,7 @@ export default function DraftView(props: DraftViewProps) {
                   }}
                   onBlur={(e) => {
                     //@ts-ignore
-                    handleFileNameInputBlur(e, layer)
+                    handleFileNameInputBlur(e)
                   }}
                 />
               </>
@@ -286,8 +295,7 @@ export default function DraftView(props: DraftViewProps) {
         </div>
 
         <EditReviewView
-          root={root}
-          visible={[layer]}
+          visible={[layer.id]}
           id={id}
           author={author}
           colors={authorColors}

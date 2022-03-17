@@ -53,8 +53,10 @@ export class Documents {
     }
   }
 
-  connect(draft: Layer): RealTimeDraft {
+  connect(id: string, did: string): RealTimeDraft {
     if (this.rtc) return this.rtc
+    let upwell = this.get(id)
+    let draft = upwell.get(did)
     this.rtc = new RealTimeDraft(draft)
     return this.rtc
   }
