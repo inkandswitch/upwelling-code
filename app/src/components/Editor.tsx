@@ -1,7 +1,8 @@
 /** @jsxImportSource @emotion/react */
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Layer } from 'api'
 import { AuthorColorsType } from './ListDocuments'
+import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
@@ -21,6 +22,8 @@ type Props = {
   onChange: any
   colors?: AuthorColorsType
 }
+
+let documents = Documents()
 
 const toggleBold = toggleMarkCommand(schema.marks.strong)
 const toggleItalic = toggleMarkCommand(schema.marks.em)
@@ -81,11 +84,18 @@ export function EditorView(props: Props) {
   let atjsonLayer = UpwellSource.fromRaw(editableLayer)
   let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
   const [state, setState] = useProseMirror(getState(pmDoc))
+  const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
 
   const viewRef = useRef(null)
 
   useEffect(() => {
     editableLayer.subscribe((doc: Layer) => {
+      let change = doc.getChanges(heads)
+      if (change.length) {
+        let [authorId] = change[0].actor.split('0000')
+        if (authorId === documents.author.id) return
+      }
+
       let atjsonLayer = UpwellSource.fromRaw(doc)
       let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
       // TODO: transform automerge to prosemirror transaction
@@ -96,6 +106,7 @@ export function EditorView(props: Props) {
       )
       let newState = state.apply(transaction)
       setState(newState)
+      setHeads(doc.doc.getHeads())
     })
     return () => {
       editableLayer.subscribe(() => {})
@@ -165,6 +176,8 @@ export function EditorView(props: Props) {
     }
 
     onChange(editableLayer)
+    let newState = state.apply(transaction)
+    setState(newState)
   }
 
   const color = colors[editableLayer.authorId]

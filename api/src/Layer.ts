@@ -6,6 +6,7 @@ import init, {
   Value,
   SyncMessage,
   SyncState,
+  decodeChange,
 } from "automerge-wasm-pack";
 import { Author, AuthorId } from "./Upwell";
 import { Comments, createAuthorId } from ".";
@@ -33,7 +34,7 @@ export type LayerMetadata = {
   message: string;
 };
 
-export type Subscriber = (doc: Layer, local: boolean) => void;
+export type Subscriber = (doc: Layer) => void;
 
 export class LazyLayer {
   binary: Buffer;
@@ -125,11 +126,15 @@ export class Layer {
 
   receiveSyncMessage(state: SyncState, message: SyncMessage) {
     this.doc.receiveSyncMessage(state, message);
-    if (this.subscriber) this.subscriber(this, false);
+    if (this.subscriber) this.subscriber(this);
   }
 
   subscribe(subscriber: Subscriber) {
     this.subscriber = subscriber;
+  }
+
+  getChanges(heads: Heads) {
+    return this.doc.getChanges(heads).map(decodeChange);
   }
 
   insertAt(position: number, value: string | Array<string>, prop = "text") {
