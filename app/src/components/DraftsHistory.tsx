@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { css } from '@emotion/react/macro'
 import { Layer } from 'api'
 import { useState } from 'react'
