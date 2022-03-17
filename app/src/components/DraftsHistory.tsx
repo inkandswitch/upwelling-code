@@ -57,6 +57,7 @@ export default function DraftsHistory({
 }: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
+  const [isExpanded, setExpanded] = useState<boolean>(true)
 
   function goToDraft(did: string) {
     window.location.hash = did
@@ -66,48 +67,82 @@ export default function DraftsHistory({
       setTab(tab)
     }
   }
+
   return (
-    <div
-      id="sidebar"
-      css={css`
-        background: white;
-        margin: 30px;
-        align-self: flex-start;
-      `}
-    >
-      <TabWrapper>
-        <SidebarTab
-          onClick={handleTabClick(Tab.DRAFTS)}
-          isActive={tab === Tab.DRAFTS}
-        >
-          Drafts
-        </SidebarTab>
-        <SidebarTab
-          onClick={handleTabClick(Tab.HISTORY)}
-          isActive={tab === Tab.HISTORY}
-        >
-          History
-        </SidebarTab>
-      </TabWrapper>
-      {tab === Tab.DRAFTS ? (
-        <ClickableDraftList
-          id={id}
-          onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-          layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
-        />
-      ) : (
-        <>
+    <>
+      <Button
+        css={css`
+          font-size: 24px;
+          color: gray;
+          top: 30px;
+          left: 30px;
+          background: transparent;
+          position: absolute;
+          z-index: 100;
+        `}
+        onClick={() => setExpanded(true)}
+      >
+        »
+      </Button>
+      <div
+        id="sidebar"
+        css={css`
+          background: white;
+          margin: 30px;
+          align-self: flex-start;
+          width: 300px;
+          align-items: center;
+          border-bottom: 3px solid transparent;
+          overflow: hidden;
+          max-width: 300px;
+          transition: max-width 0.3s ease-out;
+          ${!isExpanded ? `max-width: 0;` : ''}
+          z-index: 101;
+        `}
+      >
+        <TabWrapper>
+          <SidebarTab
+            onClick={handleTabClick(Tab.DRAFTS)}
+            isActive={tab === Tab.DRAFTS}
+          >
+            Drafts
+          </SidebarTab>
+          <SidebarTab
+            onClick={handleTabClick(Tab.HISTORY)}
+            isActive={tab === Tab.HISTORY}
+          >
+            History
+          </SidebarTab>
+          <Button
+            css={css`
+              font-size: 24px;
+              color: gray;
+            `}
+            onClick={() => setExpanded(false)}
+          >
+            «
+          </Button>
+        </TabWrapper>
+        {tab === Tab.DRAFTS ? (
           <ClickableDraftList
             id={id}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-            layers={archivedLayers}
+            layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
           />
+        ) : (
+          <>
+            <ClickableDraftList
+              id={id}
+              onLayerClick={(layer: Layer) => goToDraft(layer.id)}
+              layers={archivedLayers}
+            />
 
-          {onGetMoreClick && (
-            <Button onClick={onGetMoreClick}>load more</Button>
-          )}
-        </>
-      )}
-    </div>
+            {onGetMoreClick && (
+              <Button onClick={onGetMoreClick}>load more</Button>
+            )}
+          </>
+        )}
+      </div>
+    </>
   )
 }

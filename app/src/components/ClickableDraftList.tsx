@@ -83,7 +83,6 @@ export default function ClickableDraftList({
         .map((layer: Layer, index) => {
           return (
             <FileTab
-              id={layer.id}
               key={layer.id}
               index={index}
               isBottom={isBottom}
