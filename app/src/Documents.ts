@@ -1,4 +1,4 @@
-import { Author, RealTimeDraft, Upwell, Layer, createAuthorId } from 'api'
+import { Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'

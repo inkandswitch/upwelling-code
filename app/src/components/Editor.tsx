@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 //import React, { useEffect, useRef, useState } from 'react'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { Upwell, Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'

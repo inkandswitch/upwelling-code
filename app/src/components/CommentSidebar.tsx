@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React from 'react'
-import { Upwell, LayerMetadata, Layer, Comment, CommentState } from 'api'
+import { Upwell, LayerMetadata, Comment, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
 type CommentViewProps = {
