@@ -6,6 +6,7 @@ import init, {
   Value,
   SyncMessage,
   SyncState,
+  decodeChange,
 } from "automerge-wasm-pack";
 import { Author, AuthorId } from "./Upwell";
 import { Comments, createAuthorId } from ".";
@@ -114,6 +115,7 @@ export class Layer {
   set title(value: string) {
     this.doc.set(ROOT, "title", value);
   }
+
   get title(): string {
     return this._getAutomergeText("title");
   }
@@ -127,12 +129,16 @@ export class Layer {
   }
 
   receiveSyncMessage(state: SyncState, message: SyncMessage) {
-    if (this.subscriber) this.subscriber(this);
     this.doc.receiveSyncMessage(state, message);
+    if (this.subscriber) this.subscriber(this);
   }
 
   subscribe(subscriber: Subscriber) {
     this.subscriber = subscriber;
+  }
+
+  getChanges(heads: Heads) {
+    return this.doc.getChanges(heads).map(decodeChange);
   }
 
   insertAt(position: number, value: string | Array<string>, prop = "text") {
@@ -228,6 +234,7 @@ export class Layer {
 
   merge(theirs: Layer) {
     this.doc.merge(theirs.doc);
+    if (this.subscriber) this.subscriber(this);
   }
 
   static mergeWithEdits(author: Author, ours: Layer, ...theirs: Layer[]) {

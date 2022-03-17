@@ -1,12 +1,13 @@
 /** @jsxImportSource @emotion/react */
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Layer } from 'api'
 import { AuthorColorsType } from './ListDocuments'
+import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { MarkType } from 'prosemirror-model'
+import { MarkType, Slice } from 'prosemirror-model'
 import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState, Transaction } from 'prosemirror-state'
@@ -21,6 +22,8 @@ type Props = {
   onChange: any
   colors?: AuthorColorsType
 }
+
+let documents = Documents()
 
 const toggleBold = toggleMarkCommand(schema.marks.strong)
 const toggleItalic = toggleMarkCommand(schema.marks.em)
@@ -59,28 +62,56 @@ export const textCSS = css`
 export function EditorView(props: Props) {
   let { editableLayer, onChange, colors = {} } = props
 
-  let atjsonLayer = UpwellSource.fromRaw(editableLayer)
-  let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
-
-  const opts: Parameters<typeof useProseMirror>[0] = {
-    schema,
-    doc: pmDoc,
-    plugins: [
-      history(),
-      keymap({
-        ...baseKeymap,
-        'Mod-z': undo,
-        'Mod-y': redo,
-        'Mod-Shift-z': redo,
-        'Mod-b': toggleBold,
-        'Mod-i': toggleItalic,
-      }),
-    ],
+  function getState(pmDoc: any) {
+    const opts: Parameters<typeof useProseMirror>[0] = {
+      schema,
+      doc: pmDoc,
+      plugins: [
+        history(),
+        keymap({
+          ...baseKeymap,
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo,
+          'Mod-b': toggleBold,
+          'Mod-i': toggleItalic,
+        }),
+      ],
+    }
+    return opts
   }
 
-  const [state, setState] = useProseMirror(opts)
+  let atjsonLayer = UpwellSource.fromRaw(editableLayer)
+  let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+  const [state, setState] = useProseMirror(getState(pmDoc))
+  const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
 
   const viewRef = useRef(null)
+
+  useEffect(() => {
+    editableLayer.subscribe((doc: Layer) => {
+      let change = doc.getChanges(heads)
+      if (change.length) {
+        let [authorId] = change[0].actor.split('0000')
+        if (authorId === documents.author.id) return
+      }
+
+      let atjsonLayer = UpwellSource.fromRaw(doc)
+      let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+      // TODO: transform automerge to prosemirror transaction
+      let transaction = state.tr.replace(
+        0,
+        state.doc.content.size,
+        new Slice(pmDoc.content, 0, 0)
+      )
+      let newState = state.apply(transaction)
+      setState(newState)
+      setHeads(doc.doc.getHeads())
+    })
+    return () => {
+      editableLayer.subscribe(() => {})
+    }
+  })
 
   let prosemirrorToAutomerge = (position: number, doc: any): number => {
     let i = 0
@@ -145,7 +176,6 @@ export function EditorView(props: Props) {
     }
 
     onChange(editableLayer)
-
     let newState = state.apply(transaction)
     setState(newState)
   }
