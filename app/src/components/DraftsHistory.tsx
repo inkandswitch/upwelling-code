@@ -183,7 +183,7 @@ export default function DraftsHistory({ layers, id, colors = {} }: Props) {
             id={id}
             onLayerClick={(layer: Layer) => goToDraft(layer.id)}
             onShareClick={handleShareClick}
-            layers={layers.filter((l) => l.id !== upwell.rootLayer.id)}
+            layers={getYourLayers(layers, upwell.rootLayer.id)}
             colors={colors}
           />
         ) : (
