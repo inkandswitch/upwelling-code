@@ -21,7 +21,6 @@ type Props = {
 
 export function EditReviewView(props: Props) {
   const { root, visible, onChange, reviewMode, colors } = props
-  console.log('rendering EditReviewView')
   if (!root) {
     console.log('no root')
     return <div></div>

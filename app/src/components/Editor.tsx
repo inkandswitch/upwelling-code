@@ -85,9 +85,11 @@ export function EditorView(props: Props) {
   const viewRef = useRef(null)
 
   useEffect(() => {
-    editableLayer.subscribe(() => {
+    editableLayer.subscribe((doc: Layer, local: boolean) => {
+      if (local) return
       let atjsonLayer = UpwellSource.fromRaw(editableLayer)
       let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+      // TODO: transform automerge to prosemirror transaction
       let transaction = state.tr.replace(
         0,
         state.doc.content.size,
@@ -99,7 +101,7 @@ export function EditorView(props: Props) {
     return () => {
       editableLayer.subscribe(() => {})
     }
-  }, [])
+  })
 
   let prosemirrorToAutomerge = (position: number, doc: any): number => {
     let i = 0
@@ -164,9 +166,6 @@ export function EditorView(props: Props) {
     }
 
     onChange(editableLayer)
-
-    let newState = state.apply(transaction)
-    setState(newState)
   }
 
   const color = colors[editableLayer.authorId]
