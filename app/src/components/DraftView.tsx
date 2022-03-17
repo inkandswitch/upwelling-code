@@ -24,7 +24,6 @@ type DraftViewProps = {
 }
 
 const AUTOSAVE_INTERVAL = 3000
-const HISTORY_FETCH_SIZE = 5
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, root } = props
@@ -33,24 +32,10 @@ export default function DraftView(props: DraftViewProps) {
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [did, setDraftId] = useState<string>(window.location.hash.slice(1))
   let [layers, setLayers] = useState<Layer[]>([])
-  let [history, setHistory] = useState<Layer[]>([])
-  let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
-  let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)
 
   let upwell = documents.get(id)
   if (did === 'latest') did = upwell.rootLayer.id
   let layer = upwell.get(did)
-
-  const getHistory = useCallback(() => {
-    let upwell = documents.get(id)
-    const moreHistory: Layer[] = []
-    for (let i = 0; i < fetchSize; i++) {
-      let value = upwell.history.get(i)
-      if (value) moreHistory.push(value)
-    }
-    setNoMoreHistory(upwell.history.length <= fetchSize)
-    setHistory(moreHistory)
-  }, [id, fetchSize])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -66,7 +51,6 @@ export default function DraftView(props: DraftViewProps) {
     (upwell: Upwell) => {
       const layers = upwell.layers()
       setLayers(layers)
-      getHistory()
 
       // find the authors
       const newAuthorColors = { ...authorColors }
@@ -88,7 +72,7 @@ export default function DraftView(props: DraftViewProps) {
         })
       }
     },
-    [getHistory, authorColors, setAuthorColors, props.author]
+    [authorColors, setAuthorColors, props.author]
   )
   /*
   useEffect(() => {
@@ -210,18 +194,7 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
-      <DraftsHistory
-        layers={layers}
-        id={id}
-        archivedLayers={history}
-        onGetMoreClick={
-          noMoreHistory
-            ? undefined
-            : () => {
-                setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
-              }
-        }
-      />
+      <DraftsHistory layers={layers} id={id} />
       <div
         id="folio"
         css={css`
