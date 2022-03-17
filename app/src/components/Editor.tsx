@@ -1,13 +1,15 @@
 /** @jsxImportSource @emotion/react */
-import React, { useEffect, useRef, useState } from 'react'
+//import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import { Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
-import Documents from '../Documents'
+//import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
 import { useProseMirror, ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { MarkType, Slice } from 'prosemirror-model'
+//import { MarkType, Slice } from 'prosemirror-model'
+import { MarkType } from 'prosemirror-model'
 import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState, Transaction } from 'prosemirror-state'
@@ -26,7 +28,7 @@ type Props = {
   colors: AuthorColorsType
 }
 
-let documents = Documents()
+//let documents = Documents()
 
 const toggleBold = toggleMarkCommand(schema.marks.strong)
 const toggleItalic = toggleMarkCommand(schema.marks.em)
