@@ -54,7 +54,6 @@ export default function withDocument(
       }
     }, [id, author, setLocation])
 
-    if (!root) return <div>Loading..</div>
     return <WrappedComponent root={root} {...props} />
   }
 }
