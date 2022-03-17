@@ -3,7 +3,6 @@ import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
 //@ts-ignore
-import debounce from 'lodash.debounce'
 import { LayerMetadata, Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
@@ -24,7 +23,7 @@ type DraftViewProps = {
   author: Author
 }
 
-const AUTOSAVE_INTERVAL = 3000
+const AUTOSAVE_INTERVAL = 5000
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author } = props
@@ -85,10 +84,9 @@ export default function DraftView(props: DraftViewProps) {
   useEffect(() => {
     let interval = setInterval(() => {
       documents.sync(id).then(() => {
-        render()
         setSyncState(SYNC_STATE.SYNCED)
       })
-    }, 2000)
+    }, AUTOSAVE_INTERVAL)
     return () => {
       clearInterval(interval)
     }
@@ -129,7 +127,6 @@ export default function DraftView(props: DraftViewProps) {
     if (rootId === layer.id) {
     } else {
       documents.updatePeers(id, did)
-      debouncedOnTextChange()
       setSyncState(SYNC_STATE.LOADING)
     }
   }
@@ -167,11 +164,6 @@ export default function DraftView(props: DraftViewProps) {
     setEpoch(Date.now())
     onChangeMade()
   }
-
-  let debouncedOnTextChange = debounce((layer: Layer) => {
-    // this is saving every time text changes, do we want this??????
-    onChangeMade()
-  }, AUTOSAVE_INTERVAL)
 
   function createLayer() {
     let upwell = documents.get(id)
