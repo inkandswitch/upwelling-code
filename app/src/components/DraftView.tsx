@@ -267,7 +267,7 @@ export default function DraftView(props: DraftViewProps) {
               justify-content: space-between;
             `}
           >
-            {isLatest ? (
+            {isLatest || upwell.isArchived(did) ? (
               <Button onClick={createLayer}>Create Draft</Button>
             ) : (
               <>
