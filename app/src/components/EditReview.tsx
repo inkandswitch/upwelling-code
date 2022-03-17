@@ -11,7 +11,7 @@ import { EditorView } from './Editor'
 
 type Props = {
   id: string
-  root: Layer
+  root?: Layer
   visible: Layer[]
   onChange: any
   author: Author
@@ -21,11 +21,6 @@ type Props = {
 
 export function EditReviewView(props: Props) {
   const { root, visible, onChange, reviewMode, colors } = props
-  console.log('rendering EditReviewView')
-  if (!root) {
-    console.log('no root')
-    return <div></div>
-  }
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (

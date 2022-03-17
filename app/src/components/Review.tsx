@@ -16,7 +16,7 @@ type ReviewState = {
 }
 
 export function ReviewView(props: {
-  root: Layer
+  root?: Layer
   visible: Layer[]
   colors?: AuthorColorsType
 }) {
@@ -24,6 +24,8 @@ export function ReviewView(props: {
 
   let updateAtjsonState = useCallback(
     async function () {
+      if (!root) return
+
       if (!visible.length) {
         let atjsonLayer = new UpwellSource({
           content: '',
