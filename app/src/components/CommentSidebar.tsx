@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useState, useEffect, useCallback } from 'react'
+import React from 'react'
 import { Upwell, Layer, Comment, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
@@ -13,7 +13,7 @@ type CommentViewProps = {
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { upwell, comment, mark, layer, colors } = props
+  let { upwell, comment, layer } = props
   let authorName = upwell.getAuthorName(comment.author)
 
   let archiveComment = () => {
