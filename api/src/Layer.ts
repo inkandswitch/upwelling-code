@@ -230,6 +230,7 @@ export class Layer {
 
   merge(theirs: Layer) {
     this.doc.merge(theirs.doc);
+    if (this.subscriber) this.subscriber(this);
   }
 
   static mergeWithEdits(author: Author, ours: Layer, ...theirs: Layer[]) {
