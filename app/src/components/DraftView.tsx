@@ -53,6 +53,7 @@ export default function DraftView(props: DraftViewProps) {
     let upwell = documents.get(id)
     const layers = upwell.layers()
     setLayers(layers)
+    setLayer(upwell.get(layer.id).materialize())
 
     let draft = upwell.get(layer.id)
     setLayer(draft.materialize())
@@ -86,7 +87,9 @@ export default function DraftView(props: DraftViewProps) {
       setLayer(draft.materialize())
       render()
     })
+  }, []) //eslint-disable-line
 
+  useEffect(() => {
     documents.connect(id, layer.id)
 
     // auto update root on first load if we need to
@@ -118,8 +121,6 @@ export default function DraftView(props: DraftViewProps) {
 
   // local changes
   function onChangeMade() {
-    let draft = upwell.get(layer.id)
-    setLayer(draft.materialize())
     render()
 
     documents
@@ -138,7 +139,7 @@ export default function DraftView(props: DraftViewProps) {
     } else {
       documents.updatePeers(id, layer.id)
       setSyncState(SYNC_STATE.LOADING)
-      debouncedOnTextChange()
+      debouncedOnTextChange(layer.id)
     }
   }
 
@@ -175,8 +176,9 @@ export default function DraftView(props: DraftViewProps) {
     onChangeMade()
   }
 
-  let debouncedOnTextChange = debounce((layer: Layer) => {
-    onChangeMade()
+  let debouncedOnTextChange = debounce((l: Layer) => {
+    console.log('debounced')
+    if (layer.id === l.id) onChangeMade()
   }, AUTOSAVE_INTERVAL)
 
   function createLayer() {
