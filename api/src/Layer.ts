@@ -30,8 +30,11 @@ export type Heads = string[];
 export type LayerMetadata = {
   id: string;
   title: string;
+  pinned: boolean;
   text: string;
   time: number;
+  marks: any;
+  comments: any;
   version: string;
   shared: boolean;
   parent_id: string;
@@ -101,6 +104,14 @@ export class Layer {
     this.doc.set(ROOT, "time", value);
   }
 
+  get pinned() {
+    return this._getValue("pinned") as boolean;
+  }
+
+  set pinned(value: boolean) {
+    this.doc.set(ROOT, "pinned", value);
+  }
+
   get message(): string {
     return this._getValue("message") as string;
   }
@@ -150,12 +161,15 @@ export class Layer {
     return {
       id: this.id,
       title: this.title,
+      pinned: this.pinned,
       parent_id: this.parent_id,
       text: this.text,
       message: this.message,
       time: this.time,
       version: this.version,
       shared: this.shared,
+      marks: this.marks,
+      comments: this.comments.objects(),
       authorId: this.authorId,
     };
   }
@@ -270,6 +284,7 @@ export class Layer {
     doc.set(ROOT, "time", Date.now());
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
+    doc.set(ROOT, "pinned", false);
     return new Layer(id, doc);
   }
 
@@ -350,6 +365,7 @@ export class Layer {
     doc.set(ROOT, "message", message);
     doc.set(ROOT, "author", authorId);
     doc.set(ROOT, "shared", false, "boolean");
+    doc.set(ROOT, "pinned", false);
     doc.set(ROOT, "time", Date.now(), "timestamp");
     doc.set(ROOT, "archived", false, "boolean");
     doc.set(ROOT, "title", "");
