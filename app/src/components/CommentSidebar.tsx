@@ -1,25 +1,19 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React from 'react'
-import { Upwell, LayerMetadata, Comment, CommentState } from 'api'
+import { Upwell, Comment, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
 type CommentViewProps = {
   upwell: Upwell
-  layer: LayerMetadata
   comment: Comment
   mark: { start: number; end: number }
+  archiveComment: Function
   colors?: AuthorColorsType
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { upwell, comment, layer } = props
+  let { upwell, comment, archiveComment } = props
   let authorName = upwell.getAuthorName(comment.author)
-
-  let archiveComment = () => {
-    let draft = upwell.get(layer.id)
-    draft.comments.archive(comment)
-  }
 
   return (
     <div
@@ -52,7 +46,7 @@ export function CommentView(props: CommentViewProps) {
             width: 5em;
             font-size: x-small;
           `}
-          onClick={archiveComment}
+          onClick={() => archiveComment(comment)}
         >
           archive
         </button>
@@ -62,24 +56,21 @@ export function CommentView(props: CommentViewProps) {
 }
 
 type CommentSidebarProps = {
-  layer: LayerMetadata
+  comments: any
+  marks: any
   upwell: Upwell
   colors?: AuthorColorsType
-  onChange: () => void
+  onChange: (comment: Comment) => void
 }
 
 export default function CommentSidebar(props: CommentSidebarProps) {
-  let { upwell, layer, colors } = props
-  let draft = upwell.get(layer.id)
-  let comments = draft.comments.objects()
+  let { upwell, marks, comments, onChange, colors } = props
 
   let commentObjs = Object.keys(comments)
     .map((id) => {
       let comment = comments[id]
 
-      let mark = draft.marks.find(
-        (m: any) => m.type === 'comment' && m.value === id
-      )
+      let mark = marks.find((m: any) => m.type === 'comment' && m.value === id)
 
       return {
         comment,
@@ -96,9 +87,9 @@ export default function CommentSidebar(props: CommentSidebarProps) {
             <CommentView
               comment={comment}
               mark={mark}
-              upwell={upwell}
-              layer={layer}
               colors={colors}
+              upwell={upwell}
+              archiveComment={onChange}
             />
           </div>
         )

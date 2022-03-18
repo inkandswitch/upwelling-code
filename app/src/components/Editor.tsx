@@ -124,6 +124,7 @@ export function Editor(props: Props) {
               let message = prompt('what is your comment')
               editableLayer.insertComment(from, to, message!, author.id)
               contextMenu.style.display = 'none'
+              onChange()
             },
           },
         ]),

@@ -2,7 +2,7 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
-import { LayerMetadata, Layer, Author } from 'api'
+import { Comment, LayerMetadata, Layer, Author } from 'api'
 //@ts-ignore
 import debounce from 'lodash.debounce'
 import { AuthorColorsType } from './ListDocuments'
@@ -100,7 +100,6 @@ export default function DraftView(props: DraftViewProps) {
       console.log('updating to root')
       upwell.updateToRoot(draft)
     }
-    render()
 
     return () => {
       console.log('unmounting ')
@@ -136,14 +135,16 @@ export default function DraftView(props: DraftViewProps) {
   let onTextChange = () => {
     if (rootId === layer.id) {
     } else {
-      documents.updatePeers(id, did)
+      documents.updatePeers(id, layer.id)
       setSyncState(SYNC_STATE.LOADING)
       debouncedOnTextChange()
     }
   }
 
-  let onCommentChange = () => {
-    console.log('comment change!')
+  let onArchiveComment = (comment: Comment) => {
+    let draft = upwell.get(layer.id)
+    draft.comments.archive(comment)
+    onChangeMade()
   }
 
   let handleUpdateClick = () => {
@@ -167,8 +168,8 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleMergeClick = () => {
     let upwell = documents.get(id)
-    let layer = upwell.get(did)
-    upwell.setLatest(layer)
+    let draft = upwell.get(layer.id)
+    upwell.setLatest(draft)
     setEpoch(Date.now())
     onChangeMade()
   }
@@ -212,7 +213,7 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <DraftsHistory
-        did={did}
+        did={layer.id}
         handleShareClick={handleShareClick}
         epoch={epoch}
         goToDraft={goToDraft}
@@ -242,7 +243,7 @@ export default function DraftView(props: DraftViewProps) {
         >
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
-            {!isLatest && !upwell.isArchived(did) && (
+            {!isLatest && !upwell.isArchived(layer.id) && (
               <>
                 <Button onClick={() => goToDraft('latest')}>View Latest</Button>{' '}
                 »{' '}
@@ -271,7 +272,7 @@ export default function DraftView(props: DraftViewProps) {
               justify-content: space-between;
             `}
           >
-            {isLatest || upwell.isArchived(did) ? (
+            {isLatest || upwell.isArchived(layer.id) ? (
               <Button onClick={createLayer}>Create Draft</Button>
             ) : (
               <>
@@ -322,7 +323,7 @@ export default function DraftView(props: DraftViewProps) {
         </div>
 
         <EditReviewView
-          did={did}
+          did={layer.id}
           epoch={epoch}
           visible={[layer.id]}
           id={id}
@@ -342,8 +343,9 @@ export default function DraftView(props: DraftViewProps) {
         `}
       >
         <CommentSidebar
-          layer={layer}
-          onChange={onCommentChange}
+          marks={layer.marks}
+          comments={layer.comments}
+          onChange={onArchiveComment}
           upwell={upwell}
           colors={authorColors}
         />

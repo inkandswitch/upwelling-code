@@ -34,6 +34,8 @@ export type LayerMetadata = {
   text: string;
   time: number;
   version: string;
+  comments: any;
+  marks: any;
   shared: boolean;
   parent_id: string;
   authorId: AuthorId;
@@ -166,6 +168,8 @@ export class Layer {
       time: this.time,
       version: this.version,
       shared: this.shared,
+      marks: this.marks,
+      comments: this.comments.objects(),
       authorId: this.authorId,
     };
   }
