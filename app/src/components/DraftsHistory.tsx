@@ -58,7 +58,7 @@ function getYourLayers(layers: Layer[], rootId: string) {
       return false
     }
     // don't show if it's someone elses' and not shared
-    if (l.id !== yourId && !l.shared) {
+    if (l.authorId !== yourId && !l.shared) {
       return false
     }
     return true
