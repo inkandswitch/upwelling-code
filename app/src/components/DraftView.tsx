@@ -78,18 +78,14 @@ export default function DraftView(props: DraftViewProps) {
   }, [id, layer.id, authorColors, setAuthorColors, props.author])
 
   useEffect(() => {
-    // listen for remote changes on this draft
-    /*
-    let interval = setInterval(() => {
-      documents.sync(id).then(() => {
-        setSyncState(SYNC_STATE.SYNCED)
-        let upwell = documents.get(id)
-        let draft = upwell.get(layer.id)
-        setLayer(draft.materialize())
-        render()
-      })
-    }, AUTOSAVE_INTERVAL)
-    */
+    // get remote changes on this draft on first load
+    documents.sync(id).then(() => {
+      setSyncState(SYNC_STATE.SYNCED)
+      let upwell = documents.get(id)
+      let draft = upwell.get(layer.id)
+      setLayer(draft.materialize())
+      render()
+    })
 
     documents.connect(id, layer.id)
 
@@ -107,7 +103,6 @@ export default function DraftView(props: DraftViewProps) {
     render()
 
     return () => {
-      //clearInterval(interval)
       console.log('unmounting ')
       documents.disconnect()
     }
@@ -128,7 +123,7 @@ export default function DraftView(props: DraftViewProps) {
     render()
 
     documents
-      .upwellChanged(props.id)
+      .sync(props.id)
       .then(() => {
         setSyncState(SYNC_STATE.SYNCED)
       })

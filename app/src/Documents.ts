@@ -41,10 +41,6 @@ export class Documents {
     return this.save(id)
   }
 
-  upwellChanged(id: string) {
-    return this.sync(id)
-  }
-
   disconnect() {
     if (this.rtc) {
       this.rtc.destroy()
