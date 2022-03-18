@@ -223,7 +223,7 @@ export default function DraftView(props: DraftViewProps) {
                 {' '}
                 »{' '}
                 <Input
-                  value={layer.message}
+                  defaultValue={layer.message}
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
