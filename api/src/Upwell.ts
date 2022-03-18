@@ -121,6 +121,12 @@ export class Upwell {
     return this.metadata.isArchived(id);
   }
 
+  updateToRoot(layer: Layer) {
+    let root = this.rootLayer;
+    layer.merge(root);
+    layer.parent_id = root.id;
+  }
+
   archive(id: string): void {
     if (this.isArchived(id)) return;
     let doc = this.get(id);
@@ -278,6 +284,7 @@ export class Upwell {
     //merge metadata
     let theirs = other.metadata;
     let ours = this.metadata;
+
     ours.doc.merge(theirs.doc);
     this.metadata = ours;
     this.subscriber();

@@ -48,7 +48,6 @@ export class Documents {
   disconnect() {
     if (this.rtc) {
       this.rtc.destroy()
-      console.log('disconnecting')
       this.rtc = undefined
     }
   }

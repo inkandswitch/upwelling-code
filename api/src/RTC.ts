@@ -11,7 +11,7 @@ type WebsocketSyncMessage = {
   message?: string;
 };
 
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 2;
 
 export class RealTimeDraft {
   draft: Layer;
@@ -28,12 +28,12 @@ export class RealTimeDraft {
 
   retry() {
     this.retries++;
-    if (this.retries > MAX_RETRIES)
-      return console.log("MAX RETRIES", this.retries);
+    if (this.retries > MAX_RETRIES) return console.log("Stopped");
+    let retryInMs = 1000 * this.retries;
+    console.log("Retrying in " + retryInMs + "ms");
     this.timeout = setTimeout(() => {
-      console.log("Retrying");
       this.ws = this.connect();
-    }, 1000);
+    }, retryInMs);
   }
 
   connect() {
