@@ -213,9 +213,11 @@ export default function DraftView(props: DraftViewProps) {
         >
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
-            <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
-              View Original
-            </Button>
+            {!isLatest && (
+              <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
+                View Latest
+              </Button>
+            )}
             {!isLatest && (
               <>
                 {' '}
