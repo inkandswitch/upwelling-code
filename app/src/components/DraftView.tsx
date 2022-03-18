@@ -2,8 +2,9 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
-//@ts-ignore
 import { LayerMetadata, Layer, Author } from 'api'
+//@ts-ignore
+import debounce from 'lodash.debounce'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -23,7 +24,7 @@ type DraftViewProps = {
   author: Author
 }
 
-//const AUTOSAVE_INTERVAL = 5000
+const AUTOSAVE_INTERVAL = 3000
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author } = props
@@ -142,6 +143,7 @@ export default function DraftView(props: DraftViewProps) {
     } else {
       documents.updatePeers(id, did)
       setSyncState(SYNC_STATE.LOADING)
+      debouncedOnTextChange()
     }
   }
 
@@ -175,6 +177,10 @@ export default function DraftView(props: DraftViewProps) {
     setEpoch(Date.now())
     onChangeMade()
   }
+
+  let debouncedOnTextChange = debounce((layer: Layer) => {
+    onChangeMade()
+  }, AUTOSAVE_INTERVAL)
 
   function createLayer() {
     let upwell = documents.get(id)
