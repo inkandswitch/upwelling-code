@@ -95,7 +95,8 @@ export default function DraftView(props: DraftViewProps) {
     if (
       !draft.pinned &&
       draft.id !== upwell.rootLayer.id &&
-      draft.parent_id !== upwell.rootLayer.id
+      draft.parent_id !== upwell.rootLayer.id &&
+      !upwell.isArchived(draft.id)
     ) {
       console.log('updating to root')
       upwell.updateToRoot(draft)
