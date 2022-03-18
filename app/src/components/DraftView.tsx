@@ -236,7 +236,7 @@ export default function DraftView(props: DraftViewProps) {
             <SyncIndicator state={sync_state}></SyncIndicator>
             {!isLatest && (
               <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
-                View Latest
+                View Document
               </Button>
             )}
             {!isLatest && (
@@ -282,7 +282,7 @@ export default function DraftView(props: DraftViewProps) {
                     disabled={rootId !== layer.parent_id}
                     onClick={handleMergeClick}
                   >
-                    Merge to document
+                    Merge to Document
                   </Button>
                   {layer.pinned && (
                     <Button
