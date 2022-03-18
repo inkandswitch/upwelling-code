@@ -82,12 +82,9 @@ export default function DraftView(props: DraftViewProps) {
     // get remote changes on this draft on first load
     documents.sync(id).then(() => {
       setSyncState(SYNC_STATE.SYNCED)
-      let upwell = documents.get(id)
-      let draft = upwell.get(layer.id)
-      setLayer(draft.materialize())
       render()
     })
-  }, []) //eslint-disable-line
+  }, [render, id])
 
   useEffect(() => {
     documents.connect(id, layer.id)
