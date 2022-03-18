@@ -157,6 +157,16 @@ export default function DraftView(props: DraftViewProps) {
     onChangeMade()
   }
 
+  const handleShareClick = (layer: Layer) => {
+    if (
+      // eslint-disable-next-line no-restricted-globals
+      confirm("Do you want to share your layer? it can't be unshared.")
+    ) {
+      let upwell = documents.get(id)
+      upwell.share(layer.id)
+    }
+  }
+
   let handleMergeClick = () => {
     let upwell = documents.get(id)
     let layer = upwell.get(did)
@@ -201,6 +211,7 @@ export default function DraftView(props: DraftViewProps) {
     >
       <DraftsHistory
         did={did}
+        handleShareClick={handleShareClick}
         epoch={epoch}
         goToDraft={goToDraft}
         colors={authorColors}

@@ -68,6 +68,7 @@ function getYourLayers(layers: Layer[], rootId: string) {
 type Props = {
   layers: Layer[]
   epoch: number
+  handleShareClick: Function
   id: string
   did: string
   goToDraft: Function
@@ -75,6 +76,7 @@ type Props = {
 }
 export default function DraftsHistory({
   epoch,
+  handleShareClick,
   layers,
   id,
   did,
@@ -107,16 +109,6 @@ export default function DraftsHistory({
 
   function onGetMoreClick() {
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
-  }
-
-  const handleShareClick = (layer: Layer) => {
-    if (
-      // eslint-disable-next-line no-restricted-globals
-      confirm("Do you want to share your layer? it can't be unshared.")
-    ) {
-      let upwell = documents.get(id)
-      upwell.share(layer.id)
-    }
   }
 
   return (
