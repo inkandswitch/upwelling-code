@@ -164,6 +164,7 @@ export default function DraftView(props: DraftViewProps) {
     ) {
       let upwell = documents.get(id)
       upwell.share(layer.id)
+      onChangeMade()
     }
   }
 
