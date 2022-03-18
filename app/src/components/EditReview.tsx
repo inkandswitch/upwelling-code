@@ -44,7 +44,7 @@ export function EditReviewView(props: Props) {
     <ReviewView upwell={upwell} visible={visible} colors={colors}></ReviewView>
   )
   let component = reviewView
-  if (visible.length === 1 && !upwell.isArchived(visible[0])) {
+  if (visible.length === 1) {
     let textArea = (
       <Editor
         upwell={upwell}
