@@ -53,12 +53,15 @@ function getYourLayers(layers: Layer[], rootId: string) {
   const yourId = documents.author.id
 
   return layers.filter((l) => {
-    return (
-      // keep it if it isn't the root layer
-      l.id !== rootId ||
-      // keep it if it's someone else's layer and it's shared
-      (l.id !== yourId && l.shared)
-    )
+    // don't show root layer
+    if (l.id === rootId) {
+      return false
+    }
+    // don't show if it's someone elses' and not shared
+    if (l.authorId !== yourId && !l.shared) {
+      return false
+    }
+    return true
   })
 }
 
