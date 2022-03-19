@@ -1,8 +1,11 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React from 'react'
+import React, { useState } from 'react'
 import { Upwell, LayerMetadata, Comment, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
+import Documents from '../Documents'
+
+let documents = Documents()
 
 type CommentViewProps = {
   upwell: Upwell
@@ -15,11 +18,17 @@ type CommentViewProps = {
 export function CommentView(props: CommentViewProps) {
   let { upwell, comment, layer } = props
   let authorName = upwell.getAuthorName(comment.author)
+  let [state, setState] = useState({
+    archived: comment.state !== CommentState.OPEN,
+  })
 
   let archiveComment = () => {
     let draft = upwell.get(layer.id)
     draft.comments.archive(comment)
+    documents.save(upwell.id)
+    setState({ archived: true })
   }
+  if (state.archived) return <div></div>
 
   return (
     <div
