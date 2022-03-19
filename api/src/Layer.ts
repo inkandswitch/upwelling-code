@@ -29,6 +29,7 @@ export type ChangeMetadata = {
 export type Heads = string[];
 export type LayerMetadata = {
   id: string;
+  contributors: string[];
   title: string;
   pinned: boolean;
   text: string;
@@ -82,6 +83,11 @@ export class Layer {
 
   get shared() {
     return this._getValue("shared") as boolean;
+  }
+
+  get contributors(): string[] {
+    let contribMap = this.doc.materialize("/contributors");
+    return Object.keys(contribMap);
   }
 
   set shared(value: boolean) {
@@ -164,6 +170,7 @@ export class Layer {
       pinned: this.pinned,
       parent_id: this.parent_id,
       text: this.text,
+      contributors: this.contributors,
       message: this.message,
       time: this.time,
       version: this.version,
@@ -179,6 +186,7 @@ export class Layer {
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, 0, value);
     else throw new Error("Text field not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   insertBlock(position: number, type: string) {
@@ -186,6 +194,7 @@ export class Layer {
     if (text && text[0] === "text")
       this.doc.insert_object(text[1], position, { type });
     else throw new Error("text not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   insertComment(
@@ -207,6 +216,7 @@ export class Layer {
 
     this.mark("comment", `[${from}..${to}]`, comment_id);
 
+    this.addMyselfAsContributor();
     return comment_id;
   }
 
@@ -215,6 +225,7 @@ export class Layer {
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, count, "");
     else throw new Error("Text field not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   mark(name: string, range: string, value: Value, prop = "text") {
@@ -222,6 +233,7 @@ export class Layer {
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
     else throw new Error("Text field not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   getMarks(prop = "text") {
@@ -285,7 +297,13 @@ export class Layer {
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
     doc.set(ROOT, "pinned", false);
-    return new Layer(id, doc);
+    let layer = new Layer(id, doc);
+    layer.addMyselfAsContributor();
+    return layer;
+  }
+
+  addMyselfAsContributor() {
+    this.doc.set("/contributors", this.authorId, true);
   }
 
   merge(theirs: Layer) {
@@ -370,11 +388,13 @@ export class Layer {
     doc.set(ROOT, "archived", false, "boolean");
     doc.set(ROOT, "title", "");
     doc.set_object(ROOT, "comments", {});
+    doc.set_object(ROOT, "contributors", {});
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, "text", " ");
     let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
     doc.set(initialParagraph, "type", "paragraph");
     let layer = new Layer(id, doc);
+    layer.addMyselfAsContributor();
     return layer;
   }
 
