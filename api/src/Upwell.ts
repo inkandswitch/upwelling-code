@@ -117,6 +117,14 @@ export class Upwell {
     this.subscriber();
   }
 
+  updateToRoot(layer: Layer) {
+    let root = this.rootLayer;
+    let message = layer.message;
+    layer.merge(root);
+    layer.message = message;
+    layer.parent_id = root.id;
+  }
+
   isArchived(id: string): boolean {
     return this.metadata.isArchived(id);
   }

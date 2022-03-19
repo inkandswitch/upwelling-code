@@ -100,7 +100,7 @@ export default function DraftView(props: DraftViewProps) {
     onChangeMade()
   }
 
-  function onChangeMade() {
+  const onChangeMade = useCallback(() => {
     documents
       .upwellChanged(props.id)
       .then(() => {
@@ -110,7 +110,21 @@ export default function DraftView(props: DraftViewProps) {
         setSyncState(SYNC_STATE.OFFLINE)
         console.error('failed to sync', err)
       })
-  }
+  }, [props.id])
+
+  useEffect(() => {
+    let upwell = documents.get(id)
+    let draft = upwell.get(layer.id)
+    if (
+      !draft.pinned &&
+      draft.id !== upwell.rootLayer.id &&
+      draft.parent_id !== upwell.rootLayer.id &&
+      !upwell.isArchived(draft.id)
+    ) {
+      upwell.updateToRoot(draft)
+      onChangeMade()
+    }
+  }, [id, layer, onChangeMade])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -133,6 +147,13 @@ export default function DraftView(props: DraftViewProps) {
 
   let onCommentChange = () => {
     console.log('comment change!')
+  }
+
+  function pinDraft() {
+    let draft = upwell.get(layer.id)
+    draft.pinned = !draft.pinned
+    setLayer(draft.materialize())
+    onChangeMade()
   }
 
   let handleUpdateClick = () => {
@@ -215,7 +236,7 @@ export default function DraftView(props: DraftViewProps) {
             <SyncIndicator state={sync_state}></SyncIndicator>
             {!isLatest && (
               <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
-                View Latest
+                View Document
               </Button>
             )}
             {!isLatest && (
@@ -223,12 +244,13 @@ export default function DraftView(props: DraftViewProps) {
                 {' '}
                 »{' '}
                 <Input
-                  defaultValue={layer.message}
+                  value={layer.message}
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
                   onChange={(e) => {
                     e.stopPropagation()
+                    setLayer({ ...layer, message: e.target.value })
                   }}
                   onBlur={(e) => {
                     //@ts-ignore
@@ -257,17 +279,19 @@ export default function DraftView(props: DraftViewProps) {
                   `}
                 >
                   <Button
-                    disabled={!rootId || rootId !== layer.parent_id}
+                    disabled={rootId !== layer.parent_id}
                     onClick={handleMergeClick}
                   >
-                    Merge to document
+                    Merge to Document
                   </Button>
-                  <Button
-                    disabled={!rootId || rootId === layer.parent_id}
-                    onClick={handleUpdateClick}
-                  >
-                    Update from current
-                  </Button>
+                  {layer.pinned && (
+                    <Button
+                      disabled={rootId === layer.parent_id}
+                      onClick={handleUpdateClick}
+                    >
+                      Update from current
+                    </Button>
+                  )}
                 </span>
                 <span>
                   view changes{' '}
@@ -280,13 +304,25 @@ export default function DraftView(props: DraftViewProps) {
                     {reviewMode ? 'on' : 'off'}
                   </Button>
                 </span>
+
+                <span>
+                  fixed{' '}
+                  <Button
+                    css={css`
+                      margin-bottom: 1ex;
+                    `}
+                    onClick={() => pinDraft()}
+                  >
+                    {layer.pinned ? 'on' : 'off'}
+                  </Button>
+                </span>
               </>
             )}
           </div>
         </div>
 
         <EditReviewView
-          did={did}
+          did={layer.id}
           epoch={epoch}
           visible={[layer.id]}
           id={id}

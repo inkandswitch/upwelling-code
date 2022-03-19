@@ -20,6 +20,9 @@ import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import ProsemirrorRenderer from '../ProsemirrorRenderer'
 import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
+import Documents from '../Documents'
+
+let documents = Documents()
 
 type Props = {
   upwell: Upwell
@@ -123,6 +126,7 @@ export function Editor(props: Props) {
               )
               let message = prompt('what is your comment')
               editableLayer.insertComment(from, to, message!, author.id)
+              documents.save(upwell.id)
               contextMenu.style.display = 'none'
             },
           },
