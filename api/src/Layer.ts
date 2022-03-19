@@ -29,6 +29,7 @@ export type ChangeMetadata = {
 export type Heads = string[];
 export type LayerMetadata = {
   id: string;
+  contributors: string[];
   title: string;
   pinned: boolean;
   text: string;
@@ -82,6 +83,11 @@ export class Layer {
 
   get shared() {
     return this._getValue("shared") as boolean;
+  }
+
+  get contributors(): string[] {
+    let contribMap = this.doc.materialize("/contributors");
+    return Object.keys(contribMap);
   }
 
   set shared(value: boolean) {
@@ -164,6 +170,7 @@ export class Layer {
       pinned: this.pinned,
       parent_id: this.parent_id,
       text: this.text,
+      contributors: this.contributors,
       message: this.message,
       time: this.time,
       version: this.version,
@@ -272,6 +279,7 @@ export class Layer {
   }
 
   save(): Uint8Array {
+    this.doc.set("/contributors", this.authorId, true);
     return this.doc.save();
   }
 
@@ -370,6 +378,7 @@ export class Layer {
     doc.set(ROOT, "archived", false, "boolean");
     doc.set(ROOT, "title", "");
     doc.set_object(ROOT, "comments", {});
+    doc.set_object(ROOT, "contributors", {});
     // for prosemirror, we can't have an empty document, so fill some space
     let text = doc.set_object(ROOT, "text", " ");
     let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
