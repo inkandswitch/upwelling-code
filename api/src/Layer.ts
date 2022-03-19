@@ -186,6 +186,7 @@ export class Layer {
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, 0, value);
     else throw new Error("Text field not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   insertBlock(position: number, type: string) {
@@ -193,6 +194,7 @@ export class Layer {
     if (text && text[0] === "text")
       this.doc.insert_object(text[1], position, { type });
     else throw new Error("text not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   insertComment(
@@ -214,6 +216,7 @@ export class Layer {
 
     this.mark("comment", `[${from}..${to}]`, comment_id);
 
+    this.addMyselfAsContributor();
     return comment_id;
   }
 
@@ -222,6 +225,7 @@ export class Layer {
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, count, "");
     else throw new Error("Text field not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   mark(name: string, range: string, value: Value, prop = "text") {
@@ -229,6 +233,7 @@ export class Layer {
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
     else throw new Error("Text field not properly initialized");
+    this.addMyselfAsContributor();
   }
 
   getMarks(prop = "text") {
@@ -279,7 +284,6 @@ export class Layer {
   }
 
   save(): Uint8Array {
-    this.doc.set("/contributors", this.authorId, true);
     return this.doc.save();
   }
 
@@ -293,7 +297,13 @@ export class Layer {
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
     doc.set(ROOT, "pinned", false);
-    return new Layer(id, doc);
+    let layer = new Layer(id, doc);
+    layer.addMyselfAsContributor();
+    return layer;
+  }
+
+  addMyselfAsContributor() {
+    this.doc.set("/contributors", this.authorId, true);
   }
 
   merge(theirs: Layer) {
@@ -384,6 +394,7 @@ export class Layer {
     let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
     doc.set(initialParagraph, "type", "paragraph");
     let layer = new Layer(id, doc);
+    layer.addMyselfAsContributor();
     return layer;
   }
 
