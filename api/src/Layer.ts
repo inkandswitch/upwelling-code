@@ -151,8 +151,9 @@ export class Layer {
   }
 
   receiveSyncMessage(state: SyncState, message: SyncMessage) {
-    this.doc.receiveSyncMessage(state, message);
+    let res = this.doc.receiveSyncMessage(state, message);
     if (this.subscriber) this.subscriber(this);
+    return res
   }
 
   subscribe(subscriber: Subscriber) {

@@ -1,6 +1,7 @@
-import { SyncState, initSyncState } from "automerge-wasm-pack";
+import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
 import { Layer } from "./";
 import { nanoid } from "nanoid";
+import Queue from "./Queue";
 
 const STORAGE_URL = process.env.STORAGE_URL;
 console.log(STORAGE_URL);
@@ -11,6 +12,8 @@ type WebsocketSyncMessage = {
   message?: string;
 };
 
+export type Transaction = ChangeSet[]
+
 const MAX_RETRIES = 5;
 
 export class RealTimeDraft {
@@ -20,6 +23,7 @@ export class RealTimeDraft {
   ws: WebSocket;
   peerStates = new Map<string, SyncState>();
   retries: number = 0;
+  transactions: Queue<Transaction> = new Queue()
 
   constructor(draft: Layer) {
     this.draft = draft;
@@ -114,6 +118,7 @@ export class RealTimeDraft {
 
   receiveSyncMessage(msg: WebsocketSyncMessage) {
     let state = this._getPeerState(msg.peerId);
+    let heads = this.draft.doc.getHeads()
     if (!msg.message) {
       console.error("msg", msg);
       throw new Error("Malformed syncMessage");
@@ -121,6 +126,10 @@ export class RealTimeDraft {
     let syncMessage = Uint8Array.from(Buffer.from(msg.message, "base64"));
 
     this.draft.receiveSyncMessage(state, syncMessage);
+    // TODO: only call attribute if textObj was changed
+    let newHeads = this.draft.doc.getHeads()
+    let attribution = this.draft.doc.attribute('/text', heads, [newHeads])
+    this.transactions.push(attribution)
     this.sendSyncMessage(msg.peerId);
   }
 

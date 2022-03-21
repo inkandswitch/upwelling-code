@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 //import React, { useEffect, useRef, useState } from 'react'
-import React, { useState, useRef } from 'react'
-import { Upwell, Layer, Author } from 'api'
+import React, { useState, useEffect, useRef } from 'react'
+import { Transaction as UpwellTransaction, Upwell, Layer, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'
 
@@ -152,35 +152,29 @@ export function Editor(props: Props) {
 
   const viewRef = useRef(null)
 
-  /*
-   * this was breaking things badly in strange ways, so just commenting out for the moment.
-   *
   useEffect(() => {
-    editableLayer.subscribe((doc: Layer) => {
-      let change: any = doc.getChanges(heads)
-      if (change.length) {
-        let [authorId] = change[0].actor.split('0000')
-        if (authorId === documents.author.id) return
-      }
+    if (documents.rtc && documents.rtc.draft.id === editableLayerId) {
+      documents.rtc.transactions.subscribe((transaction: UpwellTransaction) => {
+        for (const changeset of transaction) {
+          console.log(changeset)
+        }
+        /*
+        let atjsonLayer = UpwellSource.fromRaw(doc)
+        let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
 
-      let atjsonLayer = UpwellSource.fromRaw(doc)
-      let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
-
-      let { selection } = state
-
-      // TODO: transform automerge to prosemirror transaction
-      let transaction = state.tr
-        .replace(0, state.doc.content.size, new Slice(pmDoc.content, 0, 0))
-        .setSelection(selection)
-      let newState = state.apply(transaction)
-      setState(newState)
-      setHeads(doc.doc.getHeads())
-    })
+        // TODO: transform automerge to prosemirror transaction
+        let transaction = state.tr
+          .replace(0, state.doc.content.size, new Slice(pmDoc.content, 0, 0))
+          .setSelection(selection)
+        let newState = state.apply(transaction)
+        setState(newState)
+        */
+      })
+    }
     return () => {
-      editableLayer.subscribe(() => {})
+      documents.rtc?.transactions.unsubscribe()
     }
   })
-  */
 
   let dispatchHandler = (transaction: any) => {
     for (let step of transaction.steps) {
