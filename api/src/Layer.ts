@@ -182,11 +182,11 @@ export class Layer {
   }
 
   insertAt(position: number, value: string | Array<string>, prop = "text") {
+    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, 0, value);
     else throw new Error("Text field not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   insertBlock(position: number, type: string) {
@@ -221,19 +221,19 @@ export class Layer {
   }
 
   deleteAt(position: number, count: number = 1, prop = "text") {
+    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, count, "");
     else throw new Error("Text field not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   mark(name: string, range: string, value: Value, prop = "text") {
+    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
     else throw new Error("Text field not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   getMarks(prop = "text") {
