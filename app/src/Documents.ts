@@ -57,7 +57,7 @@ export class Documents {
     if (this.rtc) return this.rtc
     let upwell = this.get(id)
     let draft = upwell.get(did)
-    this.rtc = new RealTimeDraft(draft)
+    this.rtc = new RealTimeDraft(draft, this.author)
     return this.rtc
   }
 

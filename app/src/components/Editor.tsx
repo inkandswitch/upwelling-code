@@ -154,7 +154,7 @@ export function Editor(props: Props) {
   useEffect(() => {
     if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
       documents.rtc.transactions.subscribe((transaction: UpwellTransaction) => {
-        console.log('from', transaction.authorId)
+        console.log('from', transaction.author)
         if (transaction.changes) {
           for (const changeset of transaction.changes) {
             console.log(changeset)

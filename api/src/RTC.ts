@@ -1,5 +1,5 @@
 import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
-import { AuthorId, Draft } from "./";
+import { Author, Draft } from "./";
 import { nanoid } from "nanoid";
 import Queue from "./Queue";
 
@@ -10,12 +10,13 @@ type WebsocketSyncMessage = {
   method: "OPEN" | "MESSAGE" | "BYE" | "CURSOR";
   peerId: string;
   message?: string;
+  author: Author;
   cursor?: number;
 };
 
 export type Transaction = {
   changes?: ChangeSet[],
-  authorId: AuthorId,
+  author: Author,
   cursor?: CursorPosition
 }
 export type CursorPosition = number
@@ -26,13 +27,15 @@ export class RealTimeDraft {
   draft: Draft;
   timeout: any;
   peerId: string = nanoid();
+  author: Author;
   ws: WebSocket;
   peerStates = new Map<string, SyncState>();
   retries: number = 0;
   transactions: Queue<Transaction> = new Queue()
 
-  constructor(draft: Draft) {
+  constructor(draft: Draft, author: Author) {
     this.draft = draft;
+    this.author = author
     this.ws = this.connect();
   }
 
@@ -80,6 +83,9 @@ export class RealTimeDraft {
         case "CURSOR":
           this.receiveCursorMessage(value)
           break;
+        case "BYE":
+          console.log('bye', value)
+          break;
         default:
           throw new Error("No message matched");
       }
@@ -101,6 +107,7 @@ export class RealTimeDraft {
 
   sendOpen() {
     this.send({
+      author: this.author,
       peerId: this.peerId,
       method: "OPEN",
     });
@@ -116,7 +123,7 @@ export class RealTimeDraft {
 
   receiveCursorMessage(msg: WebsocketSyncMessage) {
     this.transactions.push({
-      authorId: msg.peerId,
+      author: msg.author,
       cursor: msg.cursor,
     })
 
@@ -124,6 +131,7 @@ export class RealTimeDraft {
 
   sendCursorMessage(pos: CursorPosition) {
     this.send({
+      author: this.author,
       peerId: this.peerId,
       method: "CURSOR",
       cursor: pos
@@ -156,7 +164,7 @@ export class RealTimeDraft {
     let newHeads = this.draft.doc.getHeads()
     let attribution = this.draft.doc.attribute('/text', heads, [newHeads])
     this.transactions.push({
-      authorId: msg.peerId,
+      author: msg.author,
       changes: attribution
     })
     this.sendSyncMessage(msg.peerId);
@@ -168,6 +176,7 @@ export class RealTimeDraft {
     if (!syncMessage) return; // done
     let msg: WebsocketSyncMessage = {
       peerId: this.peerId,
+      author: this.author,
       method: "MESSAGE",
       message: Buffer.from(syncMessage).toString("base64"),
     };
@@ -176,6 +185,7 @@ export class RealTimeDraft {
 
   destroy() {
     let msg: WebsocketSyncMessage = {
+      author: this.author,
       peerId: this.peerId,
       method: "BYE",
     };
