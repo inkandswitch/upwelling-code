@@ -154,14 +154,21 @@ export function Editor(props: Props) {
   useEffect(() => {
     if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
       documents.rtc.transactions.subscribe((transaction: UpwellTransaction) => {
-        for (const changeset of transaction) {
-          console.log(changeset)
+        console.log('from', transaction.authorId)
+        if (transaction.changes) {
+          for (const changeset of transaction.changes) {
+            console.log(changeset)
+            // TODO: transform automerge to prosemirror transaction
+          }
         }
+        if (transaction.cursor) {
+          // TODO: update cursor position
+        }
+
         /*
         let atjsonLayer = UpwellSource.fromRaw(doc)
         let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
 
-        // TODO: transform automerge to prosemirror transaction
         let transaction = state.tr
           .replace(0, state.doc.content.size, new Slice(pmDoc.content, 0, 0))
           .setSelection(selection)
