@@ -1,6 +1,6 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
-import { Draft } from 'api'
+import { Draft, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
 export class Insertion extends InlineAnnotation<{
@@ -47,32 +47,42 @@ export default class UpwellSource extends Document {
   // This converts an upwell/automerge draft to an atjson document.
   static fromRaw(draft: Draft, colors?: AuthorColorsType) {
     // first convert marks to annotations
-    let marks = draft.marks.map((m: any) => {
-      let attrs: any = {}
-      if (m.type === 'comment') {
-        attrs = draft.comments.get(m.value)
-        if (colors) attrs.authorColor = colors[attrs.author]
-      } else {
-        try {
-          if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
-        } catch {
-          console.log(
-            'we should really fix the thing where I stuffed mark attrs into a json string lol'
-          )
-        }
-      }
+    let marks = draft.marks
+      .map((m: any) => {
+        let attrs: any = {}
+        if (m.type === 'comment') {
+          attrs = draft.comments.get(m.value)
 
-      // I wonder if there's a (good) way to preserve the automerge identity of
-      // the mark here (id? presumably?) Or I guess just the mark itself?) so
-      // that we can do direct actions on the Upwell draft via the atjson annotation
-      // as a proxy.
-      return {
-        start: m.start,
-        end: m.end,
-        type: `-upwell-${m.type}`,
-        attributes: attrs,
-      }
-    })
+          // don't include a mark if the comment is closed!
+          if (attrs.state === CommentState.CLOSED) {
+            return null
+          }
+
+          if (colors && colors[attrs.author])
+            attrs.authorColor = colors[attrs.author]
+          else attrs.authorColor = 'black'
+        } else {
+          try {
+            if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+          } catch {
+            console.log(
+              'we should really fix the thing where I stuffed mark attrs into a json string lol'
+            )
+          }
+        }
+
+        // I wonder if there's a (good) way to preserve the automerge identity of
+        // the mark here (id? presumably?) Or I guess just the mark itself?) so
+        // that we can do direct actions on the Upwell draft via the atjson annotation
+        // as a proxy.
+        return {
+          start: m.start,
+          end: m.end,
+          type: `-upwell-${m.type}`,
+          attributes: attrs,
+        }
+      })
+      .filter((m: any) => m !== null)
 
     // next convert blocks to annotations
     for (let b of draft.blocks) {

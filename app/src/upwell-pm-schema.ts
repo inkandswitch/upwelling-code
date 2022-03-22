@@ -13,8 +13,9 @@ export const nodes = {
 let comment: MarkSpec = {
   attrs: {
     id: {},
-    authorColor: { default: 'rgba(0,255,0,0.5)' },
-    class: {},
+    authorColor: {},
+    message: {},
+    author: {},
   },
   inclusive: false,
   toDOM(node: any) {
