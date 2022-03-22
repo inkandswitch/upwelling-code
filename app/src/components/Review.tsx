@@ -19,7 +19,7 @@ export function ReviewView(props: {
   upwell: Upwell
   baseDraftId: string
   changeDraftIds: string[]
-  colors?: AuthorColorsType
+  colors: AuthorColorsType
 }) {
   const { upwell, baseDraftId, changeDraftIds, colors } = props
 

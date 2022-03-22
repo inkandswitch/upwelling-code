@@ -32,8 +32,6 @@ type Props = {
   colors: AuthorColorsType
 }
 
-//let documents = Documents()
-
 const toggleBold = toggleMarkCommand(schema.marks.strong)
 const toggleItalic = toggleMarkCommand(schema.marks.em)
 
@@ -229,6 +227,7 @@ export function Editor(props: Props) {
             mark.attrs.message,
             mark.attrs.author.id
           )
+          documents.save(upwell.id)
         } else {
           editableDraft.mark(mark.type.name, `(${from}..${to})`, '')
         }
