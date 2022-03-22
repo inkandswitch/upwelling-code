@@ -159,14 +159,16 @@ export class RealTimeDraft {
     }
     let syncMessage = Uint8Array.from(Buffer.from(msg.message, "base64"));
 
-    this.draft.receiveSyncMessage(state, syncMessage);
-    // TODO: only call attribute if textObj was changed
-    let newHeads = this.draft.doc.getHeads()
-    let attribution = this.draft.doc.attribute('/text', heads, [newHeads])
-    this.transactions.push({
-      author: msg.author,
-      changes: attribution
-    })
+    let textObj = this.draft.doc.value('_root', 'text')
+    let opIds = this.draft.receiveSyncMessage(state, syncMessage);
+    if (textObj && textObj[0] === 'text' && opIds.indexOf(textObj[1]) > -1) {
+      let newHeads = this.draft.doc.getHeads()
+      let attribution = this.draft.doc.attribute(textObj[1], heads, [newHeads])
+      this.transactions.push({
+        author: msg.author,
+        changes: attribution
+      })
+    }
     this.sendSyncMessage(msg.peerId);
   }
 

@@ -307,9 +307,10 @@ export class Draft {
     this.doc.set("/contributors", this.authorId, true);
   }
 
-  merge(theirs: Draft) {
-    this.doc.merge(theirs.doc);
+  merge(theirs: Draft): string[] {
+    let opIds = this.doc.merge(theirs.doc);
     if (this.subscriber) this.subscriber(this);
+    return opIds
   }
 
   static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]) {
