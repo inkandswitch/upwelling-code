@@ -1,22 +1,22 @@
-import { createAuthorId, Author, Upwell, Layer } from "../src/index";
+import { createAuthorId, Author, Upwell, Draft } from "../src/index";
 import { it } from "mocha";
 import { assert } from "chai";
 
 describe("upwell", () => {
   it("subscribes to document changes", async () => {
     let d = Upwell.create();
-    let layers = d.layers();
-    assert.lengthOf(layers, 1);
+    let drafts = d.drafts();
+    assert.lengthOf(drafts, 1);
 
-    let doc: Layer = layers[0].fork("New layer", {
+    let doc: Draft = drafts[0].fork("New draft", {
       id: createAuthorId(),
       name: "Susan",
     });
     d.add(doc);
-    assert.lengthOf(d.layers(), 2);
+    assert.lengthOf(d.drafts(), 2);
 
     let times = 0;
-    doc.subscribe((doc: Layer) => {
+    doc.subscribe((doc: Draft) => {
       times++;
       if (times === 1) assert.equal(doc.text, "Hello\ufffc ");
       if (times === 2) assert.equal(doc.text, "Hola\ufffc ");
@@ -45,25 +45,25 @@ describe("upwell", () => {
     let d = Upwell.create();
     let e = Upwell.create();
 
-    let layers = d.layers();
-    let ddoc = layers[0];
+    let drafts = d.drafts();
+    let ddoc = drafts[0];
     let file = ddoc.save();
-    let edoc = Layer.load(ddoc.id, file, createAuthorId());
+    let edoc = Draft.load(ddoc.id, file, createAuthorId());
     e.add(edoc);
 
     ddoc.title = "Upwelling: Contextual Writing";
 
     let binary = ddoc.save();
-    let layer = Layer.load(ddoc.id, binary, createAuthorId());
-    e.add(layer);
-    assert.equal(layer.title, ddoc.title);
+    let draft = Draft.load(ddoc.id, binary, createAuthorId());
+    e.add(draft);
+    assert.equal(draft.title, ddoc.title);
   });
 
-  it("creates layers with authors", async () => {
+  it("creates drafts with authors", async () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
     let d = Upwell.create({ author: first_author });
-    let layers = d.layers();
-    let doc = layers[0];
+    let drafts = d.drafts();
+    let doc = drafts[0];
 
     doc.insertAt(0, "H");
     doc.insertAt(1, "e");
@@ -71,38 +71,38 @@ describe("upwell", () => {
     doc.insertAt(3, "l");
     doc.insertAt(4, "o");
     assert.equal(doc.text, "Hello\ufffc ");
-    assert.equal(d.layers()[0].text, "Hello\ufffc ");
+    assert.equal(d.drafts()[0].text, "Hello\ufffc ");
 
     d.setLatest(doc);
 
     let name = "Started typing on the train";
     let author: Author = { id: createAuthorId(), name: "Theroux" };
     let e = await Upwell.deserialize(d.serialize(), author);
-    let newLayer = e.createDraft(name);
+    let newDraft = e.createDraft(name);
 
-    newLayer.insertAt(0, "H");
-    newLayer.deleteAt(1);
-    newLayer.insertAt(1, "o");
-    newLayer.deleteAt(2);
-    newLayer.deleteAt(3);
-    newLayer.insertAt(3, "a");
-    newLayer.deleteAt(4);
-    assert.equal(newLayer.text, "Hola\ufffc ");
-    assert.equal(newLayer.authorId, author.id);
+    newDraft.insertAt(0, "H");
+    newDraft.deleteAt(1);
+    newDraft.insertAt(1, "o");
+    newDraft.deleteAt(2);
+    newDraft.deleteAt(3);
+    newDraft.insertAt(3, "a");
+    newDraft.deleteAt(4);
+    assert.equal(newDraft.text, "Hola\ufffc ");
+    assert.equal(newDraft.authorId, author.id);
     assert.deepEqual(e.metadata.getAuthors(), {
       [author.id]: author.name,
       [first_author.id]: first_author.name,
     });
   });
 
-  describe("Layer", () => {
+  describe("Draft", () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
     let d = Upwell.create({ author: first_author });
-    let layers = d.layers();
-    let doc = layers[0];
+    let drafts = d.drafts();
+    let doc = drafts[0];
     let rootId;
-    let newLayer;
-    assert.equal(layers.length, 1);
+    let newDraft;
+    assert.equal(drafts.length, 1);
     it("inserts text", () => {
       doc.insertAt(0, "H");
       doc.insertAt(1, "e");
@@ -115,79 +115,79 @@ describe("upwell", () => {
 
     it("forks", () => {
       let name = "Started typing on the train";
-      newLayer = d.createDraft(name);
+      newDraft = d.createDraft(name);
 
-      newLayer.insertAt(5, " ");
-      newLayer.insertAt(6, "w");
-      newLayer.insertAt(7, "o");
-      newLayer.insertAt(8, "r");
-      newLayer.insertAt(9, "l");
-      newLayer.insertAt(10, "d");
-      rootId = d.rootLayer.id;
+      newDraft.insertAt(5, " ");
+      newDraft.insertAt(6, "w");
+      newDraft.insertAt(7, "o");
+      newDraft.insertAt(8, "r");
+      newDraft.insertAt(9, "l");
+      newDraft.insertAt(10, "d");
+      rootId = d.rootDraft.id;
     });
 
     it("merged", () => {
-      doc.merge(newLayer);
+      doc.merge(newDraft);
       assert.equal(doc.text, "Hello world\ufffc ");
 
       d.add(doc);
-      layers = d.layers();
-      assert.equal(layers.length, 2);
+      drafts = d.drafts();
+      assert.equal(drafts.length, 2);
     });
 
     it("can be archived", async () => {
-      d.archive(newLayer.id);
-      let layer = d.history.get(0);
-      assert.ok(layer);
-      if (layer) {
-        assert.equal(d.isArchived(layer.id), true);
-        let root = d.rootLayer;
+      d.archive(newDraft.id);
+      let draft = d.history.get(0);
+      assert.ok(draft);
+      if (draft) {
+        assert.equal(d.isArchived(draft.id), true);
+        let root = d.rootDraft;
         assert.equal(root.id, rootId);
         assert.equal(doc.id, rootId);
       }
     });
 
-    it("can get archived layers from deserialized", async () => {
+    it("can get archived drafts from deserialized", async () => {
       let author = { id: createAuthorId(), name: "boop" };
       let f = await Upwell.deserialize(d.serialize(), author);
       let e = await Upwell.deserialize(f.serialize(), author);
-      let layer = e.history.get(0);
-      assert.ok(layer);
+      let draft = e.history.get(0);
+      assert.ok(draft);
     });
   });
 
-  it("makes layers visible and shared", async () => {
+  it("makes drafts visible and shared", async () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
     let d = Upwell.create({ author: first_author });
-    let layers = d.layers();
-    let doc = layers[0];
+    let drafts = d.drafts();
+    let doc = drafts[0];
     d.share(doc.id);
     assert.equal(doc.shared, true);
 
     let author = { id: createAuthorId(), name: "Theroux" };
     let inc = await Upwell.deserialize(d.serialize(), author);
     inc.createDraft();
-    let incomingLayers = inc.layers();
-    assert.equal(incomingLayers.length, 2);
+    let incomingDrafts = inc.drafts();
+    assert.equal(incomingDrafts.length, 2);
 
-    let incomingShared = incomingLayers[0];
+    let incomingShared = incomingDrafts[0];
     assert.equal(inc.getAuthorName(incomingShared.authorId), "Susan");
     assert.equal(incomingShared.shared, true);
     assert.equal(d.isArchived(incomingShared.id), false);
   });
 
-  it("gets root layer", () => {
+  it("gets root draft", () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
     let d = Upwell.create({ author: first_author });
-    let layers = d.layers();
-    let doc = layers[0];
-    let root = d.rootLayer;
+    let drafts = d.drafts();
+    let doc = drafts[0];
+    let root = d.rootDraft;
     assert.deepEqual(root.text, doc.text);
     assert.deepEqual(root.title, doc.title);
 
     d.add(doc.fork("beep boop", { id: createAuthorId(), name: "john" }));
 
-    root = d.rootLayer;
+    root = d.rootDraft;
     assert.deepEqual(root.text, doc.text);
     assert.deepEqual(root.title, doc.title);
   });
@@ -196,16 +196,16 @@ describe("upwell", () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
     let d = Upwell.create({ author: first_author });
 
-    let og = d.layers()[0];
+    let og = d.drafts()[0];
 
-    let layer = og.fork("", first_author);
-    d.add(layer);
-    d.share(layer.id);
+    let draft = og.fork("", first_author);
+    d.add(draft);
+    d.share(draft.id);
 
-    let boop = layer.fork("", first_author);
+    let boop = draft.fork("", first_author);
     d.add(boop);
 
-    assert.equal(d.layers().filter((l) => l.shared).length, 1);
+    assert.equal(d.drafts().filter((l) => l.shared).length, 1);
 
     boop = boop.fork("", first_author);
     d.add(boop);
@@ -215,7 +215,7 @@ describe("upwell", () => {
     d.add(boop);
 
     for (let i = 0; i < 100; i++) {
-      assert.equal(d.layers().filter((l) => l.shared).length, 2);
+      assert.equal(d.drafts().filter((l) => l.shared).length, 2);
     }
   });
 });

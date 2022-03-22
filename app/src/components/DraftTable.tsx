@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Documents from '../Documents'
 import { Button } from './Button'
-import { Upwell, Layer, Author } from 'api'
+import { Upwell, Draft, Author } from 'api'
 import { useLocation } from 'wouter'
 import ClickableDraftList from './ClickableDraftList'
 
@@ -15,17 +15,17 @@ type DraftListProps = {
 export default function DraftList(props: DraftListProps) {
   const { id } = props
   const [, setLocation] = useLocation()
-  let [layers, setLayers] = useState<Layer[]>([])
-  let [, setRoot] = useState<Layer>()
+  let [drafts, setDrafts] = useState<Draft[]>([])
+  let [, setRoot] = useState<Draft>()
 
   let upwell = documents.get(id)
 
   const render = useCallback((upwell: Upwell) => {
     // find the authors
-    let root = upwell.rootLayer
-    const layers = upwell.layers()
+    let root = upwell.rootDraft
+    const drafts = upwell.drafts()
     setRoot(root)
-    setLayers(layers)
+    setDrafts(drafts)
   }, [])
 
   useEffect(() => {
@@ -69,8 +69,8 @@ export default function DraftList(props: DraftListProps) {
       <ClickableDraftList
         id={id}
         did={''}
-        onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-        layers={layers.filter((l) => !upwell.isArchived(l.id))}
+        onDraftClick={(draft: Draft) => goToDraft(draft.id)}
+        drafts={drafts.filter((l) => !upwell.isArchived(l.id))}
       />
     </div>
   )

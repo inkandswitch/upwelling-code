@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from '@emotion/react/macro'
 import React from 'react'
-import { Layer } from 'api'
+import { Draft } from 'api'
 import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
@@ -172,27 +172,27 @@ const editableTabStyle = css`
 `
 
 type Props = {
-  onLayerClick: Function
+  onDraftClick: Function
   onInputBlur: Function
-  editableLayer?: string
+  editableDraft?: string
   visible: string[]
   handleShareClick?: any // TODO
   id: string
   handleDeleteClick?: any // TODO
-  layers: Layer[]
+  drafts: Draft[]
   isBottom?: boolean
   colors?: AuthorColorsType
 }
 
 export default function ListDocuments({
-  onLayerClick,
+  onDraftClick,
   handleShareClick,
   id,
   handleDeleteClick,
   onInputBlur,
-  editableLayer,
+  editableDraft,
   visible,
-  layers,
+  drafts,
   isBottom = false,
   colors = {},
 }: Props) {
@@ -205,14 +205,14 @@ export default function ListDocuments({
         ${isBottom ? 'overflow: unset;' : ''}
       `}
     >
-      {layers
+      {drafts
         .sort((a, b) => a.time - b.time)
-        .map((layer: Layer, index) => {
-          let visibleMaybe = visible.findIndex((id) => id === layer.id)
-          const isMerged = upwell.isArchived(layer.id)
+        .map((draft: Draft, index) => {
+          let visibleMaybe = visible.findIndex((id) => id === draft.id)
+          const isMerged = upwell.isArchived(draft.id)
           return (
             <FileTab
-              key={layer.id}
+              key={draft.id}
               aria-pressed={visibleMaybe > -1}
               index={index}
               isBottom={isBottom}
@@ -220,26 +220,26 @@ export default function ListDocuments({
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                onLayerClick(layer)
+                onDraftClick(draft)
               }}
-              title={`by ${authors[layer.authorId]}, ${relativeDate(
-                new Date(layer.time)
+              title={`by ${authors[draft.authorId]}, ${relativeDate(
+                new Date(draft.time)
               )}`}
               css={css`
                 display: flex;
                 flex-direction: row;
                 justify-content: flex-start;
                 align-items: flex-start;
-                ${editableLayer === layer.id ? editableTabStyle : ''}
+                ${editableDraft === draft.id ? editableTabStyle : ''}
                 box-shadow: 18px 24px 0px -18px ${colors[
-                  layer.authorId
+                  draft.authorId
                 ]?.toString() || 'none'} inset;
               `}
             >
-              {/* <span css={{ color: "lightgray" }}>{layer.id.slice(0, 2)}</span> */}
+              {/* <span css={{ color: "lightgray" }}>{draft.id.slice(0, 2)}</span> */}
               <TextareaInput
-                defaultValue={layer.message}
-                placeholder="layer name"
+                defaultValue={draft.message}
+                placeholder="draft name"
                 onClick={(e) => {
                   e.stopPropagation()
                 }}
@@ -247,11 +247,11 @@ export default function ListDocuments({
                   e.stopPropagation()
                 }}
                 onBlur={(e) => {
-                  onInputBlur(e, layer)
+                  onInputBlur(e, draft)
                 }}
               />
               <div>
-                {!layer.shared && (
+                {!draft.shared && (
                   <EmojiButton
                     css={wiggleStyle}
                     onClick={(e) => {
@@ -260,10 +260,10 @@ export default function ListDocuments({
                       if (
                         // eslint-disable-next-line no-restricted-globals
                         confirm(
-                          "Do you want to share your layer? it can't be unshared."
+                          "Do you want to share your draft? it can't be unshared."
                         )
                       ) {
-                        handleShareClick(layer)
+                        handleShareClick(draft)
                       }
                     }}
                   >
@@ -279,10 +279,10 @@ export default function ListDocuments({
                       if (
                         // eslint-disable-next-line no-restricted-globals
                         confirm(
-                          "Do you want to delete this layer? you can't get it back as of yet."
+                          "Do you want to delete this draft? you can't get it back as of yet."
                         )
                       ) {
-                        handleDeleteClick(layer)
+                        handleDeleteClick(draft)
                       }
                     }}
                   >

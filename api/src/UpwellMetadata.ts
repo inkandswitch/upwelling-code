@@ -28,7 +28,7 @@ export class UpwellMetadata {
     return meta
   }
 
-  _getArchivedLayersObj(): Automerge.ObjID {
+  _getArchivedDraftsObj(): Automerge.ObjID {
     let value = this.doc.value(ROOT, 'archived')
     let map
     if (!value) {
@@ -52,7 +52,7 @@ export class UpwellMetadata {
   }
 
   archive(id: string) {
-    let list = this._getArchivedLayersObj()
+    let list = this._getArchivedDraftsObj()
     let len = this.doc.length(list)
     this.doc.insert(list, len, id)
   }
@@ -69,7 +69,7 @@ export class UpwellMetadata {
     let authors = this.doc.value(ROOT, 'authors')
     if (authors && authors[0] === 'map') {
       let value = this.doc.value(authors[1], authorId)
-      if (value && value[0] === 'str') return {id: authorId, name: value[1]}
+      if (value && value[0] === 'str') return { id: authorId, name: value[1] }
       else return undefined
     }
     else return undefined

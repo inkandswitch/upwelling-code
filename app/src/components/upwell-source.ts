@@ -1,6 +1,6 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
-import { Layer, CommentState } from 'api'
+import { Draft, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
 export class Insertion extends InlineAnnotation<{
@@ -44,14 +44,14 @@ export class Comment extends InlineAnnotation<{}> {
 export default class UpwellSource extends Document {
   static schema = [Comment, Deletion, Emphasis, Insertion, Paragraph, Strong]
 
-  // This converts an upwell/automerge layer to an atjson document.
-  static fromRaw(layer: Layer, colors?: AuthorColorsType) {
+  // This converts an upwell/automerge draft to an atjson document.
+  static fromRaw(draft: Draft, colors?: AuthorColorsType) {
     // first convert marks to annotations
-    let marks = layer.marks
+    let marks = draft.marks
       .map((m: any) => {
         let attrs: any = {}
         if (m.type === 'comment') {
-          attrs = layer.comments.get(m.value)
+          attrs = draft.comments.get(m.value)
 
           // don't include a mark if the comment is closed!
           if (attrs.state === CommentState.CLOSED) {
@@ -73,7 +73,7 @@ export default class UpwellSource extends Document {
 
         // I wonder if there's a (good) way to preserve the automerge identity of
         // the mark here (id? presumably?) Or I guess just the mark itself?) so
-        // that we can do direct actions on the Upwell layer via the atjson annotation
+        // that we can do direct actions on the Upwell draft via the atjson annotation
         // as a proxy.
         return {
           start: m.start,
@@ -85,13 +85,13 @@ export default class UpwellSource extends Document {
       .filter((m: any) => m !== null)
 
     // next convert blocks to annotations
-    for (let b of layer.blocks) {
+    for (let b of draft.blocks) {
       b.type = `-upwell-${b.type}`
       marks.push(b)
     }
 
     return new this({
-      content: layer.text,
+      content: draft.text,
       annotations: marks,
     })
   }
