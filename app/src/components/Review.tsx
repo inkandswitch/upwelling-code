@@ -17,39 +17,33 @@ type ReviewState = {
 
 export function ReviewView(props: {
   upwell: Upwell
-  visible: string[]
+  baseLayerId: string
+  changeLayerIds: string[]
   colors?: AuthorColorsType
 }) {
-  const { upwell, visible } = props
+  const { upwell, baseLayerId, changeLayerIds, colors } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      if (!visible.length) {
-        let atjsonLayer = new UpwellSource({
-          content: '',
-          annotations: [],
-        })
-        setState({ atjsonLayer })
-        return
-      }
+      let baseLayer = upwell.get(baseLayerId)
+      let changeLayers = changeLayerIds.map((id) => upwell.get(id))
 
-      // FIXME these need to be ordered by dependency graph to make sense (earliest first).
-      let rest = visible.map((id) => upwell.get(id))
       let editsLayer = Layer.mergeWithEdits(
         documents.author,
-        upwell.rootLayer,
-        ...rest
+        baseLayer,
+        ...changeLayers
       )
-      let atjsonLayer = UpwellSource.fromRaw(editsLayer)
+      let atjsonLayer = UpwellSource.fromRaw(editsLayer, colors)
+      console.log(atjsonLayer)
 
       setState({ atjsonLayer })
     },
-    [upwell, visible]
+    [upwell, baseLayerId, changeLayerIds, colors]
   )
 
   useEffect(() => {
     updateAtjsonState()
-  }, [updateAtjsonState, visible])
+  }, [updateAtjsonState, baseLayerId, changeLayerIds])
 
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})

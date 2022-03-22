@@ -329,42 +329,43 @@ export class Layer {
     if (!obj || obj[0] !== "text")
       throw new Error("Text field not properly initialized");
 
-    let blame = newLayer.doc.blame(obj[1], origHead, heads);
+    let attribution = newLayer.doc.attribute2(obj[1], origHead, heads)
+    console.log('attribution', attribution)
 
     // blame contains an array with an entry for each layer passed in above,
     // with edits (add, del) applied against newLayer's text. Convert those to marks!
 
-    for (let i = 0; i < blame.length; i++) {
-      let layer = theirs[i];
-      let edits = blame[i];
+    for (let i = 0; i < attribution.length; i++) {
+      let layer = theirs[i]
+      let edits = attribution[i]
 
-      edits.add.forEach((edit) => {
-        let text = newLayer.text.substring(edit.start, edit.end);
+      edits.add.forEach(edit => {
+        let text = newLayer.text.substring(edit.start, edit.end)
         newLayer.mark(
-          "insert",
+          'insert',
           `(${edit.start}..${edit.end})`,
           JSON.stringify({
             author: layer.authorId,
-            text,
+            text
           })
-        );
-      });
+        )
+      })
 
-      edits.del.forEach((edit) => {
+      edits.del.forEach(edit => {
         newLayer.mark(
-          "delete",
+          'delete',
           `(${edit.pos}..${edit.pos})`,
           JSON.stringify({
             author: layer.authorId,
-            text: edit.val,
+            text: edit.val
           })
-        );
-      });
+        )
+      })
     }
 
-    newLayer.commit("Merge");
+    newLayer.commit('Merge')
 
-    return newLayer;
+    return newLayer
   }
 
   static getActorId(authorId: AuthorId) {

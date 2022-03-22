@@ -55,6 +55,10 @@ export default class UpwellSource extends Document {
       } else {
         try {
           if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+
+          if (m.type === 'insert' || m.type === 'delete') {
+            if (colors) attrs['authorColor'] = colors[attrs.author]
+          }
         } catch {
           console.log(
             'we should really fix the thing where I stuffed mark attrs into a json string lol'
