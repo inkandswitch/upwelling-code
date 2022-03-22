@@ -1,5 +1,5 @@
 import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
-import { Draft } from "./";
+import { AuthorId, Draft } from "./";
 import { nanoid } from "nanoid";
 import Queue from "./Queue";
 
@@ -7,12 +7,18 @@ const STORAGE_URL = process.env.STORAGE_URL;
 console.log(STORAGE_URL);
 
 type WebsocketSyncMessage = {
-  method: "OPEN" | "MESSAGE" | "BYE";
+  method: "OPEN" | "MESSAGE" | "BYE" | "CURSOR";
   peerId: string;
   message?: string;
+  cursor?: number;
 };
 
-export type Transaction = ChangeSet[]
+export type Transaction = {
+  changes?: ChangeSet[],
+  authorId: AuthorId,
+  cursor?: CursorPosition
+}
+export type CursorPosition = number
 
 const MAX_RETRIES = 5;
 
@@ -71,6 +77,9 @@ export class RealTimeDraft {
         case "MESSAGE":
           this.receiveSyncMessage(value);
           break;
+        case "CURSOR":
+          this.receiveCursorMessage(value)
+          break;
         default:
           throw new Error("No message matched");
       }
@@ -105,6 +114,23 @@ export class RealTimeDraft {
     }
   }
 
+  receiveCursorMessage(msg: WebsocketSyncMessage) {
+    this.transactions.push({
+      authorId: msg.peerId,
+      cursor: msg.cursor,
+    })
+
+  }
+
+  sendCursorMessage(pos: CursorPosition) {
+    this.send({
+      peerId: this.peerId,
+      method: "CURSOR",
+      cursor: pos
+    })
+
+  }
+
   _getPeerState(peerId: string) {
     let state = this.peerStates.get(peerId);
     if (!state) {
@@ -129,7 +155,10 @@ export class RealTimeDraft {
     // TODO: only call attribute if textObj was changed
     let newHeads = this.draft.doc.getHeads()
     let attribution = this.draft.doc.attribute('/text', heads, [newHeads])
-    this.transactions.push(attribution)
+    this.transactions.push({
+      authorId: msg.peerId,
+      changes: attribution
+    })
     this.sendSyncMessage(msg.peerId);
   }
 
