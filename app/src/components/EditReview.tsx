@@ -20,12 +20,22 @@ type Props = {
   author: Author
   epoch: number
   reviewMode: boolean
+  historyDraftId: string
   colors: AuthorColorsType
 }
 
 export function EditReviewView(props: Props) {
-  const { id, did, epoch, visible, onChange, reviewMode, colors, author } =
-    props
+  const {
+    id,
+    did,
+    epoch,
+    historyDraftId,
+    visible,
+    onChange,
+    reviewMode,
+    colors,
+    author,
+  } = props
   let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
 
@@ -43,7 +53,7 @@ export function EditReviewView(props: Props) {
   let reviewView = (
     <ReviewView
       upwell={upwell}
-      baseDraftId={upwell.rootDraft.id}
+      baseDraftId={historyDraftId}
       changeDraftIds={[did]}
       colors={colors}
     ></ReviewView>
