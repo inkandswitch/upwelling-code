@@ -1,5 +1,5 @@
 import { SyncState, initSyncState } from "automerge-wasm-pack";
-import { Layer } from "./";
+import { Draft } from "./";
 import { nanoid } from "nanoid";
 
 const STORAGE_URL = process.env.STORAGE_URL;
@@ -14,14 +14,14 @@ type WebsocketSyncMessage = {
 const MAX_RETRIES = 5;
 
 export class RealTimeDraft {
-  draft: Layer;
+  draft: Draft;
   timeout: any;
   peerId: string = nanoid();
   ws: WebSocket;
   peerStates = new Map<string, SyncState>();
   retries: number = 0;
 
-  constructor(draft: Layer) {
+  constructor(draft: Draft) {
     this.draft = draft;
     this.ws = this.connect();
   }

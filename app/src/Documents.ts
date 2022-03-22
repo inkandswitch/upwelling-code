@@ -33,9 +33,9 @@ export class Documents {
 
   updatePeers(id: string, did: string) {
     let upwell = this.get(id)
-    let layer = upwell.get(did)
+    let draft = upwell.get(did)
 
-    if (this.rtc && this.rtc.draft.id === layer.id) {
+    if (this.rtc && this.rtc.draft.id === draft.id) {
       this.rtc.updatePeers()
     }
     return this.save(id)

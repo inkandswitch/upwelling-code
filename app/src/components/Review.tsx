@@ -4,7 +4,7 @@ import { css } from '@emotion/react/macro'
 import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
-import { Upwell, Layer } from 'api'
+import { Upwell, Draft } from 'api'
 import { textCSS } from './Editor'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
@@ -12,42 +12,42 @@ import Documents from '../Documents'
 let documents = Documents()
 
 type ReviewState = {
-  atjsonLayer?: UpwellSource
+  atjsonDraft?: UpwellSource
 }
 
 export function ReviewView(props: {
   upwell: Upwell
-  baseLayerId: string
-  changeLayerIds: string[]
+  baseDraftId: string
+  changeDraftIds: string[]
   colors?: AuthorColorsType
 }) {
-  const { upwell, baseLayerId, changeLayerIds, colors } = props
+  const { upwell, baseDraftId, changeDraftIds, colors } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      let baseLayer = upwell.get(baseLayerId)
-      let changeLayers = changeLayerIds.map((id) => upwell.get(id))
+      let baseDraft = upwell.get(baseDraftId)
+      let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
 
-      let editsLayer = Layer.mergeWithEdits(
+      let editsDraft = Draft.mergeWithEdits(
         documents.author,
-        baseLayer,
-        ...changeLayers
+        baseDraft,
+        ...changeDrafts
       )
-      let atjsonLayer = UpwellSource.fromRaw(editsLayer, colors)
-      console.log(atjsonLayer)
+      let atjsonDraft = UpwellSource.fromRaw(editsDraft, colors)
+      console.log(atjsonDraft)
 
-      setState({ atjsonLayer })
+      setState({ atjsonDraft })
     },
-    [upwell, baseLayerId, changeLayerIds, colors]
+    [upwell, baseDraftId, changeDraftIds, colors]
   )
 
   useEffect(() => {
     updateAtjsonState()
-  }, [updateAtjsonState, baseLayerId, changeLayerIds])
+  }, [updateAtjsonState, baseDraftId, changeDraftIds])
 
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})
-  if (!state.atjsonLayer) {
+  if (!state.atjsonDraft) {
     return <div>Loading...</div>
   } else {
     return (
@@ -58,7 +58,7 @@ export function ReviewView(props: {
             cursor: not-allowed;
           `}
         >
-          {ReactRenderer.render(state.atjsonLayer)}
+          {ReactRenderer.render(state.atjsonDraft)}
         </article>
       </ReactRendererProvider>
     )

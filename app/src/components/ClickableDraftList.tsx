@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React from 'react'
-import { Layer } from 'api'
+import { Draft } from 'api'
 //@ts-ignore
 import relativeDate from 'relative-date'
 import { HCLColor } from 'd3-color'
@@ -63,21 +63,21 @@ const InfoText = (props: any) => (
 )
 
 type Props = {
-  onLayerClick: Function
+  onDraftClick: Function
   onShareClick?: Function
   id: string
   did: string
-  layers: Layer[]
+  drafts: Draft[]
   isBottom?: boolean
   colors?: AuthorColorsType
 } & React.ClassAttributes<HTMLDivElement> &
   React.HTMLAttributes<HTMLDivElement>
 
 export default function ClickableDraftList({
-  onLayerClick,
+  onDraftClick,
   onShareClick,
   id,
-  layers,
+  drafts,
   did,
   isBottom = false,
   colors = {},
@@ -87,18 +87,18 @@ export default function ClickableDraftList({
   let authors = upwell.metadata.getAuthors()
   return (
     <div {...props}>
-      {layers
+      {drafts
         .sort((a, b) => b.time - a.time)
-        .map((layer: Layer, index) => {
+        .map((draft: Draft, index) => {
           return (
             <FileTab
-              key={layer.id}
+              key={draft.id}
               index={index}
               isBottom={isBottom}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                onLayerClick(layer)
+                onDraftClick(draft)
               }}
               css={css`
                 display: flex;
@@ -107,24 +107,24 @@ export default function ClickableDraftList({
                 justify-content: space-between;
 
                 box-shadow: 9px 0 0 0
-                  ${(did === layer.id && colors[layer.authorId]?.toString()) ||
+                  ${(did === draft.id && colors[draft.authorId]?.toString()) ||
                   'none'}
                   inset;
               `}
             >
               <div>
-                {layer.message}
+                {draft.message}
                 <InfoText>
-                  {authors[layer.authorId]} created{' '}
-                  {relativeDate(new Date(layer.time))}
+                  {authors[draft.authorId]} created{' '}
+                  {relativeDate(new Date(draft.time))}
                 </InfoText>
               </div>
-              {!layer.shared && onShareClick && (
+              {!draft.shared && onShareClick && (
                 <IconButton
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
-                    onShareClick(layer)
+                    onShareClick(draft)
                   }}
                   icon={Share}
                 ></IconButton>

@@ -27,7 +27,7 @@ export type ChangeMetadata = {
 };
 
 export type Heads = string[];
-export type LayerMetadata = {
+export type DraftMetadata = {
   id: string;
   contributors: string[];
   title: string;
@@ -43,9 +43,9 @@ export type LayerMetadata = {
   message: string;
 };
 
-export type Subscriber = (doc: Layer) => void;
+export type Subscriber = (doc: Draft) => void;
 
-export class LazyLayer {
+export class LazyDraft {
   binary: Buffer;
   id: string;
   constructor(id: string, binary: Buffer) {
@@ -54,11 +54,11 @@ export class LazyLayer {
   }
 
   hydrate() {
-    return new Layer(this.id, loadDoc(this.binary));
+    return new Draft(this.id, loadDoc(this.binary));
   }
 }
 
-export class Layer {
+export class Draft {
   id: string;
   doc: Automerge;
   comments: Comments;
@@ -163,7 +163,7 @@ export class Layer {
     return this.doc.getChanges(heads).map(decodeChange);
   }
 
-  materialize(): LayerMetadata {
+  materialize(): DraftMetadata {
     return {
       id: this.id,
       title: this.title,
@@ -182,11 +182,11 @@ export class Layer {
   }
 
   insertAt(position: number, value: string | Array<string>, prop = "text") {
+    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, 0, value);
     else throw new Error("Text field not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   insertBlock(position: number, type: string) {
@@ -221,19 +221,19 @@ export class Layer {
   }
 
   deleteAt(position: number, count: number = 1, prop = "text") {
+    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, count, "");
     else throw new Error("Text field not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   mark(name: string, range: string, value: Value, prop = "text") {
+    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
     else throw new Error("Text field not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   getMarks(prop = "text") {
@@ -287,7 +287,7 @@ export class Layer {
     return this.doc.save();
   }
 
-  fork(message: string, author: Author): Layer {
+  fork(message: string, author: Author): Draft {
     let id = nanoid();
     let doc = this.doc.fork();
     doc.set(ROOT, "message", message);
@@ -297,88 +297,88 @@ export class Layer {
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
     doc.set(ROOT, "pinned", false);
-    let layer = new Layer(id, doc);
-    layer.addMyselfAsContributor();
-    return layer;
+    let draft = new Draft(id, doc);
+    draft.addMyselfAsContributor();
+    return draft;
   }
 
   addMyselfAsContributor() {
     this.doc.set("/contributors", this.authorId, true);
   }
 
-  merge(theirs: Layer) {
+  merge(theirs: Draft) {
     this.doc.merge(theirs.doc);
     if (this.subscriber) this.subscriber(this);
   }
 
-  static mergeWithEdits(author: Author, ours: Layer, ...theirs: Layer[]) {
-    // Fork the comparison layer, because we want to create a copy, not modify
+  static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]) {
+    // Fork the comparison draft, because we want to create a copy, not modify
     // the original. It might make sense to remove this from here and force the
     // caller to do the fork if this is the behaviour they want in order to
-    // parallel Layer.merge() behaviour.
-    let newLayer = ours.fork("Merge", author);
-    let origHead = newLayer.doc.getHeads();
+    // parallel Draft.merge() behaviour.
+    let newDraft = ours.fork("Merge", author);
+    let origHead = newDraft.doc.getHeads();
 
-    // Merge all the passed-in layers to this one.
-    theirs.forEach((layer) => newLayer.merge(layer));
+    // Merge all the passed-in drafts to this one.
+    theirs.forEach((draft) => newDraft.merge(draft));
 
-    // Now do a blame against the heads of the comparison layers.
-    let heads = theirs.map((layer) => layer.doc.getHeads());
+    // Now do a blame against the heads of the comparison drafts.
+    let heads = theirs.map((draft) => draft.doc.getHeads());
 
-    let obj = newLayer.doc.value(ROOT, "text");
+    let obj = newDraft.doc.value(ROOT, "text");
     if (!obj || obj[0] !== "text")
       throw new Error("Text field not properly initialized");
 
-    let attribution = newLayer.doc.attribute2(obj[1], origHead, heads)
+    let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
     console.log('attribution', attribution)
 
-    // blame contains an array with an entry for each layer passed in above,
-    // with edits (add, del) applied against newLayer's text. Convert those to marks!
+    // blame contains an array with an entry for each draft passed in above,
+    // with edits (add, del) applied against newDraft's text. Convert those to marks!
 
     for (let i = 0; i < attribution.length; i++) {
-      let layer = theirs[i]
+      let draft = theirs[i]
       let edits = attribution[i]
 
       edits.add.forEach(edit => {
-        let text = newLayer.text.substring(edit.start, edit.end)
-        newLayer.mark(
+        let text = newDraft.text.substring(edit.start, edit.end)
+        newDraft.mark(
           'insert',
           `(${edit.start}..${edit.end})`,
           JSON.stringify({
-            author: layer.authorId,
+            author: draft.authorId,
             text
           })
         )
       })
 
       edits.del.forEach(edit => {
-        newLayer.mark(
+        newDraft.mark(
           'delete',
           `(${edit.pos}..${edit.pos})`,
           JSON.stringify({
-            author: layer.authorId,
+            author: draft.authorId,
             text: edit.val
           })
         )
       })
     }
 
-    newLayer.commit('Merge')
+    newDraft.commit('Merge')
 
-    return newLayer
+    return newDraft
   }
 
   static getActorId(authorId: AuthorId) {
     return authorId + "0000" + createAuthorId();
   }
 
-  static load(id: string, binary: Uint8Array, authorId: AuthorId): Layer {
+  static load(id: string, binary: Uint8Array, authorId: AuthorId): Draft {
     let doc = loadDoc(binary, this.getActorId(authorId));
-    let layer = new Layer(id, doc);
-    return layer;
+    let draft = new Draft(id, doc);
+    return draft;
   }
 
-  static create(message: string, authorId: AuthorId): Layer {
+  static create(message: string, authorId: AuthorId): Draft {
     let doc = create(this.getActorId(authorId));
     let id = nanoid();
     doc.set(ROOT, "message", message);
@@ -394,9 +394,9 @@ export class Layer {
     let text = doc.set_object(ROOT, "text", " ");
     let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
     doc.set(initialParagraph, "type", "paragraph");
-    let layer = new Layer(id, doc);
-    layer.addMyselfAsContributor();
-    return layer;
+    let draft = new Draft(id, doc);
+    draft.addMyselfAsContributor();
+    return draft;
   }
 
   commit(message: string): Heads {

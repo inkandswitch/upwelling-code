@@ -6,7 +6,7 @@ import { Readable } from "stream";
 import { getRandomDessert } from "random-desserts";
 import Debug from "debug";
 import History from "./History";
-import { Layer } from "./Layer";
+import { Draft } from "./Draft";
 import { UpwellMetadata } from "./UpwellMetadata";
 
 export type AuthorId = string;
@@ -23,27 +23,27 @@ export type UpwellOptions = {
   author: Author;
 };
 
-type MaybeLayer = {
-  id: LayerId;
+type MaybeDraft = {
+  id: DraftId;
   binary: Uint8Array;
 };
-export type LayerId = string;
+export type DraftId = string;
 
 const debug = Debug("upwell");
-const LAYER_EXT = ".layer";
+const LAYER_EXT = ".draft";
 const METADATA_KEY = "metadata.automerge";
 
 export function createAuthorId() {
   return crypto.randomBytes(16).toString("hex");
 }
 
-// An Upwell is multiple layers
+// An Upwell is multiple drafts
 export class Upwell {
-  _layers: Map<string, Layer> = new Map();
+  _drafts: Map<string, Draft> = new Map();
   metadata: UpwellMetadata;
   author: Author;
-  subscriber: Function = function noop() {};
-  _archived: Map<string, Uint8Array | Layer> = new Map();
+  subscriber: Function = function noop() { };
+  _archived: Map<string, Uint8Array | Draft> = new Map();
 
   constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata;
@@ -55,7 +55,7 @@ export class Upwell {
     return this.metadata.id;
   }
 
-  get rootLayer() {
+  get rootDraft() {
     let rootId = this.metadata.main;
     return this.get(rootId);
   }
@@ -64,11 +64,11 @@ export class Upwell {
     return new History(this);
   }
 
-  set rootLayer(layer: Layer) {
-    // TODO: check to see that layer has been
+  set rootDraft(draft: Draft) {
+    // TODO: check to see that draft has been
     // effectively 'rebased' on the latest
     let oldRoot = this.metadata.main;
-    this.metadata.main = layer.id;
+    this.metadata.main = draft.id;
     this.archive(oldRoot);
 
     this.subscriber();
@@ -79,11 +79,11 @@ export class Upwell {
   }
 
   unsubscribe() {
-    this.subscriber = function noop() {};
+    this.subscriber = function noop() { };
   }
 
-  layers(): Layer[] {
-    return Array.from(this._layers.values());
+  drafts(): Draft[] {
+    return Array.from(this._drafts.values());
   }
 
   getAuthorName(authorId: AuthorId): string | undefined {
@@ -92,37 +92,37 @@ export class Upwell {
     else return undefined;
   }
 
-  setLatest(layer) {
-    layer.commit(layer.message);
-    this.archive(layer.id);
-    this.rootLayer = layer;
+  setLatest(draft) {
+    draft.commit(draft.message);
+    this.archive(draft.id);
+    this.rootDraft = draft;
   }
 
   createDraft(message?: string) {
     if (!message) message = getRandomDessert() as string;
-    let newLayer = this.rootLayer.fork(message, this.author);
-    this.add(newLayer);
-    return newLayer;
+    let newDraft = this.rootDraft.fork(message, this.author);
+    this.add(newDraft);
+    return newDraft;
   }
 
-  add(layer: Layer): void {
-    this.set(layer.id, layer);
+  add(draft: Draft): void {
+    this.set(draft.id, draft);
     this.subscriber();
   }
 
   share(id: string): void {
-    let layer = this.get(id);
-    layer.shared = true;
-    this.set(id, layer);
+    let draft = this.get(id);
+    draft.shared = true;
+    this.set(id, draft);
     this.subscriber();
   }
 
-  updateToRoot(layer: Layer) {
-    let root = this.rootLayer;
-    let message = layer.message;
-    layer.merge(root);
-    layer.message = message;
-    layer.parent_id = root.id;
+  updateToRoot(draft: Draft) {
+    let root = this.rootDraft;
+    let message = draft.message;
+    draft.merge(root);
+    draft.message = message;
+    draft.parent_id = root.id;
   }
 
   isArchived(id: string): boolean {
@@ -133,29 +133,29 @@ export class Upwell {
     if (this.isArchived(id)) return;
     let doc = this.get(id);
     this.metadata.archive(id);
-    this._layers.delete(id);
+    this._drafts.delete(id);
     this._archived.set(id, doc);
     this.subscriber();
   }
 
-  set(id: string, layer: Layer) {
-    return this._layers.set(id, layer);
+  set(id: string, draft: Draft) {
+    return this._drafts.set(id, draft);
   }
 
-  _coerceLayer(id, buf: Layer | Uint8Array): Layer {
+  _coerceDraft(id, buf: Draft | Uint8Array): Draft {
     if (buf?.constructor.name === "Uint8Array")
-      return Layer.load(id, buf as Uint8Array, this.author.id);
-    else return buf as Layer;
+      return Draft.load(id, buf as Uint8Array, this.author.id);
+    else return buf as Draft;
   }
 
-  get(id: string): Layer {
-    let layer = this._layers.get(id);
-    if (!layer) {
+  get(id: string): Draft {
+    let draft = this._drafts.get(id);
+    if (!draft) {
       let maybe = this._archived.get(id);
-      if (!maybe) throw new Error("No layer with id=" + id);
-      else return this._coerceLayer(id, maybe);
+      if (!maybe) throw new Error("No draft with id=" + id);
+      else return this._coerceDraft(id, maybe);
     }
-    return layer;
+    return draft;
   }
 
   async toFile(): Promise<Buffer> {
@@ -185,7 +185,7 @@ export class Upwell {
 
       let metadata: any = null;
       let extract = tar.extract();
-      let layers: MaybeLayer[] = [];
+      let drafts: MaybeDraft[] = [];
 
       function onentry(header, stream, next) {
         if (header.name === METADATA_KEY) {
@@ -197,7 +197,7 @@ export class Upwell {
           unpackFileStream(stream, (binary: Buffer) => {
             let filename = header.name;
             let id = filename.split(".")[0];
-            layers.push({
+            drafts.push({
               id,
               binary: Uint8Array.from(binary),
             });
@@ -208,17 +208,17 @@ export class Upwell {
 
       function finish() {
         let upwell = new Upwell(UpwellMetadata.load(metadata), author);
-        layers.forEach((item) => {
+        drafts.forEach((item) => {
           let { id, binary } = item;
           if (upwell.metadata.isArchived(id)) {
             upwell._archived.set(id, binary);
           } else {
             var start = new Date();
-            let layer = Layer.load(id, binary, author.id);
+            let draft = Draft.load(id, binary, author.id);
             //@ts-ignore
             var end = new Date() - start;
             debug("(loadDoc): execution time %dms", end);
-            upwell.add(layer);
+            upwell.add(draft);
           }
         });
         resolve(upwell);
@@ -234,20 +234,20 @@ export class Upwell {
   serialize(): tar.Pack {
     let start = Date.now();
     let pack = tar.pack();
-    let layers = this.layers();
-    layers.forEach((layer: Layer) => {
-      writeLayer(layer.id, layer.save());
+    let drafts = this.drafts();
+    drafts.forEach((draft: Draft) => {
+      writeDraft(draft.id, draft.save());
     });
     let archived = Array.from(this._archived.keys());
     archived.forEach((id) => {
       let buf = this._archived.get(id);
       if (!buf) return console.error("no buf");
       else if (buf.constructor.name === "Uint8Array")
-        writeLayer(id, buf as Uint8Array);
-      else writeLayer(id, (buf as Layer).save());
+        writeDraft(id, buf as Uint8Array);
+      else writeDraft(id, (buf as Draft).save());
     });
 
-    function writeLayer(id, binary: Uint8Array) {
+    function writeDraft(id, binary: Uint8Array) {
       pack.entry({ name: `${id}.${LAYER_EXT}` }, Buffer.from(binary));
     }
 
@@ -261,25 +261,25 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid();
     let author = options?.author || UNKNOWN_AUTHOR;
-    let layer = Layer.create(SPECIAL_ROOT_DOCUMENT, author.id);
-    let metadata = UpwellMetadata.create(id, layer.id, author);
+    let draft = Draft.create(SPECIAL_ROOT_DOCUMENT, author.id);
+    let metadata = UpwellMetadata.create(id, draft.id, author);
     let upwell = new Upwell(metadata, author);
-    upwell.add(layer);
-    upwell.archive(layer.id); // root is always archived
+    upwell.add(draft);
+    upwell.archive(draft.id); // root is always archived
     upwell.createDraft(); // always create an initial draft
     return upwell;
   }
 
   merge(other: Upwell) {
-    let layersToMerge = other.layers();
+    let draftsToMerge = other.drafts();
 
-    //merge layers
-    layersToMerge.forEach((layer) => {
+    //merge drafts
+    draftsToMerge.forEach((draft) => {
       try {
-        let existing = this.get(layer.id);
-        existing.merge(layer);
+        let existing = this.get(draft.id);
+        existing.merge(draft);
       } catch (err) {
-        this.add(layer);
+        this.add(draft);
       }
     });
 

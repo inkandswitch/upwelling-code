@@ -18,20 +18,17 @@ export default class ProsemirrorRenderer extends Renderer {
 
     if (annotation.type === 'strong' || annotation.type === 'em') {
       return annotationChildren.map((c: any) => {
-        return c.mark([schema.mark(annotation.type)])
+        return c.mark([...c.marks, schema.mark(annotation.type)])
       })
     } else if (annotation.type === 'comment') {
       return annotationChildren.map((c: any) => {
-        // FIXME this is broken because prosemirror never mutates marks after
-        // creation; the mark needs to be removed and re-added if the color
-        // changes. The most efficient way to do this is to use an "color-${authorid}"
-        // class and just handle it in CSS, but the author id comes in at the
-        // same time as the author color, so this doesn't help.
         return c.mark([
+          ...c.marks,
           schema.mark('comment', {
             id: annotation.id,
-            class: `bg-${annotation.attributes.authorid}`,
+            author: annotation.attributes.author,
             authorColor: annotation.attributes.authorColor,
+            message: annotation.attributes.message,
           }),
         ])
       })
