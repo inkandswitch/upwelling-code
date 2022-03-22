@@ -126,7 +126,6 @@ export class RealTimeDraft {
       author: msg.author,
       cursor: msg.cursor,
     })
-
   }
 
   sendCursorMessage(pos: CursorPosition) {
@@ -136,7 +135,6 @@ export class RealTimeDraft {
       method: "CURSOR",
       cursor: pos
     })
-
   }
 
   _getPeerState(peerId: string) {

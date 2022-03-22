@@ -1,14 +1,13 @@
 /** @jsxImportSource @emotion/react */
 import React, { useEffect, useState, useRef } from 'react'
-import { Transaction as UpwellTransaction, Upwell, Draft, Author } from 'api'
+import { Transaction as AutomergeEdit, Upwell, Draft, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'
 
 import { schema } from '../upwell-pm-schema'
 import { ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-//import { MarkType, Slice } from 'prosemirror-model'
-import { MarkType } from 'prosemirror-model'
+import { MarkType, Slice, Fragment } from 'prosemirror-model'
 import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState, Transaction } from 'prosemirror-state'
@@ -67,23 +66,42 @@ export const textCSS = css`
   }
 `
 
+let automergeToProsemirror = (
+  step: { start: number; end: number },
+  draft: Draft
+) => {
+  return {
+    from: automergeToProsemirrorNumber(step.start, draft),
+    to: automergeToProsemirrorNumber(step.end, draft),
+  }
+}
+
+const OPENING_TAG = '\uFFFC'
+
+let automergeToProsemirrorNumber = (position: number, draft: Draft) => {
+  let i = 0
+  let l = draft.text.length
+  while (i < l) {
+    //boop
+    i = draft.text.indexOf(OPENING_TAG, i + 1)
+    if (i >= position || i === -1) break
+    // add one because prosemirror has a closing tag but automerge doesn't
+    position++
+  }
+  return position
+}
+
 let prosemirrorToAutomergeNumber = (position: number, draft: Draft): number => {
   let i = 0
   let l = draft.text.length
 
   while (i < l) {
-    i = draft.text.indexOf('\uFFFC', i + 1)
+    i = draft.text.indexOf(OPENING_TAG, i + 1)
     if (i >= position || i === -1) break
+    // subtract one because prosemirror has a closing tag but automerge doesn't
     position--
   }
-
-  // we always start with a block, so we should never be inserting
-  // into the document at position 0
-  if (position === 0) throw new Error('this is not right')
-
-  let max = Math.min(position, draft.text.length)
-  let min = Math.max(max, 0)
-  return min
+  return position
 }
 
 let prosemirrorToAutomerge = (
@@ -120,11 +138,11 @@ export function Editor(props: Props) {
             ) => {
               let { from, to } = view.state.selection
               let message = prompt('what is your comment')
-
+              let authorColor = colors[author.id].toString()
               let commentMark = schema.mark('comment', {
                 id: 'new-comment',
                 author: author,
-                authorColor: colors[author.id],
+                authorColor,
                 message,
               })
               let tr = view.state.tr.addMark(from, to, commentMark)
@@ -157,15 +175,53 @@ export function Editor(props: Props) {
 
   useEffect(() => {
     if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
-      documents.rtc.transactions.subscribe((transaction: UpwellTransaction) => {
-        console.log('from', transaction.author)
-        if (transaction.changes) {
-          for (const changeset of transaction.changes) {
-            console.log(changeset)
+      documents.rtc.transactions.subscribe((edits: AutomergeEdit) => {
+        console.log('edits', edits)
+        if (edits.changes) {
+          for (const changeset of edits.changes) {
+            //{add: {start: 3, end: 4}, del: []}
+            changeset.add.forEach((added) => {
+              let text = editableDraft.text.substring(added.start, added.end)
+              let { from } = automergeToProsemirror(added, editableDraft)
+              let nodes = []
+              let blocks = text.split(OPENING_TAG)
+
+              let depth = blocks.length > 1 ? 1 : 0
+
+              // blocks: [ "text the first", "second text", "text" ]
+              //          ^ no pgh break    ^ pgh break    ^ pgh break 2
+
+              // the first text node here doesn't get a paragraph break
+              let block = blocks.shift()
+              if (!block) {
+                let node = schema.node('paragraph', {}, schema.text('\n'))
+                nodes.push(node)
+              } else {
+                nodes.push(schema.text(block))
+              }
+
+              blocks.forEach((block) => {
+                if (block.length === 0) block = '\n'
+                let node = schema.node('paragraph', {}, schema.text(block))
+                nodes.push(node)
+              })
+
+              console.log(nodes)
+              let fragment = Fragment.fromArray(nodes)
+              let slice = new Slice(fragment, depth, depth)
+
+              console.log('slice', slice)
+              let step = new ReplaceStep(from, from, slice)
+              console.log('step', step)
+              let transaction = state.tr.step(step)
+              console.log('transaction', transaction)
+              let newState = state.apply(transaction)
+              setState(newState)
+            })
             // TODO: transform automerge to prosemirror transaction
           }
         }
-        if (transaction.cursor) {
+        if (edits.cursor) {
           // TODO: update cursor position
         }
 
@@ -196,6 +252,7 @@ export function Editor(props: Props) {
         }
 
         if (step.slice) {
+          console.log('the prosemirror transaction was', step.slice)
           let insOffset = from
           step.slice.content.forEach((node, idx) => {
             if (node.type.name === 'text' && node.text) {
