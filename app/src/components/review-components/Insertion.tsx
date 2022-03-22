@@ -8,7 +8,7 @@ export const Insert: React.FC<AttributesOf<Annotation>> = (props) => {
   return (
     <span
       css={css`
-        color: ${props.authorColor || 'green'};
+        color: ${props.authorColor?.toString() || 'green'};
       `}
       className="insertion"
     >

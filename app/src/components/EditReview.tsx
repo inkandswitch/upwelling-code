@@ -41,7 +41,12 @@ export function EditReviewView(props: Props) {
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
-    <ReviewView upwell={upwell} visible={visible} colors={colors}></ReviewView>
+    <ReviewView
+      upwell={upwell}
+      baseDraftId={upwell.rootDraft.id}
+      changeDraftIds={[did]}
+      colors={colors}
+    ></ReviewView>
   )
   let component = reviewView
   if (visible.length === 1) {

@@ -331,42 +331,43 @@ export class Draft {
     if (!obj || obj[0] !== "text")
       throw new Error("Text field not properly initialized");
 
-    let blame = newDraft.doc.blame(obj[1], origHead, heads);
+    let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
+    console.log('attribution', attribution)
 
     // blame contains an array with an entry for each draft passed in above,
     // with edits (add, del) applied against newDraft's text. Convert those to marks!
 
-    for (let i = 0; i < blame.length; i++) {
-      let draft = theirs[i];
-      let edits = blame[i];
+    for (let i = 0; i < attribution.length; i++) {
+      let draft = theirs[i]
+      let edits = attribution[i]
 
-      edits.add.forEach((edit) => {
-        let text = newDraft.text.substring(edit.start, edit.end);
+      edits.add.forEach(edit => {
+        let text = newDraft.text.substring(edit.start, edit.end)
         newDraft.mark(
-          "insert",
+          'insert',
           `(${edit.start}..${edit.end})`,
           JSON.stringify({
             author: draft.authorId,
-            text,
+            text
           })
-        );
-      });
+        )
+      })
 
-      edits.del.forEach((edit) => {
+      edits.del.forEach(edit => {
         newDraft.mark(
-          "delete",
+          'delete',
           `(${edit.pos}..${edit.pos})`,
           JSON.stringify({
             author: draft.authorId,
-            text: edit.val,
+            text: edit.val
           })
-        );
-      });
+        )
+      })
     }
 
-    newDraft.commit("Merge");
+    newDraft.commit('Merge')
 
-    return newDraft;
+    return newDraft
   }
 
   static getActorId(authorId: AuthorId) {

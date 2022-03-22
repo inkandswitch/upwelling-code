@@ -118,14 +118,18 @@ export function Editor(props: Props) {
               contextMenu: HTMLDivElement,
               buttonEl: HTMLButtonElement
             ) => {
-              let editableDraft = upwell.get(editableDraftId)
-              let { from, to } = prosemirrorToAutomerge(
-                view.state.selection,
-                editableDraft
-              )
+              let { from, to } = view.state.selection
               let message = prompt('what is your comment')
-              editableDraft.insertComment(from, to, message!, author.id)
-              documents.save(upwell.id)
+
+              let commentMark = schema.mark('comment', {
+                id: 'new-comment',
+                author: author,
+                authorColor: colors[author.id],
+                message,
+              })
+              let tr = view.state.tr.addMark(from, to, commentMark)
+              view.dispatch(tr)
+
               contextMenu.style.display = 'none'
             },
           },
@@ -216,8 +220,18 @@ export function Editor(props: Props) {
         }
       } else if (step instanceof AddMarkStep) {
         let { from, to } = prosemirrorToAutomerge(step, editableDraft)
+        let mark = step.mark
 
-        editableDraft.mark(step.mark.type.name, `(${from}..${to})`, '')
+        if (mark.type.name === 'comment') {
+          editableDraft.insertComment(
+            from,
+            to,
+            mark.attrs.message,
+            mark.attrs.author.id
+          )
+        } else {
+          editableDraft.mark(mark.type.name, `(${from}..${to})`, '')
+        }
       } else if (step instanceof RemoveMarkStep) {
         // TK not implemented because automerge doesn't support removing marks yet
       }

@@ -1,6 +1,6 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
-import { Draft } from 'api'
+import { Draft, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 
 export class Insertion extends InlineAnnotation<{
@@ -55,6 +55,10 @@ export default class UpwellSource extends Document {
       } else {
         try {
           if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+
+          if (m.type === 'insert' || m.type === 'delete') {
+            if (colors) attrs['authorColor'] = colors[attrs.author]
+          }
         } catch {
           console.log(
             'we should really fix the thing where I stuffed mark attrs into a json string lol'
@@ -72,7 +76,8 @@ export default class UpwellSource extends Document {
         type: `-upwell-${m.type}`,
         attributes: attrs,
       }
-    })
+
+    }).filter((m: any) => m !== null)
 
     // next convert blocks to annotations
     for (let b of draft.blocks) {
