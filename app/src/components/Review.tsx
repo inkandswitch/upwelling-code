@@ -4,7 +4,7 @@ import { css } from '@emotion/react/macro'
 import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
-import { Upwell, Layer } from 'api'
+import { Upwell, Draft } from 'api'
 import { textCSS } from './Editor'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
@@ -12,7 +12,7 @@ import Documents from '../Documents'
 let documents = Documents()
 
 type ReviewState = {
-  atjsonLayer?: UpwellSource
+  atjsonDraft?: UpwellSource
 }
 
 export function ReviewView(props: {
@@ -25,24 +25,24 @@ export function ReviewView(props: {
   let updateAtjsonState = useCallback(
     async function () {
       if (!visible.length) {
-        let atjsonLayer = new UpwellSource({
+        let atjsonDraft = new UpwellSource({
           content: '',
           annotations: [],
         })
-        setState({ atjsonLayer })
+        setState({ atjsonDraft })
         return
       }
 
       // FIXME these need to be ordered by dependency graph to make sense (earliest first).
       let rest = visible.map((id) => upwell.get(id))
-      let editsLayer = Layer.mergeWithEdits(
+      let editsDraft = Draft.mergeWithEdits(
         documents.author,
-        upwell.rootLayer,
+        upwell.rootDraft,
         ...rest
       )
-      let atjsonLayer = UpwellSource.fromRaw(editsLayer)
+      let atjsonDraft = UpwellSource.fromRaw(editsDraft)
 
-      setState({ atjsonLayer })
+      setState({ atjsonDraft })
     },
     [upwell, visible]
   )
@@ -53,7 +53,7 @@ export function ReviewView(props: {
 
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})
-  if (!state.atjsonLayer) {
+  if (!state.atjsonDraft) {
     return <div>Loading...</div>
   } else {
     return (
@@ -64,7 +64,7 @@ export function ReviewView(props: {
             cursor: not-allowed;
           `}
         >
-          {ReactRenderer.render(state.atjsonLayer)}
+          {ReactRenderer.render(state.atjsonDraft)}
         </article>
       </ReactRendererProvider>
     )

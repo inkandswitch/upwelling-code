@@ -1,5 +1,5 @@
 import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
-import { Layer } from "./";
+import { Draft } from "./";
 import { nanoid } from "nanoid";
 import Queue from "./Queue";
 
@@ -17,7 +17,7 @@ export type Transaction = ChangeSet[]
 const MAX_RETRIES = 5;
 
 export class RealTimeDraft {
-  draft: Layer;
+  draft: Draft;
   timeout: any;
   peerId: string = nanoid();
   ws: WebSocket;
@@ -25,7 +25,7 @@ export class RealTimeDraft {
   retries: number = 0;
   transactions: Queue<Transaction> = new Queue()
 
-  constructor(draft: Layer) {
+  constructor(draft: Draft) {
     this.draft = draft;
     this.ws = this.connect();
   }

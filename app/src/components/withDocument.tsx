@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Upwell, Layer, Author } from 'api'
+import { Upwell, Draft, Author } from 'api'
 import { useLocation } from 'wouter'
 import Documents from '../Documents'
 
@@ -16,7 +16,7 @@ export default function withDocument(
   props: DocumentProps
 ) {
   return function () {
-    let [root, setRoot] = useState<Layer>()
+    let [root, setRoot] = useState<Draft>()
     let [, setLocation] = useLocation()
     let { id, author } = props
 
@@ -26,7 +26,7 @@ export default function withDocument(
       async function render() {
         try {
           upwell = await documents.open(id)
-          if (!unmounted) setRoot(upwell.rootLayer)
+          if (!unmounted) setRoot(upwell.rootDraft)
         } catch (err) {}
 
         try {
@@ -35,7 +35,7 @@ export default function withDocument(
           if (!upwell) upwell = await documents.create(props.id, author)
         } finally {
           if (!upwell) throw new Error('could not create upwell')
-          if (!unmounted) setRoot(upwell.rootLayer)
+          if (!unmounted) setRoot(upwell.rootDraft)
         }
       }
 
