@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
-import { Upwell, LayerMetadata, Comment, CommentState } from 'api'
+import { Upwell, DraftMetadata, Comment, CommentState } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 
@@ -9,22 +9,22 @@ let documents = Documents()
 
 type CommentViewProps = {
   upwell: Upwell
-  layer: LayerMetadata
+  draft: DraftMetadata
   comment: Comment
   mark: { start: number; end: number }
   colors?: AuthorColorsType
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { upwell, comment, layer } = props
+  let { upwell, comment, draft } = props
   let authorName = upwell.getAuthorName(comment.author)
   let [state, setState] = useState({
     archived: comment.state !== CommentState.OPEN,
   })
 
   let archiveComment = () => {
-    let draft = upwell.get(layer.id)
-    draft.comments.archive(comment)
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.comments.archive(comment)
     documents.save(upwell.id)
     setState({ archived: true })
   }
@@ -71,16 +71,16 @@ export function CommentView(props: CommentViewProps) {
 }
 
 type CommentSidebarProps = {
-  layer: LayerMetadata
+  draft: DraftMetadata
   upwell: Upwell
   colors?: AuthorColorsType
   onChange: () => void
 }
 
 export default function CommentSidebar(props: CommentSidebarProps) {
-  let { upwell, layer, colors } = props
-  let draft = upwell.get(layer.id)
-  let comments = draft.comments.objects()
+  let { upwell, draft, colors } = props
+  let draftInstance = upwell.get(draft.id)
+  let comments = draftInstance.comments.objects()
 
   let commentObjs = Object.keys(comments)
     .map((id) => {
@@ -106,7 +106,7 @@ export default function CommentSidebar(props: CommentSidebarProps) {
               comment={comment}
               mark={mark}
               upwell={upwell}
-              layer={layer}
+              draft={draft}
               colors={colors}
             />
           </div>

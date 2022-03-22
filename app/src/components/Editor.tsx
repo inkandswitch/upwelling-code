@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 //import React, { useEffect, useRef, useState } from 'react'
 import React, { useState, useRef } from 'react'
-import { Upwell, Layer, Author } from 'api'
+import { Upwell, Draft, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'
 
@@ -26,7 +26,7 @@ let documents = Documents()
 
 type Props = {
   upwell: Upwell
-  editableLayerId: string
+  editableDraftId: string
   author: Author
   onChange: any
   colors: AuthorColorsType
@@ -68,12 +68,12 @@ export const textCSS = css`
   }
 `
 
-let prosemirrorToAutomergeNumber = (position: number, layer: Layer): number => {
+let prosemirrorToAutomergeNumber = (position: number, draft: Draft): number => {
   let i = 0
-  let l = layer.text.length
+  let l = draft.text.length
 
   while (i < l) {
-    i = layer.text.indexOf('\uFFFC', i + 1)
+    i = draft.text.indexOf('\uFFFC', i + 1)
     if (i >= position || i === -1) break
     position--
   }
@@ -82,23 +82,23 @@ let prosemirrorToAutomergeNumber = (position: number, layer: Layer): number => {
   // into the document at position 0
   if (position === 0) throw new Error('this is not right')
 
-  let max = Math.min(position, layer.text.length)
+  let max = Math.min(position, draft.text.length)
   let min = Math.max(max, 0)
   return min
 }
 
 let prosemirrorToAutomerge = (
   position: { from: number; to: number },
-  layer: Layer
+  draft: Draft
 ): { from: number; to: number } => {
   return {
-    from: prosemirrorToAutomergeNumber(position.from, layer),
-    to: prosemirrorToAutomergeNumber(position.to, layer),
+    from: prosemirrorToAutomergeNumber(position.from, draft),
+    to: prosemirrorToAutomergeNumber(position.to, draft),
   }
 }
 
 export function Editor(props: Props) {
-  let { upwell, editableLayerId, onChange, author, colors } = props
+  let { upwell, editableDraftId, onChange, author, colors } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
@@ -119,13 +119,13 @@ export function Editor(props: Props) {
               contextMenu: HTMLDivElement,
               buttonEl: HTMLButtonElement
             ) => {
-              let editableLayer = upwell.get(editableLayerId)
+              let editableDraft = upwell.get(editableDraftId)
               let { from, to } = prosemirrorToAutomerge(
                 view.state.selection,
-                editableLayer
+                editableDraft
               )
               let message = prompt('what is your comment')
-              editableLayer.insertComment(from, to, message!, author.id)
+              editableDraft.insertComment(from, to, message!, author.id)
               documents.save(upwell.id)
               contextMenu.style.display = 'none'
             },
@@ -144,11 +144,11 @@ export function Editor(props: Props) {
     })
   }
 
-  let editableLayer = upwell.get(editableLayerId)
-  let atjsonLayer = UpwellSource.fromRaw(editableLayer, colors)
-  let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+  let editableDraft = upwell.get(editableDraftId)
+  let atjsonDraft = UpwellSource.fromRaw(editableDraft, colors)
+  let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
   const [state, setState] = useState<EditorState>(getState(pmDoc))
-  //const [heads, setHeads] = useState<string[]>(editableLayer.doc.getHeads())
+  //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
 
   const viewRef = useRef(null)
 
@@ -156,15 +156,15 @@ export function Editor(props: Props) {
    * this was breaking things badly in strange ways, so just commenting out for the moment.
    *
   useEffect(() => {
-    editableLayer.subscribe((doc: Layer) => {
+    editableDraft.subscribe((doc: Draft) => {
       let change: any = doc.getChanges(heads)
       if (change.length) {
         let [authorId] = change[0].actor.split('0000')
         if (authorId === documents.author.id) return
       }
 
-      let atjsonLayer = UpwellSource.fromRaw(doc)
-      let pmDoc = ProsemirrorRenderer.render(atjsonLayer)
+      let atjsonDraft = UpwellSource.fromRaw(doc)
+      let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
 
       let { selection } = state
 
@@ -177,7 +177,7 @@ export function Editor(props: Props) {
       setHeads(doc.doc.getHeads())
     })
     return () => {
-      editableLayer.subscribe(() => {})
+      editableDraft.subscribe(() => {})
     }
   })
   */
@@ -185,25 +185,25 @@ export function Editor(props: Props) {
   let dispatchHandler = (transaction: any) => {
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
-        let { from, to } = prosemirrorToAutomerge(step, editableLayer)
+        let { from, to } = prosemirrorToAutomerge(step, editableDraft)
 
         if (from !== to) {
-          editableLayer.deleteAt(from, to - from)
+          editableDraft.deleteAt(from, to - from)
         }
 
         if (step.slice) {
           let insOffset = from
           step.slice.content.forEach((node, idx) => {
             if (node.type.name === 'text' && node.text) {
-              editableLayer.insertAt(insOffset, node.text)
+              editableDraft.insertAt(insOffset, node.text)
               insOffset += node.text.length
             } else if (node.type.name === 'paragraph') {
               if (idx !== 0)
                 // @ts-ignore
-                editableLayer.insertBlock(insOffset++, node.type.name)
+                editableDraft.insertBlock(insOffset++, node.type.name)
 
               let nodeText = node.textBetween(0, node.content.size)
-              editableLayer.insertAt(insOffset, nodeText)
+              editableDraft.insertAt(insOffset, nodeText)
               insOffset += nodeText.length
             } else {
               alert(
@@ -215,20 +215,20 @@ export function Editor(props: Props) {
           })
         }
       } else if (step instanceof AddMarkStep) {
-        let { from, to } = prosemirrorToAutomerge(step, editableLayer)
+        let { from, to } = prosemirrorToAutomerge(step, editableDraft)
 
-        editableLayer.mark(step.mark.type.name, `(${from}..${to})`, '')
+        editableDraft.mark(step.mark.type.name, `(${from}..${to})`, '')
       } else if (step instanceof RemoveMarkStep) {
         // TK not implemented because automerge doesn't support removing marks yet
       }
     }
 
-    onChange(editableLayer)
+    onChange(editableDraft)
     let newState = state.apply(transaction)
     setState(newState)
   }
 
-  let color = colors[editableLayer.authorId]
+  let color = colors[editableDraft.authorId]
   return (
     <ProseMirror
       state={state}

@@ -3,22 +3,22 @@ import { it } from 'mocha';
 import { assert } from 'chai';
 
 describe('upwell', () => {
-  let author = {id: createAuthorId(), name: 'susan'}
+  let author = { id: createAuthorId(), name: 'susan' }
   let d = Upwell.create({ author })
   it('works', async () => {
-    let doc1 = d.layers()[0]
+    let doc1 = d.drafts()[0]
     doc1.insertAt(0, 'Hello bold plain italic whatever');
     doc1.mark('bold', "(5..9)", true)
     doc1.commit('Hello!');
   })
 
   it('create a basic comment', async () => {
-    let doc1 = d.layers()[0]
+    let doc1 = d.drafts()[0]
     let comment_id = 'abc123'
     let comment = {
       id: comment_id,
       author: author.id,
-      message: 'peanuts', 
+      message: 'peanuts',
       children: [],
       state: CommentState.OPEN
     }
@@ -33,7 +33,7 @@ describe('upwell', () => {
   })
 
   it('creates a comment thread', async () => {
-    let doc1 = d.layers()[0]
+    let doc1 = d.drafts()[0]
     let marks = doc1.marks
     let commentMark = marks.find(m => m.type === 'comment')
     assert.ok(commentMark)
@@ -46,7 +46,7 @@ describe('upwell', () => {
     let child = {
       id: child_id,
       author: author.id,
-      message: 'bananas', 
+      message: 'bananas',
       children: [],
       state: CommentState.CHILD
     }
