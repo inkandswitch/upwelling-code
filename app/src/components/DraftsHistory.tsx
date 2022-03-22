@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { useEffect } from 'react'
 import { css } from '@emotion/react/macro'
-import { Layer } from 'api'
+import { Draft } from 'api'
 import { useState } from 'react'
 import { Link } from 'wouter'
 import Documents from '../Documents'
@@ -46,14 +46,14 @@ export const TabWrapper = (props: any) => (
   />
 )
 
-// only get the layers you can see:
-// - your private layers
-// - shared layers
-function getYourLayers(layers: Layer[], rootId: string) {
+// only get the drafts you can see:
+// - your private drafts
+// - shared drafts
+function getYourDrafts(drafts: Draft[], rootId: string) {
   const yourId = documents.author.id
 
-  return layers.filter((l) => {
-    // don't show root layer
+  return drafts.filter((l) => {
+    // don't show root draft
     if (l.id === rootId) {
       return false
     }
@@ -66,7 +66,7 @@ function getYourLayers(layers: Layer[], rootId: string) {
 }
 
 type Props = {
-  layers: Layer[]
+  drafts: Draft[]
   epoch: number
   id: string
   did: string
@@ -75,7 +75,7 @@ type Props = {
 }
 export default function DraftsHistory({
   epoch,
-  layers,
+  drafts,
   id,
   did,
   goToDraft,
@@ -84,7 +84,7 @@ export default function DraftsHistory({
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(true)
-  let [archivedLayers, setHistory] = useState<Layer[]>([])
+  let [archivedDrafts, setHistory] = useState<Draft[]>([])
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)
 
@@ -96,7 +96,7 @@ export default function DraftsHistory({
 
   useEffect(() => {
     let upwell = documents.get(id)
-    const moreHistory: Layer[] = []
+    const moreHistory: Draft[] = []
     for (let i = 0; i < fetchSize; i++) {
       let value = upwell.history.get(i)
       if (value) moreHistory.push(value)
@@ -109,13 +109,13 @@ export default function DraftsHistory({
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
   }
 
-  const handleShareClick = (layer: Layer) => {
+  const handleShareClick = (draft: Draft) => {
     if (
       // eslint-disable-next-line no-restricted-globals
-      confirm("Do you want to share your layer? it can't be unshared.")
+      confirm("Do you want to share your draft? it can't be unshared.")
     ) {
       let upwell = documents.get(id)
-      upwell.share(layer.id)
+      upwell.share(draft.id)
     }
   }
 
@@ -187,9 +187,9 @@ export default function DraftsHistory({
             `}
             id={id}
             did={did}
-            onLayerClick={(layer: Layer) => goToDraft(layer.id)}
+            onDraftClick={(draft: Draft) => goToDraft(draft.id)}
             onShareClick={handleShareClick}
-            layers={getYourLayers(layers, upwell.rootLayer.id)}
+            drafts={getYourDrafts(drafts, upwell.rootDraft.id)}
             colors={colors}
           />
         ) : (
@@ -200,8 +200,8 @@ export default function DraftsHistory({
               `}
               id={id}
               did={did}
-              onLayerClick={(layer: Layer) => goToDraft(layer.id)}
-              layers={archivedLayers}
+              onDraftClick={(draft: Draft) => goToDraft(draft.id)}
+              drafts={archivedDrafts}
               colors={colors}
             />
 

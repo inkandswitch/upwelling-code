@@ -3,7 +3,7 @@ import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
 //@ts-ignore
-import { LayerMetadata, Layer, Author } from 'api'
+import { DraftMetadata, Draft, Author } from 'api'
 import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -19,7 +19,7 @@ let documents = Documents()
 
 type DraftViewProps = {
   id: string
-  root: Layer
+  root: Draft
   author: Author
 }
 
@@ -34,42 +34,42 @@ export default function DraftView(props: DraftViewProps) {
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
   let did = getDraftHash()
-  let maybeLayer
+  let maybeDraft
   try {
-    maybeLayer = upwell.get(did)
+    maybeDraft = upwell.get(did)
   } catch (err) {
-    maybeLayer = upwell.rootLayer
+    maybeDraft = upwell.rootDraft
   }
-  let [layer, setLayer] = useState<LayerMetadata>(maybeLayer.materialize())
-  let [layers, setLayers] = useState<Layer[]>([])
+  let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
+  let [drafts, setDrafts] = useState<Draft[]>([])
 
   function getDraftHash() {
     return window.location.hash.replace('#', '')
   }
 
   useEffect(() => {
-    documents.connect(id, layer.id)
+    documents.connect(id, draft.id)
 
     return () => {
       documents.disconnect()
     }
-  }, [id, layer.id])
+  }, [id, draft.id])
 
   const render = useCallback(() => {
     let upwell = documents.get(id)
-    const layers = upwell.layers()
-    setLayers(layers)
+    const drafts = upwell.drafts()
+    setDrafts(drafts)
 
     // find the authors
     const newAuthorColors = { ...authorColors }
     let changed = false
-    layers.forEach((l) => {
+    drafts.forEach((l) => {
       if (!(l.authorId in authorColors)) {
         newAuthorColors[l.authorId] = deterministicColor(l.authorId)
         changed = true
       }
     })
-    // also add this user in case they haven't made a layer
+    // also add this user in case they haven't made a draft
     if (!(props.author.id in authorColors)) {
       newAuthorColors[props.author.id] = deterministicColor(props.author.id)
       changed = true
@@ -95,8 +95,8 @@ export default function DraftView(props: DraftViewProps) {
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let draft = upwell.get(layer.id)
-    draft.message = e.target.value
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.message = e.target.value
     onChangeMade()
   }
 
@@ -114,17 +114,17 @@ export default function DraftView(props: DraftViewProps) {
 
   useEffect(() => {
     let upwell = documents.get(id)
-    let draft = upwell.get(layer.id)
+    let draftInstance = upwell.get(draft.id)
     if (
-      !draft.pinned &&
-      draft.id !== upwell.rootLayer.id &&
-      draft.parent_id !== upwell.rootLayer.id &&
-      !upwell.isArchived(draft.id)
+      !draftInstance.pinned &&
+      draftInstance.id !== upwell.rootDraft.id &&
+      draftInstance.parent_id !== upwell.rootDraft.id &&
+      !upwell.isArchived(draftInstance.id)
     ) {
-      upwell.updateToRoot(draft)
+      upwell.updateToRoot(draftInstance)
       onChangeMade()
     }
-  }, [id, layer, onChangeMade])
+  }, [id, draft, onChangeMade])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -138,7 +138,7 @@ export default function DraftView(props: DraftViewProps) {
   }, [id, render])
 
   let onTextChange = () => {
-    if (rootId === layer.id) {
+    if (rootId === draft.id) {
     } else {
       documents.updatePeers(id, did)
       setSyncState(SYNC_STATE.LOADING)
@@ -150,20 +150,20 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   function pinDraft() {
-    let draft = upwell.get(layer.id)
-    draft.pinned = !draft.pinned
-    setLayer(draft.materialize())
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.pinned = !draftInstance.pinned
+    setDraft(draftInstance.materialize())
     onChangeMade()
   }
 
   let handleUpdateClick = () => {
-    let root = upwell.rootLayer
-    let message = layer.message
-    let draft = upwell.get(layer.id)
-    draft.merge(root)
-    draft.message = message
-    draft.parent_id = root.id
-    setLayer(draft.materialize())
+    let root = upwell.rootDraft
+    let message = draft.message
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.merge(root)
+    draftInstance.message = message
+    draftInstance.parent_id = root.id
+    setDraft(draftInstance.materialize())
     onChangeMade()
     setReviewMode(false)
     setEpoch(Date.now())
@@ -171,29 +171,29 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleMergeClick = () => {
     let upwell = documents.get(id)
-    let layer = upwell.get(did)
-    upwell.setLatest(layer)
-    setLayer(upwell.rootLayer.materialize())
+    let draft = upwell.get(did)
+    upwell.setLatest(draft)
+    setDraft(upwell.rootDraft.materialize())
     setEpoch(Date.now())
     onChangeMade()
   }
 
-  function createLayer() {
+  function createDraft() {
     let upwell = documents.get(id)
-    let newLayer = upwell.createDraft()
-    goToDraft(newLayer.id)
+    let newDraft = upwell.createDraft()
+    goToDraft(newDraft.id)
     onChangeMade()
   }
 
   function goToDraft(did: string) {
-    let layer = upwell.get(did).materialize()
-    setLayer(layer)
+    let draft = upwell.get(did).materialize()
+    setDraft(draft)
     render()
-    setLocation(`/document/${id}#${layer.id}`)
+    setLocation(`/document/${id}#${draft.id}`)
   }
 
-  let rootId = upwell.rootLayer.id
-  const isLatest = rootId === layer.id
+  let rootId = upwell.rootDraft.id
+  const isLatest = rootId === draft.id
   return (
     <div
       id="draft-view"
@@ -209,7 +209,7 @@ export default function DraftView(props: DraftViewProps) {
         epoch={epoch}
         goToDraft={goToDraft}
         colors={authorColors}
-        layers={layers}
+        drafts={drafts}
         id={id}
       />
       <div
@@ -235,7 +235,7 @@ export default function DraftView(props: DraftViewProps) {
           <div>
             <SyncIndicator state={sync_state}></SyncIndicator>
             {!isLatest && (
-              <Button onClick={() => goToDraft(upwell.rootLayer.id)}>
+              <Button onClick={() => goToDraft(upwell.rootDraft.id)}>
                 View Document
               </Button>
             )}
@@ -244,13 +244,13 @@ export default function DraftView(props: DraftViewProps) {
                 {' '}
                 »{' '}
                 <Input
-                  value={layer.message}
+                  value={draft.message}
                   onClick={(e) => {
                     e.stopPropagation()
                   }}
                   onChange={(e) => {
                     e.stopPropagation()
-                    setLayer({ ...layer, message: e.target.value })
+                    setDraft({ ...draft, message: e.target.value })
                   }}
                   onBlur={(e) => {
                     //@ts-ignore
@@ -269,7 +269,7 @@ export default function DraftView(props: DraftViewProps) {
             `}
           >
             {isLatest || upwell.isArchived(did) ? (
-              <Button onClick={createLayer}>Create Draft</Button>
+              <Button onClick={createDraft}>Create Draft</Button>
             ) : (
               <>
                 <span
@@ -279,14 +279,14 @@ export default function DraftView(props: DraftViewProps) {
                   `}
                 >
                   <Button
-                    disabled={rootId !== layer.parent_id}
+                    disabled={rootId !== draft.parent_id}
                     onClick={handleMergeClick}
                   >
                     Merge to Document
                   </Button>
-                  {layer.pinned && (
+                  {draft.pinned && (
                     <Button
-                      disabled={rootId === layer.parent_id}
+                      disabled={rootId === draft.parent_id}
                       onClick={handleUpdateClick}
                     >
                       Update from current
@@ -313,7 +313,7 @@ export default function DraftView(props: DraftViewProps) {
                     `}
                     onClick={() => pinDraft()}
                   >
-                    {layer.pinned ? 'on' : 'off'}
+                    {draft.pinned ? 'on' : 'off'}
                   </Button>
                 </span>
               </>
@@ -322,9 +322,9 @@ export default function DraftView(props: DraftViewProps) {
         </div>
 
         <EditReviewView
-          did={layer.id}
+          did={draft.id}
           epoch={epoch}
-          visible={[layer.id]}
+          visible={[draft.id]}
           id={id}
           author={author}
           colors={authorColors}
@@ -342,7 +342,7 @@ export default function DraftView(props: DraftViewProps) {
         `}
       >
         <CommentSidebar
-          layer={layer}
+          draft={draft}
           onChange={onCommentChange}
           upwell={upwell}
           colors={authorColors}

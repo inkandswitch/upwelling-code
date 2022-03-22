@@ -9,7 +9,7 @@ import Documents from '../Documents'
 
 let documents = Documents()
 
-// visible 0 or more layers NOT including root
+// visible 0 or more drafts NOT including root
 // root
 
 type Props = {
@@ -32,8 +32,8 @@ export function EditReviewView(props: Props) {
   useEffect(() => {
     console.log('effect triggered')
     let upwell = documents.get(id)
-    let editableLayer = upwell.get(did)
-    setText(editableLayer.text)
+    let editableDraft = upwell.get(did)
+    setText(editableDraft.text)
     setImmediate(() => setText(undefined))
   }, [id, did, epoch])
 
@@ -51,7 +51,7 @@ export function EditReviewView(props: Props) {
         author={author}
         colors={colors}
         onChange={onChange}
-        editableLayerId={visible[0]}
+        editableDraftId={visible[0]}
       ></Editor>
     )
     component = (

@@ -1,20 +1,20 @@
-import { createAuthorId, Upwell, Layer } from '../src/index'
+import { createAuthorId, Upwell, Draft } from '../src/index'
 import { it } from 'mocha'
 import { assert } from 'chai'
 
 describe('edits', () => {
-  let doc1: Layer, doc2: Layer, doc3: Layer
-  let author = {id: createAuthorId(), name: 'author' }
-  let author_doc2 = {id: createAuthorId(), name: 'doc2' }
-  let author_doc3 = {id: createAuthorId(), name: 'doc3' }
+  let doc1: Draft, doc2: Draft, doc3: Draft
+  let author = { id: createAuthorId(), name: 'author' }
+  let author_doc2 = { id: createAuthorId(), name: 'doc2' }
+  let author_doc3 = { id: createAuthorId(), name: 'doc3' }
 
   beforeEach(async () => {
     let d = await Upwell.create({ author })
-    doc1 = (await d.layers())[0]
+    doc1 = (await d.drafts())[0]
     doc1.insertAt(0, 'Hello of course')
     doc1.commit('Hello!')
 
-    doc2 = doc1.fork('Fork layer', author_doc2)
+    doc2 = doc1.fork('Fork draft', author_doc2)
     await d.add(doc2)
 
     doc2.insertAt(5, ' World')
@@ -22,7 +22,7 @@ describe('edits', () => {
     doc2.deleteAt(16, 6)
     doc2.commit('I hope you like my changes!')
 
-    doc3 = doc1.fork('Additional forked layer', author_doc3)
+    doc3 = doc1.fork('Additional forked draft', author_doc3)
     await d.add(doc3)
 
     doc3.insertAt(15, ' NEW LAYER')
@@ -37,13 +37,13 @@ describe('edits', () => {
   })
 
   describe('mergeWithEdits', () => {
-    let merged: Layer
+    let merged: Draft
 
     beforeEach(async () => {
-      merged = Layer.mergeWithEdits(author, doc1, doc2)
+      merged = Draft.mergeWithEdits(author, doc1, doc2)
     })
 
-    describe('with two layers', () => {
+    describe('with two drafts', () => {
       it('has the correct text', () => {
         assert.equal('Hey Everybody - World of course\ufffc ', merged.text)
       })
@@ -76,16 +76,16 @@ describe('edits', () => {
       })
     })
 
-    describe('with three layers', () => {
+    describe('with three drafts', () => {
       let merged123
 
       describe('linear merge', () => {
         // this is a contrived example because this approach would only allow
-        // us to merge together layers that have *not* been updated to the most
+        // us to merge together drafts that have *not* been updated to the most
         // recent root. See parallel merge below for the more realistic scenario.
 
         beforeEach(() => {
-          merged123 = Layer.mergeWithEdits(author, doc1, doc2, doc3)
+          merged123 = Draft.mergeWithEdits(author, doc1, doc2, doc3)
         })
 
         it('has the correct number of marks', () => {

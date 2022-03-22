@@ -1,23 +1,23 @@
-import { LayerId, Upwell } from './Upwell';
+import { DraftId, Upwell } from './Upwell';
 
 export default class History {
   upwell: Upwell
-  list: Array<LayerId>
+  list: Array<DraftId>
 
   constructor(upwell: Upwell) {
     this.upwell = upwell
-    // Remove the first document which is the root layer.
+    // Remove the first document which is the root Draft.
     this.list = upwell.metadata.doc.materialize('/archived').slice(1).reverse()
   }
 
   get length() {
-    return this.list.length 
+    return this.list.length
   }
-  
+
   get(index: number) {
     let id = this.list[index]
     let buf = this.upwell._archived.get(id)
     if (!buf) return undefined
-    else return this.upwell._coerceLayer(id, buf)
+    else return this.upwell._coerceDraft(id, buf)
   }
 }
