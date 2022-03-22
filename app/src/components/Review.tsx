@@ -17,39 +17,33 @@ type ReviewState = {
 
 export function ReviewView(props: {
   upwell: Upwell
-  visible: string[]
+  baseDraftId: string
+  changeDraftIds: string[]
   colors?: AuthorColorsType
 }) {
-  const { upwell, visible } = props
+  const { upwell, baseDraftId, changeDraftIds, colors } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      if (!visible.length) {
-        let atjsonDraft = new UpwellSource({
-          content: '',
-          annotations: [],
-        })
-        setState({ atjsonDraft })
-        return
-      }
+      let baseDraft = upwell.get(baseDraftId)
+      let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
 
-      // FIXME these need to be ordered by dependency graph to make sense (earliest first).
-      let rest = visible.map((id) => upwell.get(id))
       let editsDraft = Draft.mergeWithEdits(
         documents.author,
-        upwell.rootDraft,
-        ...rest
+        baseDraft,
+        ...changeDrafts
       )
-      let atjsonDraft = UpwellSource.fromRaw(editsDraft)
+      let atjsonDraft = UpwellSource.fromRaw(editsDraft, colors)
+      console.log(atjsonDraft)
 
       setState({ atjsonDraft })
     },
-    [upwell, visible]
+    [upwell, baseDraftId, changeDraftIds, colors]
   )
 
   useEffect(() => {
     updateAtjsonState()
-  }, [updateAtjsonState, visible])
+  }, [updateAtjsonState, baseDraftId, changeDraftIds])
 
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})
