@@ -194,6 +194,7 @@ export default function DraftView(props: DraftViewProps) {
 
   let rootId = upwell.rootDraft.id
   const isLatest = rootId === draft.id
+  const authors = upwell.metadata.getAuthors()
   return (
     <div
       id="draft-view"
@@ -232,33 +233,69 @@ export default function DraftView(props: DraftViewProps) {
             row-gap: 10px;
           `}
         >
-          <div>
+          <div
+            css={css`
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: space-between;
+            `}
+          >
             <SyncIndicator state={sync_state}></SyncIndicator>
-            {!isLatest && (
-              <Button onClick={() => goToDraft(upwell.rootDraft.id)}>
-                View Document
-              </Button>
-            )}
-            {!isLatest && (
-              <>
-                {' '}
-                »{' '}
-                <Input
-                  value={draft.message}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setDraft({ ...draft, message: e.target.value })
-                  }}
-                  onBlur={(e) => {
-                    //@ts-ignore
-                    handleFileNameInputBlur(e)
-                  }}
-                />
-              </>
-            )}
+            <div>
+              {!isLatest && (
+                <Button onClick={() => goToDraft(upwell.rootDraft.id)}>
+                  View Document
+                </Button>
+              )}
+              {!isLatest && (
+                <>
+                  {' '}
+                  »{' '}
+                  <Input
+                    value={draft.message}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                    }}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      setDraft({ ...draft, message: e.target.value })
+                    }}
+                    onBlur={(e) => {
+                      //@ts-ignore
+                      handleFileNameInputBlur(e)
+                    }}
+                  />
+                </>
+              )}
+            </div>
+            {draft.contributors.map((id) => (
+              <div
+                css={css`
+                  overflow: hidden;
+                  background: white; /* icon background needs a white backdrop to match others because of semi-transparency */
+
+                  border-radius: 50%;
+                `}
+                title={authors[id]}
+              >
+                <div
+                  css={css`
+                    background: ${authorColors[id]?.toString()};
+                    font-size: 18px;
+                    line-height: 18px;
+                    height: 1.5rem;
+                    width: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding-top: 3px;
+                  `}
+                >
+                  {authors[id].slice(0, 1)}
+                </div>
+              </div>
+            ))}
           </div>
           <div
             css={css`
