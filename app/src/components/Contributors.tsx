@@ -11,7 +11,12 @@ type Props = {
 export default function Contributors(props: Props) {
   const authors = props.upwell.metadata.getAuthors()
   return (
-    <div>
+    <div
+      css={css`
+        display: flex;
+        flex-direction: row;
+      `}
+    >
       {props.contributors.map((id) => (
         <div
           css={css`
