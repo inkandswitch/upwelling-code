@@ -182,7 +182,6 @@ export class Draft {
   }
 
   insertAt(position: number, value: string | Array<string>, prop = "text") {
-    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, 0, value);
@@ -194,7 +193,6 @@ export class Draft {
     if (text && text[0] === "text")
       this.doc.insert_object(text[1], position, { type });
     else throw new Error("text not properly initialized");
-    this.addMyselfAsContributor();
   }
 
   insertComment(
@@ -216,12 +214,10 @@ export class Draft {
 
     this.mark("comment", `[${from}..${to}]`, comment_id);
 
-    this.addMyselfAsContributor();
     return comment_id;
   }
 
   deleteAt(position: number, count: number = 1, prop = "text") {
-    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.splice(obj[1], position, count, "");
@@ -229,7 +225,6 @@ export class Draft {
   }
 
   mark(name: string, range: string, value: Value, prop = "text") {
-    this.addMyselfAsContributor();
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
@@ -298,12 +293,12 @@ export class Draft {
     doc.set(ROOT, "parent_id", this.id);
     doc.set(ROOT, "pinned", false);
     let draft = new Draft(id, doc);
-    draft.addMyselfAsContributor();
+    draft.addContributor(author.id)
     return draft;
   }
 
-  addMyselfAsContributor() {
-    this.doc.set("/contributors", this.authorId, true);
+  addContributor(authorId: AuthorId) {
+    this.doc.set("/contributors", authorId, true);
   }
 
   merge(theirs: Draft) {
@@ -395,7 +390,7 @@ export class Draft {
     let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
     doc.set(initialParagraph, "type", "paragraph");
     let draft = new Draft(id, doc);
-    draft.addMyselfAsContributor();
+    draft.addContributor(authorId);
     return draft;
   }
 

@@ -14,6 +14,7 @@ import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
 import CommentSidebar from './CommentSidebar'
+import Contributors from './Contributors'
 
 let documents = Documents()
 
@@ -141,6 +142,12 @@ export default function DraftView(props: DraftViewProps) {
   let onTextChange = () => {
     if (rootId === draft.id) {
     } else {
+      if (draft.contributors.indexOf(documents.author.id) === -1) {
+        let upwell = documents.get(id)
+        let draftInstance = upwell.get(draft.id)
+        draftInstance.addContributor(documents.author.id)
+        setDraft(draftInstance.materialize())
+      }
       documents.updatePeers(id, did)
       setSyncState(SYNC_STATE.LOADING)
     }
@@ -234,33 +241,47 @@ export default function DraftView(props: DraftViewProps) {
             row-gap: 10px;
           `}
         >
-          <div>
+          <div
+            css={css`
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: space-between;
+            `}
+          >
             <SyncIndicator state={sync_state}></SyncIndicator>
-            {!isLatest && (
-              <Button onClick={() => goToDraft(upwell.rootDraft.id)}>
-                View Document
-              </Button>
-            )}
-            {!isLatest && (
-              <>
-                {' '}
-                »{' '}
-                <Input
-                  value={draft.message}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setDraft({ ...draft, message: e.target.value })
-                  }}
-                  onBlur={(e) => {
-                    //@ts-ignore
-                    handleFileNameInputBlur(e)
-                  }}
-                />
-              </>
-            )}
+            <div>
+              {!isLatest && (
+                <Button onClick={() => goToDraft(upwell.rootDraft.id)}>
+                  View Document
+                </Button>
+              )}
+              {!isLatest && (
+                <>
+                  {' '}
+                  »{' '}
+                  <Input
+                    value={draft.message}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                    }}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      setDraft({ ...draft, message: e.target.value })
+                    }}
+                    onBlur={(e) => {
+                      //@ts-ignore
+                      handleFileNameInputBlur(e)
+                    }}
+                  />
+                </>
+              )}
+            </div>
+            <Contributors
+              colors={authorColors}
+              upwell={upwell}
+              contributors={draft.contributors}
+            ></Contributors>
           </div>
           <div
             css={css`
