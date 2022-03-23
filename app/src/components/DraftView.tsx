@@ -14,6 +14,7 @@ import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
 import CommentSidebar from './CommentSidebar'
+import Contributors from './Contributors'
 
 let documents = Documents()
 
@@ -140,6 +141,12 @@ export default function DraftView(props: DraftViewProps) {
   let onTextChange = () => {
     if (rootId === draft.id) {
     } else {
+      if (draft.contributors.indexOf(documents.author.id) === -1) {
+        let upwell = documents.get(id)
+        let draftInstance = upwell.get(draft.id)
+        draftInstance.addContributor(documents.author.id)
+        setDraft(draftInstance.materialize())
+      }
       documents.updatePeers(id, did)
       setSyncState(SYNC_STATE.LOADING)
     }
@@ -194,7 +201,6 @@ export default function DraftView(props: DraftViewProps) {
 
   let rootId = upwell.rootDraft.id
   const isLatest = rootId === draft.id
-  const authors = upwell.metadata.getAuthors()
   return (
     <div
       id="draft-view"
@@ -269,33 +275,11 @@ export default function DraftView(props: DraftViewProps) {
                 </>
               )}
             </div>
-            {draft.contributors.map((id) => (
-              <div
-                css={css`
-                  overflow: hidden;
-                  background: white; /* icon background needs a white backdrop to match others because of semi-transparency */
-
-                  border-radius: 50%;
-                `}
-                title={authors[id]}
-              >
-                <div
-                  css={css`
-                    background: ${authorColors[id]?.toString()};
-                    font-size: 18px;
-                    line-height: 18px;
-                    height: 1.5rem;
-                    width: 1.5rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding-top: 3px;
-                  `}
-                >
-                  {authors[id].slice(0, 1)}
-                </div>
-              </div>
-            ))}
+            <Contributors
+              colors={authorColors}
+              upwell={upwell}
+              contributors={draft.contributors}
+            ></Contributors>
           </div>
           <div
             css={css`
