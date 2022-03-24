@@ -248,7 +248,6 @@ export function Editor(props: Props) {
       dispatchTransaction={dispatchHandler}
       css={css`
         ${textCSS}
-        box-shadow: 0 10px 0 -2px ${color?.toString() || 'none'} inset;
         caret-color: ${color?.copy({ opacity: 1 }).toString() || 'auto'};
       `}
     />
