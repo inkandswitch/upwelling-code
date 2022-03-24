@@ -156,11 +156,14 @@ export default function DraftView(props: DraftViewProps) {
     console.log('comment change!')
   }
 
-  function pinDraft() {
-    let draftInstance = upwell.get(draft.id)
-    draftInstance.pinned = !draftInstance.pinned
-    setDraft(draftInstance.materialize())
-    onChangeMade()
+  const handleShareClick = (draft: DraftMetadata) => {
+    if (
+      // eslint-disable-next-line no-restricted-globals
+      confirm("Do you want to share your draft? it can't be unshared.")
+    ) {
+      let upwell = documents.get(id)
+      upwell.share(draft.id)
+    }
   }
 
   let handleUpdateClick = () => {
@@ -211,6 +214,7 @@ export default function DraftView(props: DraftViewProps) {
         background: url('/wood.png');
       `}
     >
+      <SyncIndicator state={sync_state}></SyncIndicator>
       <DraftsHistory
         did={did}
         epoch={epoch}
@@ -247,33 +251,67 @@ export default function DraftView(props: DraftViewProps) {
               justify-content: space-between;
             `}
           >
-            <SyncIndicator state={sync_state}></SyncIndicator>
-            <div>
-              {!isLatest && (
-                <Button onClick={() => goToDraft(upwell.rootDraft.id)}>
-                  View Document
-                </Button>
-              )}
-              {!isLatest && (
+            <div
+              css={css`
+                display: flex;
+                align-items: baseline;
+                column-gap: 12px;
+              `}
+            >
+              <span
+                css={css`
+                  font-size: 1.1em;
+                  font-weight: 600;
+                `}
+              >
+                Our document
+              </span>
+              <select
+                onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
+              >
+                <option label="main" value={upwell.rootDraft.id} />
+                {drafts.map((draft) => (
+                  <option label={draft.message} value={draft.id} />
+                ))}
+              </select>
+              {isLatest || upwell.isArchived(did) ? (
+                <Button onClick={createDraft}>Create Draft</Button>
+              ) : (
                 <>
-                  {' '}
-                  »{' '}
-                  <Input
-                    value={draft.message}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                    }}
-                    onChange={(e) => {
-                      e.stopPropagation()
-                      setDraft({ ...draft, message: e.target.value })
-                    }}
-                    onBlur={(e) => {
-                      //@ts-ignore
-                      handleFileNameInputBlur(e)
-                    }}
-                  />
+                  <Button
+                    disabled={rootId !== draft.parent_id}
+                    onClick={handleMergeClick}
+                  >
+                    Merge
+                  </Button>
+                  {draft.shared ? (
+                    '(Public Draft)'
+                  ) : (
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleShareClick(draft)
+                      }}
+                    >
+                      Share
+                    </Button>
+                  )}
                 </>
               )}
+              <Input
+                value={draft.message}
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  setDraft({ ...draft, message: e.target.value })
+                }}
+                onBlur={(e) => {
+                  //@ts-ignore
+                  handleFileNameInputBlur(e)
+                }}
+              />
             </div>
             <Contributors
               colors={authorColors}
@@ -283,62 +321,38 @@ export default function DraftView(props: DraftViewProps) {
           </div>
           <div
             css={css`
-              display: inline-flex;
+              display: flex;
               align-items: baseline;
               column-gap: 30px;
               justify-content: space-between;
+              align-items: center;
             `}
           >
-            {isLatest || upwell.isArchived(did) ? (
-              <Button onClick={createDraft}>Create Draft</Button>
-            ) : (
-              <>
-                <span
+            <Button
+              disabled={rootId === draft.parent_id}
+              onClick={handleUpdateClick}
+            >
+              Pending changes
+            </Button>
+            <div>
+              <span
+                css={css`
+                  gap: 20px;
+                  display: flex;
+                `}
+              ></span>
+              <span>
+                view changes{' '}
+                <Button
                   css={css`
-                    gap: 20px;
-                    display: flex;
+                    margin-bottom: 1ex;
                   `}
+                  onClick={() => setReviewMode(!reviewMode)}
                 >
-                  <Button
-                    disabled={rootId !== draft.parent_id}
-                    onClick={handleMergeClick}
-                  >
-                    Merge to Document
-                  </Button>
-                  {draft.pinned && (
-                    <Button
-                      disabled={rootId === draft.parent_id}
-                      onClick={handleUpdateClick}
-                    >
-                      Update from current
-                    </Button>
-                  )}
-                </span>
-                <span>
-                  view changes{' '}
-                  <Button
-                    css={css`
-                      margin-bottom: 1ex;
-                    `}
-                    onClick={() => setReviewMode(!reviewMode)}
-                  >
-                    {reviewMode ? 'on' : 'off'}
-                  </Button>
-                </span>
-
-                <span>
-                  fixed{' '}
-                  <Button
-                    css={css`
-                      margin-bottom: 1ex;
-                    `}
-                    onClick={() => pinDraft()}
-                  >
-                    {draft.pinned ? 'on' : 'off'}
-                  </Button>
-                </span>
-              </>
-            )}
+                  {reviewMode ? 'on' : 'off'}
+                </Button>
+              </span>
+            </div>
           </div>
         </div>
 

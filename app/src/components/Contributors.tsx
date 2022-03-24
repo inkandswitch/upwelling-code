@@ -15,6 +15,7 @@ export default function Contributors(props: Props) {
       css={css`
         display: flex;
         flex-direction: row;
+        column-gap: 6px;
       `}
     >
       {props.contributors.map((id) => (
