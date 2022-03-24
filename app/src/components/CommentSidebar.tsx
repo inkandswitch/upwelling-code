@@ -2,7 +2,7 @@
 import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
 import { Upwell, DraftMetadata, Comment, CommentState } from 'api'
-import { AuthorColorsType } from './ListDocuments'
+import deterministicColor from '../color'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -12,7 +12,6 @@ type CommentViewProps = {
   draft: DraftMetadata
   comment: Comment
   mark: { start: number; end: number }
-  colors?: AuthorColorsType
 }
 
 export function CommentView(props: CommentViewProps) {
@@ -44,7 +43,7 @@ export function CommentView(props: CommentViewProps) {
       <div
         css={css`
           font-size: small;
-          color: grey;
+          color: ${deterministicColor(comment.author).toString()};
         `}
       >
         {authorName}
@@ -73,12 +72,11 @@ export function CommentView(props: CommentViewProps) {
 type CommentSidebarProps = {
   draft: DraftMetadata
   upwell: Upwell
-  colors?: AuthorColorsType
   onChange: () => void
 }
 
 export default function CommentSidebar(props: CommentSidebarProps) {
-  let { upwell, draft, colors } = props
+  let { upwell, draft } = props
   let draftInstance = upwell.get(draft.id)
   let comments = draftInstance.comments.objects()
 
@@ -107,7 +105,6 @@ export default function CommentSidebar(props: CommentSidebarProps) {
               mark={mark}
               upwell={upwell}
               draft={draft}
-              colors={colors}
             />
           </div>
         )

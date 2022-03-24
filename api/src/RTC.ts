@@ -1,6 +1,7 @@
 import { SyncState, initSyncState } from "automerge-wasm-pack";
 import { Draft } from "./";
 import { nanoid } from "nanoid";
+import { EventEmitter } from "events";
 
 const STORAGE_URL = process.env.STORAGE_URL;
 console.log(STORAGE_URL);
@@ -13,7 +14,7 @@ type WebsocketSyncMessage = {
 
 const MAX_RETRIES = 5;
 
-export class RealTimeDraft {
+export class RealTimeDraft extends EventEmitter {
   draft: Draft;
   timeout: any;
   peerId: string = nanoid();
@@ -22,6 +23,7 @@ export class RealTimeDraft {
   retries: number = 0;
 
   constructor(draft: Draft) {
+    super()
     this.draft = draft;
     this.ws = this.connect();
   }
@@ -62,6 +64,7 @@ export class RealTimeDraft {
       }
       switch (value.method) {
         case "OPEN":
+          this.emit('peer', value)
           this.sendSyncMessage(value.peerId);
           break;
         case "MESSAGE":

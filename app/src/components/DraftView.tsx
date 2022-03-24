@@ -4,12 +4,10 @@ import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
 //@ts-ignore
 import { DraftMetadata, Draft, Author } from 'api'
-import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
 import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
-import deterministicColor from '../color'
 import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
@@ -29,13 +27,13 @@ const AUTOSAVE_INTERVAL = 5000
 export default function DraftView(props: DraftViewProps) {
   let { id, author } = props
   let [, setLocation] = useLocation()
-  let [authorColors, setAuthorColors] = useState<AuthorColorsType>({})
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
   let did = getDraftHash()
   let maybeDraft
+
   try {
     maybeDraft = upwell.get(did)
   } catch (err) {
@@ -48,39 +46,18 @@ export default function DraftView(props: DraftViewProps) {
     return window.location.hash.replace('#', '')
   }
 
-  useEffect(() => {
+  const render = useCallback(() => {
+    let upwell = documents.get(id)
+    const drafts = upwell.drafts()
+    setDrafts(drafts)
+    let draftInstance = upwell.get(draft.id)
+    setDraft(draftInstance.materialize())
     documents.connect(id, draft.id)
 
     return () => {
       documents.disconnect()
     }
   }, [id, draft.id])
-
-  const render = useCallback(() => {
-    let upwell = documents.get(id)
-    const drafts = upwell.drafts()
-    setDrafts(drafts)
-
-    // find the authors
-    const newAuthorColors = { ...authorColors }
-    let changed = false
-    drafts.forEach((l) => {
-      if (!(l.authorId in authorColors)) {
-        newAuthorColors[l.authorId] = deterministicColor(l.authorId)
-        changed = true
-      }
-    })
-    // also add this user in case they haven't made a draft
-    if (!(props.author.id in authorColors)) {
-      newAuthorColors[props.author.id] = deterministicColor(props.author.id)
-      changed = true
-    }
-    if (changed) {
-      setAuthorColors((prevState: any) => {
-        return { ...prevState, ...newAuthorColors }
-      })
-    }
-  }, [id, authorColors, setAuthorColors, props.author])
 
   useEffect(() => {
     let interval = setInterval(() => {
@@ -133,7 +110,7 @@ export default function DraftView(props: DraftViewProps) {
       upwell.updateToRoot(draftInstance)
       onChangeMade()
     }
-  }, [id, draft, onChangeMade])
+  }, [id, draft.id, onChangeMade])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -153,7 +130,7 @@ export default function DraftView(props: DraftViewProps) {
         let upwell = documents.get(id)
         let draftInstance = upwell.get(draft.id)
         draftInstance.addContributor(documents.author.id)
-        setDraft(draftInstance.materialize())
+        render()
       }
       documents.updatePeers(id, did)
       setSyncState(SYNC_STATE.LOADING)
@@ -175,13 +152,8 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   let handleUpdateClick = () => {
-    let root = upwell.rootDraft
-    let message = draft.message
     let draftInstance = upwell.get(draft.id)
-    draftInstance.merge(root)
-    draftInstance.message = message
-    draftInstance.parent_id = root.id
-    setDraft(draftInstance.materialize())
+    upwell.updateToRoot(draftInstance)
     onChangeMade()
     setReviewMode(false)
     setEpoch(Date.now())
@@ -191,7 +163,6 @@ export default function DraftView(props: DraftViewProps) {
     let upwell = documents.get(id)
     let draft = upwell.get(did)
     upwell.setLatest(draft)
-    setDraft(upwell.rootDraft.materialize())
     setEpoch(Date.now())
     onChangeMade()
   }
@@ -206,7 +177,6 @@ export default function DraftView(props: DraftViewProps) {
   function goToDraft(did: string) {
     let draft = upwell.get(did).materialize()
     setDraft(draft)
-    render()
     setLocation(`/document/${id}#${draft.id}`)
   }
 
@@ -227,7 +197,6 @@ export default function DraftView(props: DraftViewProps) {
         did={did}
         epoch={epoch}
         goToDraft={goToDraft}
-        colors={authorColors}
         drafts={drafts}
         id={id}
       />
@@ -340,7 +309,6 @@ export default function DraftView(props: DraftViewProps) {
               />
             </div>
             <Contributors
-              colors={authorColors}
               upwell={upwell}
               contributors={draft.contributors}
             ></Contributors>
@@ -354,12 +322,11 @@ export default function DraftView(props: DraftViewProps) {
               align-items: center;
             `}
           >
-            <Button
-              disabled={rootId === draft.parent_id}
-              onClick={handleUpdateClick}
-            >
-              Pending changes
-            </Button>
+            {draft.id !== rootId && rootId !== draft.parent_id ? (
+              <Button onClick={handleUpdateClick}>Pending changes</Button>
+            ) : (
+              <div></div>
+            )}
             <div>
               <span
                 css={css`
@@ -388,7 +355,6 @@ export default function DraftView(props: DraftViewProps) {
           visible={[draft.id]}
           id={id}
           author={author}
-          colors={authorColors}
           reviewMode={reviewMode}
           onChange={onTextChange}
         />
@@ -406,7 +372,6 @@ export default function DraftView(props: DraftViewProps) {
           draft={draft}
           onChange={onCommentChange}
           upwell={upwell}
-          colors={authorColors}
         />
       </div>
     </div>

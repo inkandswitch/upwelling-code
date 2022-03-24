@@ -2,8 +2,8 @@
 //import React, { useEffect, useRef, useState } from 'react'
 import React, { useState, useRef } from 'react'
 import { Upwell, Draft, Author } from 'api'
-import { AuthorColorsType } from './ListDocuments'
 //import Documents from '../Documents'
+import deterministicColor from '../color'
 
 import { schema } from '../upwell-pm-schema'
 import { ProseMirror } from 'use-prosemirror'
@@ -29,7 +29,6 @@ type Props = {
   editableDraftId: string
   author: Author
   onChange: any
-  colors: AuthorColorsType
 }
 
 const toggleBold = toggleMarkCommand(schema.marks.strong)
@@ -96,7 +95,7 @@ let prosemirrorToAutomerge = (
 }
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author, colors } = props
+  let { upwell, editableDraftId, onChange, author } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
@@ -123,7 +122,7 @@ export function Editor(props: Props) {
               let commentMark = schema.mark('comment', {
                 id: 'new-comment',
                 author: author,
-                authorColor: colors[author.id],
+                authorColor: deterministicColor(author.id),
                 message,
               })
               let tr = view.state.tr.addMark(from, to, commentMark)
@@ -147,7 +146,7 @@ export function Editor(props: Props) {
   }
 
   let editableDraft = upwell.get(editableDraftId)
-  let atjsonDraft = UpwellSource.fromRaw(editableDraft, colors)
+  let atjsonDraft = UpwellSource.fromRaw(editableDraft)
   let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
   const [state, setState] = useState<EditorState>(getState(pmDoc))
   //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
@@ -241,7 +240,7 @@ export function Editor(props: Props) {
     setState(newState)
   }
 
-  let color = colors[editableDraft.authorId]
+  let color = deterministicColor(editableDraft.authorId)
   return (
     <ProseMirror
       state={state}

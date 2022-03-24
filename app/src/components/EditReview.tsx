@@ -3,7 +3,6 @@ import { css } from '@emotion/react/macro'
 import React, { useState, useEffect } from 'react'
 import { Author } from 'api'
 import { ReviewView } from './Review'
-import { AuthorColorsType } from './ListDocuments'
 import { Editor } from './Editor'
 import Documents from '../Documents'
 
@@ -20,12 +19,10 @@ type Props = {
   author: Author
   epoch: number
   reviewMode: boolean
-  colors: AuthorColorsType
 }
 
 export function EditReviewView(props: Props) {
-  const { id, did, epoch, visible, onChange, reviewMode, colors, author } =
-    props
+  const { id, did, epoch, visible, onChange, reviewMode, author } = props
   let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
 
@@ -45,7 +42,6 @@ export function EditReviewView(props: Props) {
       upwell={upwell}
       baseDraftId={upwell.rootDraft.id}
       changeDraftIds={[did]}
-      colors={colors}
     ></ReviewView>
   )
   let component = reviewView
@@ -54,7 +50,6 @@ export function EditReviewView(props: Props) {
       <Editor
         upwell={upwell}
         author={author}
-        colors={colors}
         onChange={onChange}
         editableDraftId={visible[0]}
       ></Editor>
