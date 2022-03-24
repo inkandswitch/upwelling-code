@@ -93,6 +93,14 @@ export default function DraftView(props: DraftViewProps) {
     }
   }, [id, render])
 
+  const handleTitleInputBlur = (
+    e: React.FocusEvent<HTMLInputElement, Element>
+  ) => {
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.title = e.target.value
+    onChangeMade()
+  }
+
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
@@ -258,14 +266,24 @@ export default function DraftView(props: DraftViewProps) {
                 column-gap: 12px;
               `}
             >
-              <span
+              <Input
+                value={draft.title}
+                placeholder={'Untitled Document'}
+                onClick={(e) => {
+                  e.stopPropagation()
+                }}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  setDraft({ ...draft, title: e.target.value })
+                }}
+                onBlur={(e) => {
+                  handleTitleInputBlur(e)
+                }}
                 css={css`
                   font-size: 1.1em;
                   font-weight: 600;
                 `}
-              >
-                Our document
-              </span>
+              />
               <select
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
               >

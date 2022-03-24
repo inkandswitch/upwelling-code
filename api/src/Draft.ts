@@ -139,7 +139,7 @@ export class Draft {
   }
 
   get title(): string {
-    return this._getAutomergeText("title");
+    return this._getValue("title") as string;
   }
 
   get parent_id(): string {
