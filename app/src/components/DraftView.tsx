@@ -287,9 +287,17 @@ export default function DraftView(props: DraftViewProps) {
               <select
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
               >
-                <option label="main" value={upwell.rootDraft.id} />
-                {drafts.map((draft) => (
-                  <option label={draft.message} value={draft.id} />
+                <option
+                  label="main"
+                  value={upwell.rootDraft.id}
+                  selected={upwell.rootDraft.id === draft.id}
+                />
+                {drafts.map((d) => (
+                  <option
+                    label={d.message}
+                    value={d.id}
+                    selected={d.id === draft.id}
+                  />
                 ))}
               </select>
               {isLatest || upwell.isArchived(did) ? (
