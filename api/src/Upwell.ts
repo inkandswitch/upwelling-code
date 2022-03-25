@@ -105,6 +105,7 @@ export class Upwell {
     let draft = this.get(id);
     draft.shared = true;
     this._add(draft);
+    this.subscriber();
   }
 
   updateToRoot(draft: Draft) {

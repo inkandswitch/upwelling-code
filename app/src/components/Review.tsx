@@ -33,8 +33,6 @@ export function ReviewView(props: {
         ...changeDrafts
       )
       let atjsonDraft = UpwellSource.fromRaw(editsDraft)
-      console.log(atjsonDraft)
-
       setState({ atjsonDraft })
     },
     [upwell, baseDraftId, changeDraftIds]

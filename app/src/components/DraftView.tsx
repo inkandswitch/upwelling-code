@@ -41,6 +41,7 @@ export default function DraftView(props: DraftViewProps) {
   }
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>([])
+  let [historyDraftId, setHistoryDraft] = useState<string>(upwell.rootDraft.id)
 
   function getDraftHash() {
     return window.location.hash.replace('#', '')
@@ -199,6 +200,7 @@ export default function DraftView(props: DraftViewProps) {
         epoch={epoch}
         goToDraft={goToDraft}
         drafts={drafts.map((d) => d.materialize())}
+        setHistorySelection={(did) => setHistoryDraft(did)}
         id={id}
       />
       <div
@@ -357,6 +359,7 @@ export default function DraftView(props: DraftViewProps) {
           id={id}
           author={author}
           reviewMode={reviewMode}
+          historyDraftId={historyDraftId}
           onChange={onTextChange}
         />
       </div>

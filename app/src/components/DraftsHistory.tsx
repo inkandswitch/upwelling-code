@@ -71,6 +71,7 @@ type Props = {
   id: string
   did: string
   goToDraft: Function
+  setHistorySelection: (id: string) => void
   colors?: AuthorColorsType
 }
 export default function DraftsHistory({
@@ -79,6 +80,7 @@ export default function DraftsHistory({
   id,
   did,
   goToDraft,
+  setHistorySelection,
   colors = {},
 }: Props) {
   const upwell = documents.get(id)
@@ -201,7 +203,9 @@ export default function DraftsHistory({
               `}
               id={id}
               did={did}
-              onDraftClick={(draft: DraftMetadata) => goToDraft(draft.id)}
+              onDraftClick={(draft: DraftMetadata) =>
+                setHistorySelection(draft.id)
+              }
               drafts={history}
               colors={colors}
             />
