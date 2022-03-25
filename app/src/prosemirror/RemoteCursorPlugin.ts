@@ -1,12 +1,10 @@
-import { AuthorColorsType } from '../components/ListDocuments'
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import { Plugin, PluginKey } from 'prosemirror-state'
+import deterministicColor from '../color'
 
 export const remoteCursorKey = new PluginKey('remoteCursor')
 
-export const remoteCursorPlugin: (colors: AuthorColorsType) => Plugin = (
-  colors: AuthorColorsType
-) => {
+export const remoteCursorPlugin: () => Plugin = () => {
   return new Plugin({
     key: remoteCursorKey,
 
@@ -30,16 +28,16 @@ export const remoteCursorPlugin: (colors: AuthorColorsType) => Plugin = (
             let node = tr.doc.nodeAt(from)
             if (node) {
               return Decoration.inline(from, to + 1, {
-                style: `border-left: 2px solid ${colors[author]}; margin-left: -2px`,
+                style: `border-left: 2px solid ${deterministicColor(author)}; margin-left: -2px`,
               })
             } else {
               return Decoration.inline(from - 1, to, {
-                style: `border-right: 2px solid ${colors[author]}; margin-right: -2px`,
+                style: `border-right: 2px solid ${deterministicColor(author)}; margin-right: -2px`,
               })
             }
           } else {
             return Decoration.inline(from, to, {
-              style: `background: ${colors[author]}`,
+              style: `background: ${deterministicColor(author)}`,
             })
           }
         })

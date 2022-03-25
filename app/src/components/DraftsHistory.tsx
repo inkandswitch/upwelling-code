@@ -83,7 +83,7 @@ export default function DraftsHistory({
 }: Props) {
   const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
-  const [isExpanded, setExpanded] = useState<boolean>(true)
+  const [isExpanded, setExpanded] = useState<boolean>(false)
   let [archivedDrafts, setHistory] = useState<Draft[]>([])
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize, setFetchSize] = useState<number>(HISTORY_FETCH_SIZE)

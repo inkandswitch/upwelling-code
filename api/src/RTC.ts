@@ -2,6 +2,7 @@ import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
 import { Author, Draft } from "./";
 import { nanoid } from "nanoid";
 import Queue from "./Queue";
+import { EventEmitter } from "events";
 
 const STORAGE_URL = process.env.STORAGE_URL;
 console.log(STORAGE_URL);
@@ -27,7 +28,7 @@ export type CursorPosition = {
 
 const MAX_RETRIES = 5;
 
-export class RealTimeDraft {
+export class RealTimeDraft extends EventEmitter {
   draft: Draft;
   timeout: any;
   peerId: string = nanoid();
@@ -38,6 +39,7 @@ export class RealTimeDraft {
   transactions: Queue<Transaction> = new Queue()
 
   constructor(draft: Draft, author: Author) {
+    super()
     this.draft = draft;
     this.author = author
     this.ws = this.connect();
@@ -79,6 +81,7 @@ export class RealTimeDraft {
       }
       switch (value.method) {
         case "OPEN":
+          this.emit('peer', value)
           this.sendSyncMessage(value.peerId);
           break;
         case "MESSAGE":
