@@ -1,5 +1,5 @@
 import * as Automerge from "automerge-wasm-pack"
-import { Author, AuthorId } from "."
+import { Draft, Author, AuthorId, DraftMetadata } from "."
 import debug from "debug"
 
 const ROOT = '_root'
@@ -16,16 +16,13 @@ export class UpwellMetadata {
     return new UpwellMetadata(Automerge.loadDoc(binary))
   }
 
-  static create(id: string, main_id: string, author: Author): UpwellMetadata {
-    debug(`creating metadata ${id}  ${main_id}`)
+  static create(id: string): UpwellMetadata {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id)
     doc.set_object(ROOT, 'drafts', {})
     doc.set_object(ROOT, 'history', [])
     doc.set_object(ROOT, 'authors', {})
     let meta = new UpwellMetadata(doc)
-    meta.main = main_id
-    meta.addAuthor(author)
     return meta
   }
 
@@ -36,7 +33,19 @@ export class UpwellMetadata {
 
   archive(id: string) {
     let draft = this.doc.materialize('/drafts/' + id)
-    this.doc.set_object('/drafts', id, { ...draft, archived: true })
+    this.doc.set_object('/drafts', id, { heads: draft.heads, archived: true })
+  }
+
+  addDraft(draft: Draft) {
+    let metadata = draft.materialize()
+    this.doc.set_object('/drafts', draft.id, {
+      heads: metadata.heads,
+      archived: metadata.archived
+    })
+  }
+
+  getDraft(id: string): { heads: string[], archived: boolean } {
+    return this.doc.materialize('/drafts/' + id)
   }
 
   addAuthor(author: Author) {
@@ -65,8 +74,9 @@ export class UpwellMetadata {
   }
 
   set main(id: string) {
+    let draftMetadata = this.getDraft(id)
+    if (!draftMetadata) throw new Error('Cant set this draft to main without having added draft to metadata first')
     let len = this.doc.length('/history')
     this.doc.insert('/history', len, id)
-    this.archive(id)
   }
 }

@@ -53,6 +53,7 @@ describe('save and load', () => {
     binary = await b.serialize()
     c = await Upwell.deserialize(binary, author)
     a.merge(c)
+    assert.equal(b.drafts().length, 3)
     upwellEquals(a, b)
   })
 
@@ -104,13 +105,6 @@ describe('save and load', () => {
 
       deserialized = await Upwell.deserialize(stream, author)
       assert.equal(deserialized.drafts().length, NUM / 2 + 1)
-      let archived = 0
-      let draft
-      while (draft = deserialized.history.get(archived)) {
-        archived++
-        assert.equal(upwell.isArchived(draft.id), true)
-      }
-      assert.equal(archived, NUM / 2)
     })
   })
 })

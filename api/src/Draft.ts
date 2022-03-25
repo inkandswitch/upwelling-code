@@ -29,14 +29,14 @@ export type ChangeMetadata = {
 export type Heads = string[];
 export type DraftMetadata = {
   id: string;
+  heads: string[]
   contributors: string[];
   title: string;
-  pinned: boolean;
   text: string;
   time: number;
+  archived: boolean;
   marks: any;
   comments: any;
-  version: string;
   shared: boolean;
   parent_id: string;
   authorId: AuthorId;
@@ -94,14 +94,6 @@ export class Draft {
     this.doc.set(ROOT, "shared", value);
   }
 
-  get version() {
-    return this._getValue("version") as string;
-  }
-
-  set version(value: string) {
-    this.doc.set(ROOT, "version", value);
-  }
-
   get time(): number {
     return this._getValue("time") as number;
   }
@@ -110,12 +102,12 @@ export class Draft {
     this.doc.set(ROOT, "time", value);
   }
 
-  get pinned() {
-    return this._getValue("pinned") as boolean;
+  get archived() {
+    return this._getValue("archived") as boolean
   }
 
-  set pinned(value: boolean) {
-    this.doc.set(ROOT, "pinned", value);
+  set archived(value: boolean) {
+    this.doc.set(ROOT, "archvived", value);
   }
 
   get message(): string {
@@ -167,13 +159,13 @@ export class Draft {
     return {
       id: this.id,
       title: this.title,
-      pinned: this.pinned,
+      heads: this.doc.getHeads(),
+      archived: this.archived,
       parent_id: this.parent_id,
       text: this.text,
       contributors: this.contributors,
       message: this.message,
       time: this.time,
-      version: this.version,
       shared: this.shared,
       marks: this.marks,
       comments: this.comments.objects(),
@@ -291,7 +283,6 @@ export class Draft {
     doc.set(ROOT, "time", Date.now());
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
-    doc.set(ROOT, "pinned", false);
     let draft = new Draft(id, doc);
     draft.addContributor(author.id)
     return draft;
@@ -380,6 +371,7 @@ export class Draft {
     doc.set(ROOT, "author", authorId);
     doc.set(ROOT, "shared", false, "boolean");
     doc.set(ROOT, "pinned", false);
+    doc.set(ROOT, "parent_id", id)
     doc.set(ROOT, "time", Date.now(), "timestamp");
     doc.set(ROOT, "archived", false, "boolean");
     doc.set(ROOT, "title", "");

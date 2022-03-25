@@ -16,8 +16,6 @@ export default class History {
 
   get(index: number) {
     let id = this.list[index]
-    let buf = this.upwell._archived.get(id)
-    if (!buf) return undefined
-    else return this.upwell._coerceDraft(id, buf)
+    return this.upwell._drafts.get(id)
   }
 }

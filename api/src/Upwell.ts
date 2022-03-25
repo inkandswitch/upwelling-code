@@ -43,7 +43,6 @@ export class Upwell {
   metadata: UpwellMetadata;
   author: Author;
   subscriber: Function = function noop() { };
-  _archived: Map<string, Uint8Array | Draft> = new Map();
 
   constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata;
@@ -66,6 +65,7 @@ export class Upwell {
 
   set rootDraft(draft: Draft) {
     this.metadata.main = draft.id;
+    this.archive(draft.id)
     this.subscriber();
   }
 
@@ -78,7 +78,7 @@ export class Upwell {
   }
 
   drafts(): Draft[] {
-    return Array.from(this._drafts.values());
+    return Array.from(this._drafts.values()).filter(draft => !this.isArchived(draft.id))
   }
 
   getAuthorName(authorId: AuthorId): string | undefined {
@@ -87,23 +87,16 @@ export class Upwell {
     else return undefined;
   }
 
-  setLatest(draft) {
-    draft.commit(draft.message);
-    this.archive(draft.id);
-    this.rootDraft = draft;
+  add(draft: Draft) {
+    this._drafts.set(draft.id, draft)
+    this.metadata.addDraft(draft);
   }
 
   createDraft(message?: string) {
     if (!message) message = getRandomDessert() as string;
     let newDraft = this.rootDraft.fork(message, this.author);
-    this.add(newDraft);
+    this.add(newDraft)
     return newDraft;
-  }
-
-  add(draft: Draft): void {
-    this.metadata
-    this._drafts.set(draft.id, draft);
-    this.subscriber();
   }
 
   share(id: string): void {
@@ -118,6 +111,7 @@ export class Upwell {
     draft.merge(root);
     draft.message = message;
     draft.parent_id = root.id;
+    this.add(draft)
   }
 
   isArchived(id: string): boolean {
@@ -125,11 +119,11 @@ export class Upwell {
   }
 
   archive(id: string): void {
-    if (this.isArchived(id)) return;
-    let doc = this.get(id);
+    if (this.isArchived(id)) return
+    let draft = this._drafts.get(id)
+    if (!draft) throw new Error('Draft with doesnt exist with id=' + id)
+    draft.archived = true
     this.metadata.archive(id);
-    this._drafts.delete(id);
-    this._archived.set(id, doc);
     this.subscriber();
   }
 
@@ -140,13 +134,9 @@ export class Upwell {
   }
 
   get(id: string): Draft {
-    let draft = this._drafts.get(id);
-    if (!draft) {
-      let maybe = this._archived.get(id);
-      if (!maybe) throw new Error("No draft with id=" + id);
-      else return this._coerceDraft(id, maybe);
-    }
-    return draft;
+    let draft = this._drafts.get(id)
+    if (!draft) throw new Error('No draft with id=' + id)
+    return draft
   }
 
   async toFile(): Promise<Buffer> {
@@ -201,15 +191,13 @@ export class Upwell {
         let upwell = new Upwell(UpwellMetadata.load(metadata), author);
         drafts.forEach((item) => {
           let { id, binary } = item;
-          if (upwell.metadata.isArchived(id)) {
-            upwell._archived.set(id, binary);
-          } else {
+          if (!upwell.metadata.isArchived(id) || id === upwell.metadata.main) {
             var start = new Date();
             let draft = Draft.load(id, binary, author.id);
             //@ts-ignore
             var end = new Date() - start;
             debug("(loadDoc): execution time %dms", end);
-            upwell.add(draft);
+            upwell._drafts.set(draft.id, draft);
           }
         });
         resolve(upwell);
@@ -229,14 +217,8 @@ export class Upwell {
     drafts.forEach((draft: Draft) => {
       writeDraft(draft.id, draft.save());
     });
-    let archived = Array.from(this._archived.keys());
-    archived.forEach((id) => {
-      let buf = this._archived.get(id);
-      if (!buf) return console.error("no buf");
-      else if (buf.constructor.name === "Uint8Array")
-        writeDraft(id, buf as Uint8Array);
-      else writeDraft(id, (buf as Draft).save());
-    });
+
+    writeDraft(this.rootDraft.id, this.rootDraft.save())
 
     function writeDraft(id, binary: Uint8Array) {
       pack.entry({ name: `${id}.${LAYER_EXT}` }, Buffer.from(binary));
@@ -253,9 +235,11 @@ export class Upwell {
     let id = options?.id || nanoid();
     let author = options?.author || UNKNOWN_AUTHOR;
     let draft = Draft.create(SPECIAL_ROOT_DOCUMENT, author.id);
-    let metadata = UpwellMetadata.create(id, draft.id, author);
+    let metadata = UpwellMetadata.create(id);
     let upwell = new Upwell(metadata, author);
     upwell.add(draft)
+    draft.parent_id = draft.id
+    upwell.rootDraft = draft
     upwell.createDraft(); // always create an initial draft
     return upwell;
   }
@@ -268,6 +252,7 @@ export class Upwell {
       try {
         let existing = this.get(draft.id);
         existing.merge(draft);
+        this.add(existing)
       } catch (err) {
         this.add(draft);
       }

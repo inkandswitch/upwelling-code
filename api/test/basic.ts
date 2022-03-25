@@ -73,7 +73,7 @@ describe("upwell", () => {
     assert.equal(doc.text, "Hello\ufffc ");
     assert.equal(d.drafts()[0].text, "Hello\ufffc ");
 
-    d.setLatest(doc);
+    d.rootDraft = doc;
 
     let name = "Started typing on the train";
     let author: Author = { id: createAuthorId(), name: "Theroux" };
@@ -110,7 +110,7 @@ describe("upwell", () => {
       doc.insertAt(3, "l");
       doc.insertAt(4, "o");
       assert.equal(doc.text, "Hello\ufffc ");
-      d.setLatest(doc);
+      d.rootDraft = doc;
     });
 
     it("forks", () => {
@@ -137,6 +137,10 @@ describe("upwell", () => {
 
     it("can be archived", async () => {
       d.archive(newDraft.id);
+      assert.equal(d.isArchived(newDraft.id), true);
+    })
+
+    it('archives history', () => {
       let draft = d.history.get(0);
       assert.ok(draft);
       if (draft) {
@@ -147,8 +151,10 @@ describe("upwell", () => {
       }
     });
 
-    it("can get archived drafts from deserialized", async () => {
+    it("can get history from deserialized", async () => {
       let author = { id: createAuthorId(), name: "boop" };
+      let _new = d.createDraft()
+      d.rootDraft = _new
       let f = await Upwell.deserialize(d.serialize(), author);
       let e = await Upwell.deserialize(f.serialize(), author);
       let draft = e.history.get(0);
