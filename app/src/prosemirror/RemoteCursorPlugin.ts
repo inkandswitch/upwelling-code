@@ -21,8 +21,8 @@ export const remoteCursorPlugin: (colors: AuthorColorsType) => Plugin = (
         // this is not especially fast or efficient, but building a mutation map
         // is more complicated, so going with this for the moment.
         const newCursors = tr.getMeta(remoteCursorKey)
-        if (!newCursors) return
 
+        if (newCursors) {
         let decorations = Object.keys(newCursors).map((author) => {
           let cursor = newCursors[author]
           let { from, to } = cursor
@@ -37,8 +37,13 @@ export const remoteCursorPlugin: (colors: AuthorColorsType) => Plugin = (
           }
         })
         return DecorationSet.create(tr.doc, decorations)
+      } else {
+        // just update the positions of the decorations
+        return cursors.map(tr.mapping, tr.doc)
+      }
       },
     },
+
     props: {
       decorations(state) {
         return remoteCursorKey.getState(state)
