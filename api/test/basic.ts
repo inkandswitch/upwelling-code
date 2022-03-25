@@ -90,8 +90,8 @@ describe("upwell", () => {
     assert.equal(newDraft.text, "Hola\ufffc ");
     assert.equal(newDraft.authorId, author.id);
     assert.deepEqual(e.metadata.getAuthors(), {
-      [author.id]: author.name,
-      [first_author.id]: first_author.name,
+      [author.id]: author,
+      [first_author.id]: first_author,
     });
   });
 

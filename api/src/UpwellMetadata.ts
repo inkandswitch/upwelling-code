@@ -20,45 +20,27 @@ export class UpwellMetadata {
     debug(`creating metadata ${id}  ${main_id}`)
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id)
-    doc.set(ROOT, 'main_id', main_id)
-    doc.set_object(ROOT, 'archived', [])
+    doc.set_object(ROOT, 'drafts', {})
+    doc.set_object(ROOT, 'history', [])
     doc.set_object(ROOT, 'authors', {})
     let meta = new UpwellMetadata(doc)
+    meta.main = main_id
     meta.addAuthor(author)
     return meta
   }
 
-  _getArchivedDraftsObj(): Automerge.ObjID {
-    let value = this.doc.value(ROOT, 'archived')
-    let map
-    if (!value) {
-      map = this.doc.set_object(ROOT, 'archived', [])
-    } else if (value[0] === 'list') {
-      map = value[1]
-    } else {
-      throw new Error('Archived property not a map')
-    }
-    return map
-  }
-
   isArchived(id: string): boolean {
-    let list = this.doc.materialize('/archived')
-    if (list) {
-      let val = list.find(_id => _id === id) !== undefined
-      return val
-    } else {
-      return false
-    }
+    let draft = this.doc.materialize('/drafts/' + id)
+    return draft.archived
   }
 
   archive(id: string) {
-    let list = this._getArchivedDraftsObj()
-    let len = this.doc.length(list)
-    this.doc.insert(list, len, id)
+    let draft = this.doc.materialize('/drafts/' + id)
+    this.doc.set_object('/drafts', id, { ...draft, archived: true })
   }
 
   addAuthor(author: Author) {
-    this.doc.set('/authors', author.id, author.name)
+    this.doc.set_object('/authors', author.id, author)
   }
 
   getAuthors() {
@@ -66,13 +48,7 @@ export class UpwellMetadata {
   }
 
   getAuthor(authorId: AuthorId): Author | undefined {
-    let authors = this.doc.value(ROOT, 'authors')
-    if (authors && authors[0] === 'map') {
-      let value = this.doc.value(authors[1], authorId)
-      if (value && value[0] === 'str') return { id: authorId, name: value[1] }
-      else return undefined
-    }
-    else return undefined
+    return this.doc.materialize('/authors/' + authorId)
   }
 
   get id(): string {
@@ -82,12 +58,15 @@ export class UpwellMetadata {
   }
 
   get main(): string {
-    let value = this.doc.value(ROOT, 'main_id')
-    if (value) return value[1] as string
-    else return ''
+    let len = this.doc.length('/history')
+    let value = this.doc.value('/history', len - 1)
+    if (value && value[0] == 'str') return value[1]
+    throw new Error('History value not a string')
   }
 
   set main(id: string) {
-    this.doc.set(ROOT, 'main_id', id)
+    let len = this.doc.length('/history')
+    this.doc.insert('/history', len, id)
+    this.archive(id)
   }
 }

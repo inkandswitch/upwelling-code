@@ -17,14 +17,18 @@ An `.upwell` is a file format. An upwell is a tar file that contains multiple fi
 
 The `metadata.automerge` file is an Automerge document that contains the metadata about this upwell. It is an Automerge document because we want to be able to update the id or authors in a way that respects the fact that multiple people could edit these properties concurrently over time. It is also separate from any particular draft or version of the document, as it contains information that is important for downstream applications to be able to properly render UI elements. It has the following properties:
 
-| prop    | type                        | description                                                         |
-| ------- | --------------------------- | ------------------------------------------------------------------- |
-| id      | string                      | The id of this upwell                                               |
-| history | Array<DraftId>              | An array of draft ids, the one that is last in the list is the main |
-| drafts  | Map<DraftId, DraftMetadata> |
+| prop    | type                          | description                                                         |
+| ------- | ----------------------------- | ------------------------------------------------------------------- |
+| id      | string                        | The id of this upwell                                               |
+| history | Array<DraftId>                | An array of draft ids, the one that is last in the list is the main |
+| drafts  | Map<DraftId, DraftMetadata>   | A lookup table of all drafts and their metadata                     |
+| authors | Map<AuthorId, AuthorMetadata> | A lookup table of all authors                                       |
 
 #### Definitions
 
+AuthorId: `string`
+AuthorMetadata:
+-- `string`
 DraftId: `string`
 DraftMetadata
 -- archived: `boolean`

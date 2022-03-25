@@ -65,12 +65,7 @@ export class Upwell {
   }
 
   set rootDraft(draft: Draft) {
-    // TODO: check to see that draft has been
-    // effectively 'rebased' on the latest
-    let oldRoot = this.metadata.main;
     this.metadata.main = draft.id;
-    this.archive(oldRoot);
-
     this.subscriber();
   }
 
@@ -106,15 +101,15 @@ export class Upwell {
   }
 
   add(draft: Draft): void {
-    this.set(draft.id, draft);
+    this.metadata
+    this._drafts.set(draft.id, draft);
     this.subscriber();
   }
 
   share(id: string): void {
     let draft = this.get(id);
     draft.shared = true;
-    this.set(id, draft);
-    this.subscriber();
+    this.add(draft);
   }
 
   updateToRoot(draft: Draft) {
@@ -136,10 +131,6 @@ export class Upwell {
     this._drafts.delete(id);
     this._archived.set(id, doc);
     this.subscriber();
-  }
-
-  set(id: string, draft: Draft) {
-    return this._drafts.set(id, draft);
   }
 
   _coerceDraft(id, buf: Draft | Uint8Array): Draft {
@@ -264,8 +255,7 @@ export class Upwell {
     let draft = Draft.create(SPECIAL_ROOT_DOCUMENT, author.id);
     let metadata = UpwellMetadata.create(id, draft.id, author);
     let upwell = new Upwell(metadata, author);
-    upwell.add(draft);
-    upwell.archive(draft.id); // root is always archived
+    upwell.add(draft)
     upwell.createDraft(); // always create an initial draft
     return upwell;
   }
