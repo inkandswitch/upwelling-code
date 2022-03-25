@@ -25,16 +25,11 @@ export const remoteCursorPlugin: () => Plugin = () => {
           let cursor = newCursors[author]
           let { from, to } = cursor
           if (from === to) {
-            let node = tr.doc.nodeAt(from)
-            if (node) {
-              return Decoration.inline(from, to + 1, {
-                style: `border-left: 2px solid ${deterministicColor(author)}; margin-left: -2px`,
-              })
-            } else {
-              return Decoration.inline(from - 1, to, {
-                style: `border-right: 2px solid ${deterministicColor(author)}; margin-right: -2px`,
-              })
-            }
+            let cursorElement = window.document.createElement('span')
+            cursorElement.style.borderRight = `2px solid ${deterministicColor(author).toString()}`
+            cursorElement.style.boxSizing = 'content-box'
+            cursorElement.style.marginLeft = '-2px'
+            return Decoration.widget(from, cursorElement)
           } else {
             return Decoration.inline(from, to, {
               style: `background: ${deterministicColor(author)}`,
