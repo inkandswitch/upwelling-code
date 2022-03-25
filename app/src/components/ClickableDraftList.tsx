@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React from 'react'
-import { Draft } from 'api'
+import { DraftMetadata } from 'api'
 //@ts-ignore
 import relativeDate from 'relative-date'
 import { HCLColor } from 'd3-color'
@@ -67,7 +67,7 @@ type Props = {
   onShareClick?: Function
   id: string
   did: string
-  drafts: Draft[]
+  drafts: DraftMetadata[]
   isBottom?: boolean
   colors?: AuthorColorsType
 } & React.ClassAttributes<HTMLDivElement> &
@@ -89,7 +89,7 @@ export default function ClickableDraftList({
     <div {...props}>
       {drafts
         .sort((a, b) => b.time - a.time)
-        .map((draft: Draft, index) => {
+        .map((draft: DraftMetadata, index) => {
           return (
             <FileTab
               key={draft.id}

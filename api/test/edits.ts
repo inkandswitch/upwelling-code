@@ -9,13 +9,13 @@ describe('edits', () => {
   let author_doc3 = { id: createAuthorId(), name: 'doc3' }
 
   beforeEach(async () => {
-    let d = await Upwell.create({ author })
-    doc1 = (await d.drafts())[0]
+    let d = Upwell.create({ author })
+    doc1 = d.drafts()[0]
     doc1.insertAt(0, 'Hello of course')
     doc1.commit('Hello!')
 
-    doc2 = doc1.fork('Fork draft', author_doc2)
-    await d.add(doc2)
+    doc2 = doc1.fork('Additional forked draft', author_doc2)
+    d._add(doc2)
 
     doc2.insertAt(5, ' World')
     doc2.insertAt(0, 'Hey Everybody - ')
@@ -23,7 +23,7 @@ describe('edits', () => {
     doc2.commit('I hope you like my changes!')
 
     doc3 = doc1.fork('Additional forked draft', author_doc3)
-    await d.add(doc3)
+    d._add(doc3)
 
     doc3.insertAt(15, ' NEW LAYER')
     doc3.insertAt(0, 'NEW LAYER ')

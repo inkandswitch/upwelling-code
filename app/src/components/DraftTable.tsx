@@ -70,7 +70,9 @@ export default function DraftList(props: DraftListProps) {
         id={id}
         did={''}
         onDraftClick={(draft: Draft) => goToDraft(draft.id)}
-        drafts={drafts.filter((l) => !upwell.isArchived(l.id))}
+        drafts={drafts
+          .filter((l) => !upwell.isArchived(l.id))
+          .map((d) => d.materialize())}
       />
     </div>
   )

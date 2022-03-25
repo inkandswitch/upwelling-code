@@ -7,7 +7,7 @@ export default class History {
   constructor(upwell: Upwell) {
     this.upwell = upwell
     // Remove the first document which is the root Draft.
-    this.list = upwell.metadata.doc.materialize('/history').reverse().slice(1)
+    this.list = upwell.metadata.doc.materialize('/history').reverse()
   }
 
   get length() {
@@ -16,6 +16,12 @@ export default class History {
 
   get(index: number) {
     let id = this.list[index]
-    return this.upwell._drafts.get(id)
+    if (id) {
+      let { heads } = this.upwell.metadata.getDraft(id)
+      let meta = this.upwell.rootDraft.materialize(heads)
+      meta.id = id
+      return meta
+    }
+    return undefined
   }
 }

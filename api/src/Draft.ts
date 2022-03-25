@@ -34,7 +34,6 @@ export type DraftMetadata = {
   title: string;
   text: string;
   time: number;
-  archived: boolean;
   marks: any;
   comments: any;
   shared: boolean;
@@ -62,22 +61,24 @@ export class Draft {
   id: string;
   doc: Automerge;
   comments: Comments;
+  _heads?: Heads = []
   private subscriber?: Subscriber;
 
-  constructor(id: string, doc: Automerge) {
+  constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id;
     this.doc = doc;
     this.comments = new Comments(doc, "comments");
+    this._heads = heads
   }
 
   private _getAutomergeText(prop: string): string {
-    let value = this.doc.value(ROOT, prop);
-    if (value && value[0] === "text") return this.doc.text(value[1]);
+    let value = this.doc.value(ROOT, prop, this._heads);
+    if (value && value[0] === "text") return this.doc.text(value[1], this._heads);
     else return "";
   }
 
   private _getValue(prop: string) {
-    let value = this.doc.value(ROOT, prop);
+    let value = this.doc.value(ROOT, prop, this._heads);
     if (value && value[0]) return value[1];
   }
 
@@ -100,14 +101,6 @@ export class Draft {
 
   set time(value: number) {
     this.doc.set(ROOT, "time", value);
-  }
-
-  get archived() {
-    return this._getValue("archived") as boolean
-  }
-
-  set archived(value: boolean) {
-    this.doc.set(ROOT, "archvived", value);
   }
 
   get message(): string {
@@ -151,16 +144,19 @@ export class Draft {
     this.subscriber = subscriber;
   }
 
-  getChanges(heads: Heads) {
-    return this.doc.getChanges(heads).map(decodeChange);
+  checkout(heads: Heads) {
+    return new Draft(this.id, this.doc.clone(), heads)
   }
 
-  materialize(): DraftMetadata {
+  materialize(heads?: Heads): DraftMetadata {
+    if (heads) {
+      let draft = this.checkout(heads)
+      return draft.materialize()
+    }
     return {
       id: this.id,
       title: this.title,
-      heads: this.doc.getHeads(),
-      archived: this.archived,
+      heads: heads || this.doc.getHeads(),
       parent_id: this.parent_id,
       text: this.text,
       contributors: this.contributors,

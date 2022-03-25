@@ -49,6 +49,7 @@ export default function DraftView(props: DraftViewProps) {
   const render = useCallback(() => {
     let upwell = documents.get(id)
     const drafts = upwell.drafts()
+    console.log('rendering', drafts)
     setDrafts(drafts)
     let draftInstance = upwell.get(draft.id)
     setDraft(draftInstance.materialize())
@@ -169,6 +170,7 @@ export default function DraftView(props: DraftViewProps) {
   function createDraft() {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft()
+    documents.save(id)
     goToDraft(newDraft.id)
     onChangeMade()
   }
@@ -196,7 +198,7 @@ export default function DraftView(props: DraftViewProps) {
         did={did}
         epoch={epoch}
         goToDraft={goToDraft}
-        drafts={drafts}
+        drafts={drafts.map((d) => d.materialize())}
         id={id}
       />
       <div
