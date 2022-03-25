@@ -25,7 +25,7 @@ export default function Contributors(props: Props) {
 
             border-radius: 50%;
           `}
-          title={authors[id]}
+          title={authors[id].name}
         >
           <div
             css={css`
@@ -40,7 +40,7 @@ export default function Contributors(props: Props) {
               padding-top: 3px;
             `}
           >
-            {authors[id].slice(0, 1)}
+            {authors[id].name.slice(0, 1)}
           </div>
         </div>
       ))}

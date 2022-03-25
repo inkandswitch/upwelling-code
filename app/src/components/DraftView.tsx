@@ -102,7 +102,6 @@ export default function DraftView(props: DraftViewProps) {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
     if (
-      !draftInstance.pinned &&
       draftInstance.id !== upwell.rootDraft.id &&
       draftInstance.parent_id !== upwell.rootDraft.id &&
       !upwell.isArchived(draftInstance.id)
@@ -162,7 +161,7 @@ export default function DraftView(props: DraftViewProps) {
   let handleMergeClick = () => {
     let upwell = documents.get(id)
     let draft = upwell.get(did)
-    upwell.setLatest(draft)
+    upwell.rootDraft = draft
     setEpoch(Date.now())
     onChangeMade()
   }

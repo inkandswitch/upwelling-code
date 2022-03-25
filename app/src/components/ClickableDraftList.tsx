@@ -115,7 +115,7 @@ export default function ClickableDraftList({
               <div>
                 {draft.message}
                 <InfoText>
-                  {authors[draft.authorId]} created{' '}
+                  {authors[draft.authorId].name} created{' '}
                   {relativeDate(new Date(draft.time))}
                 </InfoText>
               </div>
