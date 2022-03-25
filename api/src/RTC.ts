@@ -11,7 +11,7 @@ type WebsocketSyncMessage = {
   peerId: string;
   message?: string;
   author: Author;
-  cursor?: number;
+  cursor?: CursorPosition;
 };
 
 export type Transaction = {
@@ -19,7 +19,11 @@ export type Transaction = {
   author: Author,
   cursor?: CursorPosition
 }
-export type CursorPosition = number
+
+export type CursorPosition = {
+  start: number,
+  end: number
+}
 
 const MAX_RETRIES = 5;
 

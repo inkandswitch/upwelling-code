@@ -1,6 +1,6 @@
 import { Annotation } from '@atjson/document'
 import Renderer, { Context } from '@atjson/renderer-hir'
-import { schema } from './upwell-pm-schema'
+import { schema } from './UpwellSchema'
 
 export default class ProsemirrorRenderer extends Renderer {
   *root(): any {
