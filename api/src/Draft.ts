@@ -139,7 +139,7 @@ export class Draft {
   }
 
   get title(): string {
-    return this._getAutomergeText("title");
+    return this._getValue("title") as string;
   }
 
   get parent_id(): string {
@@ -151,8 +151,9 @@ export class Draft {
   }
 
   receiveSyncMessage(state: SyncState, message: SyncMessage) {
-    this.doc.receiveSyncMessage(state, message);
+    let res = this.doc.receiveSyncMessage(state, message);
     if (this.subscriber) this.subscriber(this);
+    return res
   }
 
   subscribe(subscriber: Subscriber) {
@@ -301,9 +302,10 @@ export class Draft {
     this.doc.set("/contributors", authorId, true);
   }
 
-  merge(theirs: Draft) {
-    this.doc.merge(theirs.doc);
+  merge(theirs: Draft): string[] {
+    let opIds = this.doc.merge(theirs.doc);
     if (this.subscriber) this.subscriber(this);
+    return opIds
   }
 
   static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]) {

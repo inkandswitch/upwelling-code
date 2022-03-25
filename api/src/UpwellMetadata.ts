@@ -58,6 +58,8 @@ export class UpwellMetadata {
   }
 
   addAuthor(author: Author) {
+    let maybeAuthor = this.doc.value('/authors', author.id)
+    if (maybeAuthor && maybeAuthor[0] === 'str') return
     this.doc.set('/authors', author.id, author.name)
   }
 

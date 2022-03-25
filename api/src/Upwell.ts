@@ -113,7 +113,6 @@ export class Upwell {
   share(id: string): void {
     let draft = this.get(id);
     draft.shared = true;
-    this.set(id, draft);
     this.subscriber();
   }
 

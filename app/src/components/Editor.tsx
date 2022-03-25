@@ -1,23 +1,32 @@
 /** @jsxImportSource @emotion/react */
-//import React, { useEffect, useRef, useState } from 'react'
-import React, { useState, useRef } from 'react'
-import { Upwell, Draft, Author } from 'api'
-import { AuthorColorsType } from './ListDocuments'
-//import Documents from '../Documents'
+import React, { useEffect, useState, useRef } from 'react'
+import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
+import deterministicColor from '../color'
 
-import { schema } from '../upwell-pm-schema'
+import { schema } from '../prosemirror/UpwellSchema'
+import {
+  automergeToProsemirror,
+  prosemirrorToAutomerge,
+  BLOCK_MARKER,
+} from '../prosemirror/PositionMapper'
+
 import { ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-//import { MarkType, Slice } from 'prosemirror-model'
-import { MarkType } from 'prosemirror-model'
-import { baseKeymap, Command, toggleMark } from 'prosemirror-commands'
+import { Slice, Fragment } from 'prosemirror-model'
+import { baseKeymap } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
-import { EditorState, Transaction } from 'prosemirror-state'
+import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
-import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 
-import ProsemirrorRenderer from '../ProsemirrorRenderer'
+import { contextMenu } from '../prosemirror/ContextMenuPlugin'
+import {
+  remoteCursorPlugin,
+  remoteCursorKey,
+} from '../prosemirror/RemoteCursorPlugin'
+import { toggleBold, toggleItalic } from '../prosemirror/Commands'
+
+import ProsemirrorRenderer from '../prosemirror/ProsemirrorRenderer'
 import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
 import Documents from '../Documents'
@@ -29,19 +38,6 @@ type Props = {
   editableDraftId: string
   author: Author
   onChange: any
-  colors: AuthorColorsType
-}
-
-const toggleBold = toggleMarkCommand(schema.marks.strong)
-const toggleItalic = toggleMarkCommand(schema.marks.em)
-
-function toggleMarkCommand(mark: MarkType): Command {
-  return (
-    state: EditorState,
-    dispatch: ((tr: Transaction) => void) | undefined
-  ) => {
-    return toggleMark(mark)(state, dispatch)
-  }
 }
 
 export const textCSS = css`
@@ -66,37 +62,8 @@ export const textCSS = css`
   }
 `
 
-let prosemirrorToAutomergeNumber = (position: number, draft: Draft): number => {
-  let i = 0
-  let l = draft.text.length
-
-  while (i < l) {
-    i = draft.text.indexOf('\uFFFC', i + 1)
-    if (i >= position || i === -1) break
-    position--
-  }
-
-  // we always start with a block, so we should never be inserting
-  // into the document at position 0
-  if (position === 0) throw new Error('this is not right')
-
-  let max = Math.min(position, draft.text.length)
-  let min = Math.max(max, 0)
-  return min
-}
-
-let prosemirrorToAutomerge = (
-  position: { from: number; to: number },
-  draft: Draft
-): { from: number; to: number } => {
-  return {
-    from: prosemirrorToAutomergeNumber(position.from, draft),
-    to: prosemirrorToAutomergeNumber(position.to, draft),
-  }
-}
-
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author, colors } = props
+  let { upwell, editableDraftId, onChange, author } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
@@ -119,11 +86,10 @@ export function Editor(props: Props) {
             ) => {
               let { from, to } = view.state.selection
               let message = prompt('what is your comment')
-
               let commentMark = schema.mark('comment', {
                 id: 'new-comment',
                 author: author,
-                authorColor: colors[author.id],
+                authorColor: deterministicColor(author.id),
                 message,
               })
               let tr = view.state.tr.addMark(from, to, commentMark)
@@ -133,6 +99,7 @@ export function Editor(props: Props) {
             },
           },
         ]),
+        remoteCursorPlugin(),
         history(),
         keymap({
           ...baseKeymap,
@@ -147,54 +114,112 @@ export function Editor(props: Props) {
   }
 
   let editableDraft = upwell.get(editableDraftId)
-  let atjsonDraft = UpwellSource.fromRaw(editableDraft, colors)
+  let atjsonDraft = UpwellSource.fromRaw(editableDraft)
   let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
   const [state, setState] = useState<EditorState>(getState(pmDoc))
   //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
 
   const viewRef = useRef(null)
 
-  /*
-   * this was breaking things badly in strange ways, so just commenting out for the moment.
-   *
   useEffect(() => {
-    editableDraft.subscribe((doc: Draft) => {
-      let change: any = doc.getChanges(heads)
-      if (change.length) {
-        let [authorId] = change[0].actor.split('0000')
-        if (authorId === documents.author.id) return
-      }
+    if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
+      documents.rtc.transactions.subscribe((edits: AutomergeEdit) => {
+        if (edits.changes) {
+          for (const changeset of edits.changes) {
+            //{add: {start: 3, end: 4}, del: []}
 
-      let atjsonDraft = UpwellSource.fromRaw(doc)
-      let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
+            // FIXME this should work, but the attribution steps we're getting
+            // back from automerge are incorrect, so it breaks.
+            changeset.del.forEach((deleted) => {
+              /*
+              let text = deleted.val
+              let { from, to } = automergeToProsemirror(
+                { start: deleted.pos, end: deleted.pos + text.length },
+                editableDraft
+              )
+              let fragment = Fragment.fromArray([])
+              let slice = new Slice(fragment, 0, 0)
+              let step = new ReplaceStep(from, to, slice)
+              console.log(step)
+              let transaction = state.tr.step(step)
+              let newState = state.apply(transaction)
+              setState(newState)
+              */
+            })
 
-      let { selection } = state
+            changeset.add.forEach((added) => {
+              let text = editableDraft.text.substring(added.start, added.end)
+              let { from } = automergeToProsemirror(added, editableDraft)
+              let nodes = []
+              let blocks = text.split(BLOCK_MARKER)
 
-      // TODO: transform automerge to prosemirror transaction
-      let transaction = state.tr
-        .replace(0, state.doc.content.size, new Slice(pmDoc.content, 0, 0))
-        .setSelection(selection)
-      let newState = state.apply(transaction)
-      setState(newState)
-      setHeads(doc.doc.getHeads())
-    })
+              let depth = blocks.length > 1 ? 1 : 0
+
+              // blocks: [ "text the first", "second text", "text" ]
+              //          ^ no pgh break    ^ pgh break    ^ pgh break 2
+
+              // the first text node here doesn't get a paragraph break
+              let block = blocks.shift()
+              if (!block) {
+                let node = schema.node('paragraph', {}, [])
+                nodes.push(node)
+              } else {
+                if (blocks.length === 0) nodes.push(schema.text(block))
+                else
+                  nodes.push(schema.node('paragraph', {}, schema.text(block)))
+              }
+
+              blocks.forEach((block) => {
+                // FIXME this might be wrong for e.g. a paste with multiple empty paragraphs
+                if (block.length === 0) {
+                  nodes.push(schema.node('paragraph', {}, []))
+                  return
+                } else {
+                  let node = schema.node('paragraph', {}, schema.text(block))
+                  nodes.push(node)
+                }
+              })
+
+              let fragment = Fragment.fromArray(nodes)
+              let slice = new Slice(fragment, depth, depth)
+
+              let step = new ReplaceStep(from, from, slice)
+              let transaction = state.tr.step(step)
+              let newState = state.apply(transaction)
+              setState(newState)
+            })
+          }
+        }
+
+        if (edits.cursor) {
+          let remoteCursors = state.tr.getMeta(remoteCursorKey)
+          if (!remoteCursors) remoteCursors = {}
+          remoteCursors[edits.author.id] = automergeToProsemirror(
+            edits.cursor,
+            editableDraft
+          )
+          let transaction = state.tr.setMeta(remoteCursorKey, remoteCursors)
+          let newState = state.apply(transaction)
+          setState(newState)
+        }
+      })
+    }
     return () => {
-      editableDraft.subscribe(() => {})
+      documents.rtc?.transactions.unsubscribe()
     }
   })
-  */
 
   let dispatchHandler = (transaction: any) => {
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
-        let { from, to } = prosemirrorToAutomerge(step, editableDraft)
+        let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
 
-        if (from !== to) {
-          editableDraft.deleteAt(from, to - from)
+        if (end !== start) {
+          editableDraft.deleteAt(start, end - start)
         }
 
         if (step.slice) {
-          let insOffset = from
+          let insOffset = start
           step.slice.content.forEach((node, idx) => {
             if (node.type.name === 'text' && node.text) {
               editableDraft.insertAt(insOffset, node.text)
@@ -217,31 +242,42 @@ export function Editor(props: Props) {
           })
         }
       } else if (step instanceof AddMarkStep) {
-        let { from, to } = prosemirrorToAutomerge(step, editableDraft)
+        let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
         let mark = step.mark
 
         if (mark.type.name === 'comment') {
           editableDraft.insertComment(
-            from,
-            to,
+            start,
+            end,
             mark.attrs.message,
             mark.attrs.author.id
           )
           documents.save(upwell.id)
         } else {
-          editableDraft.mark(mark.type.name, `(${from}..${to})`, '')
+          editableDraft.mark(mark.type.name, `(${start}..${end})`, '')
         }
       } else if (step instanceof RemoveMarkStep) {
         // TK not implemented because automerge doesn't support removing marks yet
       }
     }
 
+    documents.rtc?.sendCursorMessage(
+      prosemirrorToAutomerge(
+        {
+          from: transaction.curSelection.ranges[0].$from.pos,
+          to: transaction.curSelection.ranges[0].$to.pos,
+        },
+        editableDraft,
+        state
+      )
+    )
+
     onChange(editableDraft)
     let newState = state.apply(transaction)
     setState(newState)
   }
 
-  let color = colors[editableDraft.authorId]
+  let color = deterministicColor(editableDraft.authorId)
   return (
     <ProseMirror
       state={state}
@@ -249,7 +285,6 @@ export function Editor(props: Props) {
       dispatchTransaction={dispatchHandler}
       css={css`
         ${textCSS}
-        box-shadow: 0 10px 0 -2px ${color?.toString() || 'none'} inset;
         caret-color: ${color?.copy({ opacity: 1 }).toString() || 'auto'};
       `}
     />

@@ -6,7 +6,6 @@ import * as components from './review-components'
 import UpwellSource from './upwell-source'
 import { Upwell, Draft } from 'api'
 import { textCSS } from './Editor'
-import { AuthorColorsType } from './ListDocuments'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -19,9 +18,8 @@ export function ReviewView(props: {
   upwell: Upwell
   baseDraftId: string
   changeDraftIds: string[]
-  colors: AuthorColorsType
 }) {
-  const { upwell, baseDraftId, changeDraftIds, colors } = props
+  const { upwell, baseDraftId, changeDraftIds } = props
 
   let updateAtjsonState = useCallback(
     async function () {
@@ -33,12 +31,10 @@ export function ReviewView(props: {
         baseDraft,
         ...changeDrafts
       )
-      let atjsonDraft = UpwellSource.fromRaw(editsDraft, colors)
-      console.log(atjsonDraft)
-
+      let atjsonDraft = UpwellSource.fromRaw(editsDraft)
       setState({ atjsonDraft })
     },
-    [upwell, baseDraftId, changeDraftIds, colors]
+    [upwell, baseDraftId, changeDraftIds]
   )
 
   useEffect(() => {

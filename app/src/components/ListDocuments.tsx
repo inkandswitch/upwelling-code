@@ -6,15 +6,10 @@ import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
-import { HCLColor } from 'd3-color'
 import { EmojiButton } from './EmojiButton'
 import Documents from '../Documents'
+import deterministicColor from '../color'
 let documents = Documents()
-
-type ID = string
-export type AuthorColorsType = {
-  [key: ID]: HCLColor
-}
 
 const tabStyles = css`
   border: 1px #b9b9b9 solid;
@@ -181,7 +176,6 @@ type Props = {
   handleDeleteClick?: any // TODO
   drafts: Draft[]
   isBottom?: boolean
-  colors?: AuthorColorsType
 }
 
 export default function ListDocuments({
@@ -194,7 +188,6 @@ export default function ListDocuments({
   visible,
   drafts,
   isBottom = false,
-  colors = {},
 }: Props) {
   let upwell = documents.get(id)
   let authors = upwell.metadata.getAuthors()
@@ -231,9 +224,9 @@ export default function ListDocuments({
                 justify-content: flex-start;
                 align-items: flex-start;
                 ${editableDraft === draft.id ? editableTabStyle : ''}
-                box-shadow: 18px 24px 0px -18px ${colors[
+                box-shadow: 18px 24px 0px -18px ${deterministicColor(
                   draft.authorId
-                ]?.toString() || 'none'} inset;
+                ).toString() || 'none'} inset;
               `}
             >
               {/* <span css={{ color: "lightgray" }}>{draft.id.slice(0, 2)}</span> */}

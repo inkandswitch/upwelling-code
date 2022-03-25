@@ -1,28 +1,47 @@
-import { SyncState, initSyncState } from "automerge-wasm-pack";
-import { Draft } from "./";
+import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
+import { Author, Draft } from "./";
 import { nanoid } from "nanoid";
+import Queue from "./Queue";
+import { EventEmitter } from "events";
 
 const STORAGE_URL = process.env.STORAGE_URL;
 console.log(STORAGE_URL);
 
 type WebsocketSyncMessage = {
-  method: "OPEN" | "MESSAGE" | "BYE";
+  method: "OPEN" | "MESSAGE" | "BYE" | "CURSOR";
   peerId: string;
   message?: string;
+  author: Author;
+  cursor?: CursorPosition;
 };
+
+export type Transaction = {
+  changes?: ChangeSet[],
+  author: Author,
+  cursor?: CursorPosition
+}
+
+export type CursorPosition = {
+  start: number,
+  end: number
+}
 
 const MAX_RETRIES = 5;
 
-export class RealTimeDraft {
+export class RealTimeDraft extends EventEmitter {
   draft: Draft;
   timeout: any;
   peerId: string = nanoid();
+  author: Author;
   ws: WebSocket;
   peerStates = new Map<string, SyncState>();
   retries: number = 0;
+  transactions: Queue<Transaction> = new Queue()
 
-  constructor(draft: Draft) {
+  constructor(draft: Draft, author: Author) {
+    super()
     this.draft = draft;
+    this.author = author
     this.ws = this.connect();
   }
 
@@ -62,10 +81,17 @@ export class RealTimeDraft {
       }
       switch (value.method) {
         case "OPEN":
+          this.emit('peer', value)
           this.sendSyncMessage(value.peerId);
           break;
         case "MESSAGE":
           this.receiveSyncMessage(value);
+          break;
+        case "CURSOR":
+          this.receiveCursorMessage(value)
+          break;
+        case "BYE":
+          console.log('bye', value)
           break;
         default:
           throw new Error("No message matched");
@@ -88,6 +114,7 @@ export class RealTimeDraft {
 
   sendOpen() {
     this.send({
+      author: this.author,
       peerId: this.peerId,
       method: "OPEN",
     });
@@ -99,6 +126,22 @@ export class RealTimeDraft {
     for (let peerId of peers) {
       this.sendSyncMessage(peerId);
     }
+  }
+
+  receiveCursorMessage(msg: WebsocketSyncMessage) {
+    this.transactions.push({
+      author: msg.author,
+      cursor: msg.cursor,
+    })
+  }
+
+  sendCursorMessage(pos: CursorPosition) {
+    this.send({
+      author: this.author,
+      peerId: this.peerId,
+      method: "CURSOR",
+      cursor: pos
+    })
   }
 
   _getPeerState(peerId: string) {
@@ -114,13 +157,23 @@ export class RealTimeDraft {
 
   receiveSyncMessage(msg: WebsocketSyncMessage) {
     let state = this._getPeerState(msg.peerId);
+    let heads = this.draft.doc.getHeads()
     if (!msg.message) {
       console.error("msg", msg);
       throw new Error("Malformed syncMessage");
     }
     let syncMessage = Uint8Array.from(Buffer.from(msg.message, "base64"));
 
-    this.draft.receiveSyncMessage(state, syncMessage);
+    let textObj = this.draft.doc.value('_root', 'text')
+    let opIds = this.draft.receiveSyncMessage(state, syncMessage);
+    if (textObj && textObj[0] === 'text' && opIds.indexOf(textObj[1]) > -1) {
+      let newHeads = this.draft.doc.getHeads()
+      let attribution = this.draft.doc.attribute(textObj[1], heads, [newHeads])
+      this.transactions.push({
+        author: msg.author,
+        changes: attribution
+      })
+    }
     this.sendSyncMessage(msg.peerId);
   }
 
@@ -130,6 +183,7 @@ export class RealTimeDraft {
     if (!syncMessage) return; // done
     let msg: WebsocketSyncMessage = {
       peerId: this.peerId,
+      author: this.author,
       method: "MESSAGE",
       message: Buffer.from(syncMessage).toString("base64"),
     };
@@ -138,6 +192,7 @@ export class RealTimeDraft {
 
   destroy() {
     let msg: WebsocketSyncMessage = {
+      author: this.author,
       peerId: this.peerId,
       method: "BYE",
     };
