@@ -27,9 +27,7 @@ export const remoteCursorPlugin: (colors: AuthorColorsType) => Plugin = (
           let cursor = newCursors[author]
           let { from, to } = cursor
           if (from === to) {
-            console.log('NODE IS', tr.doc.nodeAt(from))
             let node = tr.doc.nodeAt(from)
-            console.log(node)
             if (node) {
               return Decoration.inline(from, to + 1, {
                 style: `border-left: 2px solid ${colors[author]}; margin-left: -2px`,
