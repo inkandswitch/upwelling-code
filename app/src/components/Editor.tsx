@@ -7,16 +7,13 @@ import { schema } from '../prosemirror/UpwellSchema'
 import {
   automergeToProsemirror,
   prosemirrorToAutomerge,
-  BLOCK_MARKER,
-} from '../prosemirror/PositionMapper'
+} from '../prosemirror/utils/PositionMapper'
 
 import { ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { Slice, Fragment } from 'prosemirror-model'
 import { baseKeymap } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { EditorState } from 'prosemirror-state'
-import { EditorView } from 'prosemirror-view'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
@@ -30,12 +27,15 @@ import ProsemirrorRenderer from '../prosemirror/ProsemirrorRenderer'
 import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
 import Documents from '../Documents'
+import { commentButton } from '../prosemirror/context-menu-items/CommentButton'
+import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemirror/utils/TransformHelper'
 
 let documents = Documents()
 
 type Props = {
   upwell: Upwell
   editableDraftId: string
+  baseDraftId?: string
   author: Author
   onChange: any
 }
@@ -70,35 +70,7 @@ export function Editor(props: Props) {
       schema,
       doc: pmDoc,
       plugins: [
-        contextMenu([
-          {
-            view: () => {
-              let commentButton = document.createElement('button')
-              commentButton.innerText = '💬'
-              return commentButton
-            },
-
-            handleClick: (
-              e: any,
-              view: EditorView,
-              contextMenu: HTMLDivElement,
-              buttonEl: HTMLButtonElement
-            ) => {
-              let { from, to } = view.state.selection
-              let message = prompt('what is your comment')
-              let commentMark = schema.mark('comment', {
-                id: 'new-comment',
-                author: author,
-                authorColor: deterministicColor(author.id),
-                message,
-              })
-              let tr = view.state.tr.addMark(from, to, commentMark)
-              view.dispatch(tr)
-
-              contextMenu.style.display = 'none'
-            },
-          },
-        ]),
+        contextMenu([ commentButton(author) ]),
         remoteCursorPlugin(),
         history(),
         keymap({
@@ -124,71 +96,10 @@ export function Editor(props: Props) {
   useEffect(() => {
     if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
       documents.rtc.transactions.subscribe((edits: AutomergeEdit) => {
-        if (edits.changes) {
-          for (const changeset of edits.changes) {
-            //{add: {start: 3, end: 4}, del: []}
-
-            // FIXME this should work, but the attribution steps we're getting
-            // back from automerge are incorrect, so it breaks.
-            changeset.del.forEach((deleted) => {
-              /*
-              let text = deleted.val
-              let { from, to } = automergeToProsemirror(
-                { start: deleted.pos, end: deleted.pos + text.length },
-                editableDraft
-              )
-              let fragment = Fragment.fromArray([])
-              let slice = new Slice(fragment, 0, 0)
-              let step = new ReplaceStep(from, to, slice)
-              console.log(step)
-              let transaction = state.tr.step(step)
-              let newState = state.apply(transaction)
-              setState(newState)
-              */
-            })
-
-            changeset.add.forEach((added) => {
-              let text = editableDraft.text.substring(added.start, added.end)
-              let { from } = automergeToProsemirror(added, editableDraft)
-              let nodes = []
-              let blocks = text.split(BLOCK_MARKER)
-
-              let depth = blocks.length > 1 ? 1 : 0
-
-              // blocks: [ "text the first", "second text", "text" ]
-              //          ^ no pgh break    ^ pgh break    ^ pgh break 2
-
-              // the first text node here doesn't get a paragraph break
-              let block = blocks.shift()
-              if (!block) {
-                let node = schema.node('paragraph', {}, [])
-                nodes.push(node)
-              } else {
-                if (blocks.length === 0) nodes.push(schema.text(block))
-                else
-                  nodes.push(schema.node('paragraph', {}, schema.text(block)))
-              }
-
-              blocks.forEach((block) => {
-                // FIXME this might be wrong for e.g. a paste with multiple empty paragraphs
-                if (block.length === 0) {
-                  nodes.push(schema.node('paragraph', {}, []))
-                  return
-                } else {
-                  let node = schema.node('paragraph', {}, schema.text(block))
-                  nodes.push(node)
-                }
-              })
-
-              let fragment = Fragment.fromArray(nodes)
-              let slice = new Slice(fragment, depth, depth)
-
-              let step = new ReplaceStep(from, from, slice)
-              let transaction = state.tr.step(step)
-              let newState = state.apply(transaction)
-              setState(newState)
-            })
-          }
+        let transaction = convertAutomergeTransactionToProsemirrorTransaction(editableDraft, state, edits)
+        if (transaction) {
+          let newState = state.apply(transaction)
+          setState(newState)
         }
 
         if (edits.cursor) {

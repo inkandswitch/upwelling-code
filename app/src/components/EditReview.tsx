@@ -61,6 +61,7 @@ export function EditReviewView(props: Props) {
         upwell={upwell}
         author={author}
         onChange={onChange}
+        baseDraftId={historyDraftId}
         editableDraftId={visible[0]}
       ></Editor>
     )
