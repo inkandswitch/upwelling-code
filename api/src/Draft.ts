@@ -62,7 +62,7 @@ export class Draft {
   doc: Automerge;
   comments: Comments;
   _heads?: Heads = []
-  private subscriber?: Subscriber;
+  subscriber?: Subscriber;
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id;
@@ -133,12 +133,6 @@ export class Draft {
 
   set parent_id(value: string) {
     this.doc.set(ROOT, "parent_id", value);
-  }
-
-  receiveSyncMessage(state: SyncState, message: SyncMessage) {
-    let res = this.doc.receiveSyncMessage(state, message);
-    if (this.subscriber) this.subscriber(this);
-    return res
   }
 
   subscribe(subscriber: Subscriber) {

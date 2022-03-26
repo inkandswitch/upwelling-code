@@ -1,5 +1,5 @@
 export * from './Upwell'
 export * from './UpwellMetadata'
 export * from './Draft'
-export * from './RTC'
+export * from './RTC/RTCDraft'
 export * from './Comments'
