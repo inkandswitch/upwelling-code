@@ -69,6 +69,7 @@ export class Upwell {
   }
 
   drafts(): Draft[] {
+    // TODO: get draft list from metadata instead
     return Array.from(this._draftLayers.values()).filter(draft => {
       return !this.isArchived(draft.id)
     })
@@ -129,6 +130,7 @@ export class Upwell {
     if (!draft) {
       let buf = this._archivedLayers.get(id)
       if (!buf) throw new Error('mystery id=' + id)
+      // TODO: if draft doesn't exist locally, go fetch it on the server as a last-ditch effort
       return this._coerceDraft(id, buf)
     }
     return draft

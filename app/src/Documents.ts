@@ -11,6 +11,8 @@ let log = debug('upwell:documents')
 
 console.log(STORAGE_URL)
 
+// TODO: refactor to not store the whole upwell as a file but instead individual draft ids
+
 export class Documents {
   upwells = new Map<string, Upwell>()
   storage = new FS('upwell-')
