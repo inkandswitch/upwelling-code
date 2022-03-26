@@ -26,7 +26,10 @@ export default function withDocument(
       async function render() {
         try {
           upwell = await documents.open(id)
-          if (!unmounted) setRoot(upwell.rootDraft)
+          if (!unmounted) {
+            console.log('getting rootDraft in main component')
+            setRoot(upwell.rootDraft)
+          }
         } catch (err) {}
 
         try {

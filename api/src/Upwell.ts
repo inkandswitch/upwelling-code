@@ -268,8 +268,12 @@ export class Upwell {
     //merge metadata
     let theirs = other.metadata;
     let ours = this.metadata;
+    let heads = ours.doc.getHeads()
     ours.doc.merge(theirs.doc);
+    let newHeads = ours.doc.getHeads()
+    if (heads === newHeads) {
+      console.log('nothing changed')
+    }
     this.metadata = ours;
-    this.subscriber();
   }
 }

@@ -2,7 +2,6 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
-//@ts-ignore
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -13,6 +12,8 @@ import Input from './Input'
 import DraftsHistory from './DraftsHistory'
 import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
+//@ts-ignore
+import debounce from 'lodash.debounce'
 
 let documents = Documents()
 
@@ -21,8 +22,6 @@ type DraftViewProps = {
   root: Draft
   author: Author
 }
-
-const AUTOSAVE_INTERVAL = 5000
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author } = props
@@ -50,7 +49,6 @@ export default function DraftView(props: DraftViewProps) {
   const render = useCallback(() => {
     let upwell = documents.get(id)
     const drafts = upwell.drafts()
-    console.log('rendering', drafts)
     setDrafts(drafts)
     let draftInstance = upwell.get(draft.id)
     setDraft(draftInstance.materialize())
@@ -60,17 +58,6 @@ export default function DraftView(props: DraftViewProps) {
       documents.disconnect()
     }
   }, [id, draft.id])
-
-  useEffect(() => {
-    let interval = setInterval(() => {
-      documents.sync(id).then(() => {
-        setSyncState(SYNC_STATE.SYNCED)
-      })
-    }, AUTOSAVE_INTERVAL)
-    return () => {
-      clearInterval(interval)
-    }
-  }, [id, render])
 
   const handleTitleInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
@@ -90,7 +77,7 @@ export default function DraftView(props: DraftViewProps) {
 
   const onChangeMade = useCallback(() => {
     documents
-      .upwellChanged(props.id)
+      .upwellChanged(id)
       .then(() => {
         setSyncState(SYNC_STATE.SYNCED)
       })
@@ -98,7 +85,7 @@ export default function DraftView(props: DraftViewProps) {
         setSyncState(SYNC_STATE.OFFLINE)
         console.error('failed to sync', err)
       })
-  }, [props.id])
+  }, [id])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -116,13 +103,13 @@ export default function DraftView(props: DraftViewProps) {
   useEffect(() => {
     let upwell = documents.get(id)
     upwell.subscribe(() => {
-      render()
+      documents.sync(id).then(render)
     })
-    render()
+    documents.sync(id).then(render)
     return () => {
       upwell.unsubscribe()
     }
-  }, [id, render])
+  }, [id, onChangeMade, render])
 
   let onTextChange = () => {
     if (rootId === draft.id) {

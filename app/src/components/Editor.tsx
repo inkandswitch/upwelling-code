@@ -95,8 +95,8 @@ export function Editor(props: Props) {
   const viewRef = useRef(null)
 
   useEffect(() => {
-    if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
-      documents.rtc.transactions.subscribe((edits: AutomergeEdit) => {
+    if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
+      documents.rtcDraft.transactions.subscribe((edits: AutomergeEdit) => {
         let transaction = convertAutomergeTransactionToProsemirrorTransaction(
           editableDraft,
           state,
@@ -121,7 +121,7 @@ export function Editor(props: Props) {
       })
     }
     return () => {
-      documents.rtc?.transactions.unsubscribe()
+      documents.rtcDraft?.transactions.unsubscribe()
     }
   })
 
@@ -177,7 +177,7 @@ export function Editor(props: Props) {
       }
     }
 
-    documents.rtc?.sendCursorMessage(
+    documents.rtcDraft?.sendCursorMessage(
       prosemirrorToAutomerge(
         {
           from: transaction.curSelection.ranges[0].$from.pos,

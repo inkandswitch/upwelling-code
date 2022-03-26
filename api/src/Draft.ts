@@ -62,7 +62,7 @@ export class Draft {
   doc: Automerge;
   comments: Comments;
   _heads?: Heads = []
-  subscriber?: Subscriber;
+  subscriber: Subscriber = () => { };
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id;

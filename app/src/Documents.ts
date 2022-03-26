@@ -1,4 +1,4 @@
-import { Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
+import { RealTimeUpwell, Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
@@ -14,7 +14,8 @@ export class Documents {
   remote = new HTTP(STORAGE_URL)
   subscriptions = new Map<string, Function>()
   author: Author
-  rtc?: RealTimeDraft
+  rtcUpwell?: RealTimeUpwell
+  rtcDraft?: RealTimeDraft
 
   constructor(author: Author) {
     this.author = author
@@ -35,30 +36,41 @@ export class Documents {
     let upwell = this.get(id)
     let draft = upwell.get(did)
 
-    if (this.rtc && this.rtc.draft.id === draft.id) {
-      this.rtc.updatePeers()
+    if (this.rtcDraft && this.rtcDraft.draft.id === draft.id) {
+      console.log('updating peers')
+      this.rtcDraft.updatePeers()
     }
     return this.save(id)
   }
 
   upwellChanged(id: string) {
+    if (this.rtcUpwell && this.rtcUpwell.id === id) {
+      this.rtcUpwell.updatePeers()
+    }
     return this.sync(id)
   }
 
   disconnect() {
-    if (this.rtc) {
-      this.rtc.destroy()
+    if (this.rtcUpwell) {
+      this.rtcUpwell.destroy()
       console.log('disconnecting')
-      this.rtc = undefined
+      this.rtcUpwell = undefined
+    }
+    if (this.rtcDraft) {
+      this.rtcDraft.destroy()
+      console.log('disconnecting')
+      this.rtcDraft = undefined
     }
   }
 
-  connect(id: string, did: string): RealTimeDraft {
-    if (this.rtc) return this.rtc
+  connect(id: string, did: string) {
     let upwell = this.get(id)
     let draft = upwell.get(did)
-    this.rtc = new RealTimeDraft(draft, this.author)
-    return this.rtc
+    if (this.rtcUpwell) return
+    this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
+    if (this.rtcDraft) return
+    this.rtcDraft = new RealTimeDraft(draft, this.author)
+    return this.rtcDraft
   }
 
   unsubscribe(id: string) {
@@ -75,12 +87,6 @@ export class Documents {
     if (!upwell) throw new Error('open upwell before get')
     return upwell
   }
-
-  notify(id: string) {
-    let fn = this.subscriptions.get(id)
-    if (fn) fn(this.upwells.get(id))
-  }
-
   async save(id: string): Promise<Upwell> {
     let upwell = this.upwells.get(id)
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
@@ -145,19 +151,10 @@ export class Documents {
       // update our local one
       let theirs = await this.toUpwell(buf)
       inMemory.merge(theirs)
-      this.notify(id)
 
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
-      this.notify(id)
-      this.remote
-        .setItem(id, newFile)
-        .then(() => {
-          console.log('Synced!')
-        })
-        .catch((err) => {
-          console.error('Failed to share!')
-        })
+      await this.remote.setItem(id, newFile)
     }
     return inMemory
   }

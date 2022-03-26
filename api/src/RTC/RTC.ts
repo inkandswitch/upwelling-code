@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { nanoid } from "nanoid";
-import { SyncState, initSyncState, ChangeSet } from "automerge-wasm-pack";
+import { SyncState, initSyncState } from "automerge-wasm-pack";
 import { Automerge } from 'automerge-wasm-pack';
 import { Author } from "..";
 
