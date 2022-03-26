@@ -103,7 +103,7 @@ export default function DraftView(props: DraftViewProps) {
   useEffect(() => {
     let upwell = documents.get(id)
     upwell.subscribe(() => {
-      documents.sync(id).then(render)
+      render()
     })
     documents.sync(id).then(render)
     return () => {
