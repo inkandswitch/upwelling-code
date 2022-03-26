@@ -57,6 +57,25 @@ describe('save and load', () => {
     upwellEquals(a, b)
   })
 
+  it.skip('recovers from merging unknown draft', async () => {
+    let a_author: Author = { id: createAuthorId(), name: "Susan" };
+    let a = Upwell.create({ author: a_author });
+
+    let b_author: Author = { id: createAuthorId(), name: "Joe" };
+    let b = Upwell.create({ author: b_author });
+
+
+    let draft = a.createDraft()
+    a.rootDraft = draft
+    let c = await Upwell.deserialize(await a.serialize(), b_author)
+    b.merge(c)
+
+    assert.equal(b.rootDraft.id, draft.id)
+
+    assert.equal(b.drafts().length, a.drafts.length)
+
+  })
+
   describe('100 drafts with 3 paragraphs of text', () => {
     let stream: any = null
     let upwell = Upwell.create()

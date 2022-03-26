@@ -4,6 +4,10 @@ import { SyncState, initSyncState } from "automerge-wasm-pack";
 import { Automerge } from 'automerge-wasm-pack';
 import { Author } from "..";
 
+import debug from 'debug'
+
+const log = debug('RTC')
+
 const STORAGE_URL = process.env.STORAGE_URL;
 console.log(STORAGE_URL);
 
@@ -42,11 +46,11 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
   retry() {
     this.retries++;
     if (this.retries > MAX_RETRIES)
-      return console.log("MAX RETRIES", this.retries);
+      return log("MAX RETRIES", this.retries);
     this.timeout = setTimeout(() => {
-      console.log("Retrying");
+      log("Retrying");
       this.ws = this.connect();
-    }, 1000);
+    }, 1000 * this.retries);
   }
 
   _getPeerState(peerId: string) {
@@ -136,6 +140,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
         console.error("Original error", err);
         return;
       }
+      log('got syncMessage', value.peerId)
       switch (value.method) {
         case "OPEN":
           this.emit('peer', value)
@@ -145,7 +150,8 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
           this.receiveSyncMessage(value);
           break;
         case "BYE":
-          console.log('bye', value)
+          log('BYE', value)
+          this.emit('peer-disconnect', value)
           break;
         default:
           this.emit('message', value)

@@ -3,8 +3,11 @@ import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
 import catNames from 'cat-names'
+import debug from 'debug'
 
 const STORAGE_URL = process.env.STORAGE_URL
+
+let log = debug('upwell:documents')
 
 console.log(STORAGE_URL)
 
@@ -32,42 +35,46 @@ export class Documents {
     this.subscriptions.set(id, fn)
   }
 
-  updatePeers(id: string, did: string) {
-    let upwell = this.get(id)
-    let draft = upwell.get(did)
-
-    if (this.rtcDraft && this.rtcDraft.draft.id === draft.id) {
-      console.log('updating peers')
+  draftChanged(did: string) {
+    if (this.rtcDraft && this.rtcDraft.draft.id === did) {
       this.rtcDraft.updatePeers()
     }
-    return this.save(id)
   }
 
   upwellChanged(id: string) {
+    log('upwellChanged')
     if (this.rtcUpwell && this.rtcUpwell.id === id) {
+      log('updating peers')
       this.rtcUpwell.updatePeers()
     }
-    return this.sync(id)
   }
 
-  disconnect() {
-    if (this.rtcUpwell) {
+  disconnect(id: string) {
+    if (this.rtcUpwell && this.rtcUpwell.id === id) {
       this.rtcUpwell.destroy()
-      console.log('disconnecting')
+      log('disconnecting')
       this.rtcUpwell = undefined
     }
-    if (this.rtcDraft) {
+    else if (this.rtcDraft && this.rtcDraft.id === id) {
       this.rtcDraft.destroy()
-      console.log('disconnecting')
+      log('disconnecting')
       this.rtcDraft = undefined
     }
   }
 
-  connect(id: string, did: string) {
+  connectUpwell(id: string) {
     let upwell = this.get(id)
-    let draft = upwell.get(did)
     if (this.rtcUpwell) return
     this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
+    this.rtcUpwell.on('data', () => {
+      console.log('got data')
+      this.notify(id)
+    })
+  }
+
+  connectDraft(id: string, did: string) {
+    let upwell = this.get(id)
+    let draft = upwell.get(did)
     if (this.rtcDraft) return
     this.rtcDraft = new RealTimeDraft(draft, this.author)
     return this.rtcDraft
@@ -87,11 +94,19 @@ export class Documents {
     if (!upwell) throw new Error('open upwell before get')
     return upwell
   }
+
+  notify(id: string, err?: Error) {
+    let fn = this.subscriptions.get(id) || noop
+    fn(err)
+  }
+
   async save(id: string): Promise<Upwell> {
     let upwell = this.upwells.get(id)
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
     this.storage.setItem(id, binary)
+    this.notify(id)
+    this.upwellChanged(id)
     return upwell
   }
 
@@ -107,11 +122,13 @@ export class Documents {
           this.upwells.set(id, ours)
           return resolve(ours)
         } else {
+          // no local binary, get from server
           try {
             let remoteBinary = await this.remote.getItem(id)
             if (remoteBinary) {
               let theirs = await this.toUpwell(Buffer.from(remoteBinary))
               this.upwells.set(id, theirs)
+              this.notify(id)
               return resolve(theirs)
             }
           } catch (err) {
@@ -119,8 +136,6 @@ export class Documents {
           }
         }
       }
-
-      this.sync(id).then(resolve).catch(reject)
     })
   }
 
@@ -142,19 +157,22 @@ export class Documents {
     } else {
       // do sync
       let buf = Buffer.from(remoteBinary)
-      let inMemoryBuf = await inMemory.toFile()
-      if (buf.equals(inMemoryBuf)) {
-        // the one we have in memory is up to date
-        await this.storage.setItem(id, inMemoryBuf)
+      let theirs = await this.toUpwell(buf)
+      // update our local one
+      let somethingChanged = inMemory.merge(theirs)
+      if (!somethingChanged) {
+        console.log('nothing changed')
         return inMemory
       }
-      // update our local one
-      let theirs = await this.toUpwell(buf)
-      inMemory.merge(theirs)
 
+      console.log('SOMETHING CHANGED')
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
-      await this.remote.setItem(id, newFile)
+      this.remote.setItem(id, newFile).then(() => {
+        this.notify(id)
+      }).catch(err => {
+        this.notify(id, err)
+      })
     }
     return inMemory
   }
@@ -182,3 +200,6 @@ export default function initialize(): Documents {
   })
   return documents
 }
+
+
+function noop() { }

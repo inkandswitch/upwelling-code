@@ -99,7 +99,6 @@ export default function DraftsHistory({
   useEffect(() => {
     let upwell = documents.get(id)
     const moreHistory: DraftMetadata[] = []
-    console.log(fetchSize)
     for (let i = 0; i < fetchSize; i++) {
       let value = upwell.history.get(i)
       if (value) moreHistory.push(value)

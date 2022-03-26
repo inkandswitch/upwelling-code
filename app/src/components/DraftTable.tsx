@@ -39,17 +39,6 @@ export default function DraftList(props: DraftListProps) {
     }
   })
 
-  useEffect(() => {
-    let upwell = documents.get(id)
-    upwell.subscribe(() => {
-      render(upwell)
-    })
-    render(upwell)
-    return () => {
-      documents.unsubscribe(id)
-    }
-  }, [id, render])
-
   function createDraft() {
     let draft = upwell.createDraft()
     let url = `/document/${id}#${draft.id}`

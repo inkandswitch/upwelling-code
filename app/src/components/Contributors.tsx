@@ -25,6 +25,7 @@ export default function Contributors(props: Props) {
 
             border-radius: 50%;
           `}
+          key={id}
           title={authors[id].name}
         >
           <div

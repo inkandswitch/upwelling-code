@@ -43,7 +43,6 @@ export class Upwell {
   _archivedLayers: Map<string, Uint8Array> = new Map();
   metadata: UpwellMetadata;
   author: Author;
-  subscriber: Function = function noop() { };
 
   constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata;
@@ -67,14 +66,6 @@ export class Upwell {
   set rootDraft(draft: Draft) {
     this.archive(draft.id)
     this.metadata.main = draft.id;
-  }
-
-  subscribe(subscriber: Function) {
-    this.subscriber = subscriber;
-  }
-
-  unsubscribe() {
-    this.subscriber = function noop() { };
   }
 
   drafts(): Draft[] {
@@ -105,7 +96,6 @@ export class Upwell {
     let draft = this.get(id);
     draft.shared = true;
     this._add(draft);
-    this.subscriber();
   }
 
   updateToRoot(draft: Draft) {
@@ -126,7 +116,6 @@ export class Upwell {
     let draft = this._draftLayers.get(id)
     if (!draft) throw new Error('Draft with doesnt exist with id=' + id)
     this.metadata.archive(draft.id);
-    this.subscriber();
   }
 
   _coerceDraft(id, buf: Draft | Uint8Array): Draft {
@@ -255,12 +244,19 @@ export class Upwell {
   merge(other: Upwell) {
     let draftsToMerge = other.drafts();
 
+    let somethingChanged = false
     //merge drafts
     draftsToMerge.forEach((draft) => {
       try {
         let existing = this.get(draft.id);
-        existing.merge(draft);
+        let heads = existing.doc.getHeads()
+        let newHeads = draft.doc.getHeads()
+        if (!arrayEquals(heads, newHeads)) {
+          somethingChanged = true
+          existing.merge(draft);
+        }
       } catch (err) {
+        somethingChanged = true
         this._add(draft)
       }
     });
@@ -268,12 +264,20 @@ export class Upwell {
     //merge metadata
     let theirs = other.metadata;
     let ours = this.metadata;
-    let heads = ours.doc.getHeads()
-    ours.doc.merge(theirs.doc);
+    let heads = theirs.doc.getHeads()
     let newHeads = ours.doc.getHeads()
-    if (heads === newHeads) {
-      console.log('nothing changed')
+    if (!arrayEquals(heads, newHeads)) {
+      ours.doc.merge(theirs.doc);
+      somethingChanged = true
     }
-    this.metadata = ours;
+    return somethingChanged
   }
+}
+
+
+function arrayEquals(a: Array<any>, b: Array<any>) {
+  return Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index]);
 }
