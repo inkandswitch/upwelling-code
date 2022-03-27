@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 //import Documents from '../Documents'
 import React, { useEffect, useState, useRef } from 'react'
-import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
+import { Transaction as AutomergeEdit, Author } from 'api'
 import deterministicColor from '../color'
 
 import { schema } from '../prosemirror/UpwellSchema'
@@ -34,7 +34,6 @@ import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemir
 let documents = Documents()
 
 type Props = {
-  upwell: Upwell
   editableDraftId: string
   baseDraftId?: string
   author: Author
@@ -64,7 +63,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author } = props
+  let { editableDraftId, onChange, author } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
@@ -86,7 +85,7 @@ export function Editor(props: Props) {
     })
   }
 
-  let editableDraft = upwell.get(editableDraftId)
+  let editableDraft = documents.getDraft(editableDraftId)
   let atjsonDraft = UpwellSource.fromRaw(editableDraft)
   let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
   const [state, setState] = useState<EditorState>(getState(pmDoc))
@@ -166,9 +165,9 @@ export function Editor(props: Props) {
             start,
             end,
             mark.attrs.message,
-            mark.attrs.author.id
+            mark.attrs.author
           )
-          documents.save(upwell.id)
+          documents.saveDraft(editableDraft)
         } else {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, '')
         }
@@ -193,7 +192,7 @@ export function Editor(props: Props) {
     setState(newState)
   }
 
-  let color = deterministicColor(editableDraft.authorId)
+  let color = deterministicColor(editableDraft.currentAuthor.id)
   return (
     <ProseMirror
       state={state}

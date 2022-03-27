@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Upwell, Draft, Author } from 'api'
+import { Upwell, Author } from 'api'
 import { useLocation } from 'wouter'
 import Documents from '../Documents'
 
@@ -16,30 +16,24 @@ export default function withDocument(
   props: DocumentProps
 ) {
   return function () {
-    let [root, setRoot] = useState<Draft>()
+    let [upwell, setUpwell] = useState<Upwell>()
     let [, setLocation] = useLocation()
     let { id, author } = props
 
     useEffect(() => {
       let unmounted = false
-      let upwell: Upwell
+      let upwell: Upwell | undefined
       async function render() {
         try {
-          upwell = await documents.open(id)
+          upwell = documents.open(id)
           if (!unmounted) {
-            console.log('getting rootDraft in main component')
-            setRoot(upwell.rootDraft)
+            setUpwell(upwell)
           }
         } catch (err) {}
 
-        try {
-          upwell = await documents.sync(id)
-        } catch (err) {
-          if (!upwell) upwell = await documents.create(props.id, author)
-        } finally {
-          if (!upwell) throw new Error('could not create upwell')
-          if (!unmounted) setRoot(upwell.rootDraft)
-        }
+        upwell = await documents.sync(id)
+        if (!upwell) upwell = await documents.create(props.id, author)
+        if (!unmounted) setUpwell(upwell)
       }
 
       render()
@@ -47,8 +41,8 @@ export default function withDocument(
         unmounted = true
       }
     }, [id, author, setLocation])
-    if (!root) return <div></div>
+    if (!upwell) return <div></div>
 
-    return <WrappedComponent root={root} {...props} />
+    return <WrappedComponent upwell={upwell} {...props} />
   }
 }

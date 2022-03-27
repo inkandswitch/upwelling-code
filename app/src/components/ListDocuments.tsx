@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css, Interpolation, Theme } from '@emotion/react/macro'
 import React from 'react'
-import { Draft } from 'api'
+import { DraftMetadata } from 'api'
 import { JSX } from '@emotion/react/jsx-runtime'
 //@ts-ignore
 import relativeDate from 'relative-date'
@@ -174,7 +174,7 @@ type Props = {
   handleShareClick?: any // TODO
   id: string
   handleDeleteClick?: any // TODO
-  drafts: Draft[]
+  drafts: DraftMetadata[]
   isBottom?: boolean
 }
 
@@ -189,8 +189,9 @@ export default function ListDocuments({
   drafts,
   isBottom = false,
 }: Props) {
-  let upwell = documents.get(id)
-  let authors = upwell.metadata.getAuthors()
+  let upwell = documents.upwell
+  if (!upwell) throw new Error('no upwell')
+  let authors = upwell.getAuthors()
   return (
     <div
       css={css`
@@ -200,9 +201,9 @@ export default function ListDocuments({
     >
       {drafts
         .sort((a, b) => a.time - b.time)
-        .map((draft: Draft, index) => {
+        .map((draft: DraftMetadata, index) => {
           let visibleMaybe = visible.findIndex((id) => id === draft.id)
-          const isMerged = upwell.isArchived(draft.id)
+          const isMerged = upwell?.isArchived(draft.id)
           return (
             <FileTab
               key={draft.id}
@@ -215,7 +216,7 @@ export default function ListDocuments({
                 e.stopPropagation()
                 onDraftClick(draft)
               }}
-              title={`by ${authors[draft.authorId]}, ${relativeDate(
+              title={`by ${authors[draft.author.id]}, ${relativeDate(
                 new Date(draft.time)
               )}`}
               css={css`

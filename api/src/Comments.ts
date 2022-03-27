@@ -1,4 +1,4 @@
-import { AuthorId } from './Upwell'
+import { Author } from './Upwell'
 import { Collection } from './Collection'
 
 export type CommentId = string
@@ -10,7 +10,7 @@ export enum CommentState {
 
 export type Comment = {
   id: CommentId
-  author: AuthorId
+  author: Author
   message: string
   children: string[]
   state: CommentState

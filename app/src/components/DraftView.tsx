@@ -2,7 +2,7 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import { useLocation } from 'wouter'
-import { DraftMetadata, Draft, Author } from 'api'
+import { Upwell, DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
 import { SYNC_STATE } from '../types'
@@ -19,28 +19,31 @@ const log = debug('DraftView')
 let documents = Documents()
 
 type DraftViewProps = {
-  id: string
+  upwell: Upwell
   root: Draft
   author: Author
 }
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author } = props
+  let { upwell, author } = props
   let [, setLocation] = useLocation()
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
-  let upwell = documents.get(id)
+  if (!documents.upwell) throw new Error('No upwell')
   let did = getDraftHash()
   let maybeDraft
 
   try {
-    maybeDraft = upwell.get(did)
+    maybeDraft = upwell.getDraft(did)
   } catch (err) {
     maybeDraft = upwell.rootDraft
   }
-  let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
-  let [drafts, setDrafts] = useState<Draft[]>([])
+  let [draft, setDraft] = useState<DraftMetadata>(maybeDraft)
+  let [draftInstance, setDraftInstance] = useState<Draft>(
+    documents.getDraft(draft.id)
+  )
+  let [drafts, setDrafts] = useState<DraftMetadata[]>([])
   let [historyDraftId, setHistoryDraft] = useState<string>(upwell.rootDraft.id)
 
   function getDraftHash() {
@@ -48,21 +51,18 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   const render = useCallback(() => {
-    let upwell = documents.get(id)
     const drafts = upwell.drafts()
-    let draftInstance = upwell.get(draft.id)
     setDrafts(drafts)
-    setDraft(draftInstance.materialize())
-    log('rendering', id, draft.id)
-  }, [id, draft.id])
+    setDraftInstance(documents.getDraft(draft.id))
+  }, [draft.id, upwell])
 
   useEffect(() => {
-    documents.subscribe(id, (err: Error) => {
-      log('got notified of a change', id)
+    documents.subscribe('upwell', (err: Error) => {
+      log('got notified of a change')
       render()
 
       documents
-        .sync(id)
+        .sync(upwell.id)
         .then(() => {
           log('synced')
           render()
@@ -74,43 +74,44 @@ export default function DraftView(props: DraftViewProps) {
         })
     })
 
-    documents.connectUpwell(id)
+    documents.connectUpwell()
     render()
 
     return () => {
-      documents.disconnect(id)
+      documents.disconnectUpwell()
     }
-  }, [id, render])
+  }, [upwell.id, render])
 
   useEffect(() => {
-    let upwell = documents.get(id)
-    let draftInstance = upwell.get(draft.id)
+    let instance = documents.getDraft(draft.id)
     if (
-      draftInstance.id !== upwell.rootDraft.id &&
-      draftInstance.parent_id !== upwell.rootDraft.id &&
-      !upwell.isArchived(draftInstance.id)
+      draft.id !== upwell.rootDraft.id &&
+      draft.parent_id !== upwell.rootDraft.id &&
+      !upwell.isArchived(draft.id)
     ) {
-      upwell.updateToRoot(draftInstance)
-      documents.save(id)
+      let root = documents.getDraft(upwell.rootDraft.id)
+      instance.doc.merge(root.doc)
+      documents.draftChanged(instance)
     } else {
       render()
     }
-    documents.connectDraft(id, draft.id)
+    documents.connectDraft(draft.id)
     return () => {
-      documents.disconnect(draft.id)
+      documents.disconnectDraft(draft.id)
     }
-  }, [id, draft.id, render])
+  }, [upwell, draft.parent_id, draft.id, render])
 
   let onTextChange = () => {
     if (rootId === draft.id) {
     } else {
-      if (draft.contributors.indexOf(documents.author.id) === -1) {
-        let upwell = documents.get(id)
-        let draftInstance = upwell.get(draft.id)
-        draftInstance.addContributor(documents.author.id)
+      let draftInstance = documents.getDraft(draft.id)
+      if (
+        !draftInstance?.contributors.find((a) => a.id === documents.author.id)
+      ) {
+        draftInstance.addContributor(documents.author)
         render()
       }
-      documents.draftChanged(did)
+      documents.draftChanged(draftInstance)
       setSyncState(SYNC_STATE.LOADING)
     }
   }
@@ -122,17 +123,17 @@ export default function DraftView(props: DraftViewProps) {
   const handleTitleInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let draftInstance = upwell.get(draft.id)
+    let draftInstance = documents.getDraft(draft.id)
     draftInstance.title = e.target.value
-    documents.save(id)
+    documents.draftChanged(draftInstance)
   }
 
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let draftInstance = upwell.get(draft.id)
-    draftInstance.message = e.target.value
-    documents.save(id)
+    let meta = upwell.getDraft(draft.id)
+    meta.message = e.target.value
+    documents.upwellChanged()
   }
 
   const handleShareClick = (draft: DraftMetadata) => {
@@ -140,39 +141,37 @@ export default function DraftView(props: DraftViewProps) {
       // eslint-disable-next-line no-restricted-globals
       confirm("Do you want to share your draft? it can't be unshared.")
     ) {
-      let upwell = documents.get(id)
       upwell.share(draft.id)
-      documents.save(id)
+      documents.upwellChanged()
     }
   }
 
   let handleUpdateClick = () => {
-    let draftInstance = upwell.get(draft.id)
-    upwell.updateToRoot(draftInstance)
-    documents.save(id)
+    let draftInstance = documents.getDraft(draft.id)
+    let root = documents.getDraft(upwell.rootDraft.id)
+    draftInstance.doc.merge(root.doc)
+    documents.draftChanged(draftInstance)
     setReviewMode(false)
     setEpoch(Date.now())
   }
 
   let handleMergeClick = () => {
-    let upwell = documents.get(id)
-    let draft = upwell.get(did)
+    let draft = upwell.getDraft(did)
     upwell.rootDraft = draft
     setEpoch(Date.now())
-    documents.save(id)
+    documents.upwellChanged()
   }
 
-  function createDraft() {
-    let upwell = documents.get(id)
-    let newDraft = upwell.createDraft()
+  async function createDraft() {
+    let newDraft = await documents.createDraft()
     goToDraft(newDraft.id)
-    documents.save(id)
+    documents.upwellChanged()
   }
 
   function goToDraft(did: string) {
-    let draft = upwell.get(did).materialize()
+    let draft = upwell.getDraft(did)
     setDraft(draft)
-    setLocation(`/document/${id}#${draft.id}`)
+    setLocation(`/document/${upwell.id}#${draft.id}`)
   }
 
   let rootId = upwell.rootDraft.id
@@ -192,9 +191,8 @@ export default function DraftView(props: DraftViewProps) {
         did={did}
         epoch={epoch}
         goToDraft={goToDraft}
-        drafts={drafts.map((d) => d.materialize())}
+        drafts={drafts}
         setHistorySelection={(did) => setHistoryDraft(did)}
-        id={id}
       />
       <div
         id="folio"
@@ -232,14 +230,15 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Input
-                value={draft.title}
+                value={draftInstance.title}
                 placeholder={'Untitled Document'}
                 onClick={(e) => {
                   e.stopPropagation()
                 }}
                 onChange={(e) => {
                   e.stopPropagation()
-                  setDraft({ ...draft, title: e.target.value })
+                  draftInstance.title = e.target.value
+                  documents.draftChanged(draftInstance)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)
@@ -296,7 +295,8 @@ export default function DraftView(props: DraftViewProps) {
                 }}
                 onChange={(e) => {
                   e.stopPropagation()
-                  setDraft({ ...draft, message: e.target.value })
+                  draft.message = e.target.value
+                  documents.upwellChanged()
                 }}
                 onBlur={(e) => {
                   //@ts-ignore
@@ -305,8 +305,7 @@ export default function DraftView(props: DraftViewProps) {
               />
             </div>
             <Contributors
-              upwell={upwell}
-              contributors={draft.contributors}
+              contributors={draftInstance.contributors}
             ></Contributors>
           </div>
           <div
@@ -349,7 +348,6 @@ export default function DraftView(props: DraftViewProps) {
           did={draft.id}
           epoch={epoch}
           visible={[draft.id]}
-          id={id}
           author={author}
           reviewMode={reviewMode}
           historyDraftId={historyDraftId}
@@ -366,7 +364,7 @@ export default function DraftView(props: DraftViewProps) {
         `}
       >
         <CommentSidebar
-          draft={draft}
+          draft={draftInstance}
           onChange={onCommentChange}
           upwell={upwell}
         />

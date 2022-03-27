@@ -2,6 +2,7 @@ import { createAuthorId, Author, Upwell, Draft, Heads } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
 
+/*
 function helloWorld(): Upwell {
   let upwell = Upwell.create()
   let drafts = upwell.drafts()
@@ -153,3 +154,4 @@ function draftEqual(la, lb) {
   assert.deepEqual(lb.title, la.title)
   assert.deepEqual(lb.author, la.author)
 }
+*/

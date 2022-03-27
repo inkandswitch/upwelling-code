@@ -1,17 +1,14 @@
-import concat from "concat-stream";
-import tar from "tar-stream";
 import crypto from "crypto";
-import { nanoid } from "nanoid";
-import { Readable } from "stream";
-import { getRandomDessert } from "random-desserts";
+import * as Automerge from "automerge-wasm-pack"
 import Debug from "debug";
 import History from "./History";
-import { Draft } from "./Draft";
-import { UpwellMetadata } from "./UpwellMetadata";
+import { Draft } from "."
+import { DraftMetadata } from './DraftMetadata';
 
 export type AuthorId = string;
 export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: "Anonymous" };
 export const SPECIAL_ROOT_DOCUMENT = "UPWELL_ROOT@@@";
+const ROOT = '_root'
 
 export type Author = {
   id: AuthorId;
@@ -23,15 +20,11 @@ export type UpwellOptions = {
   author: Author;
 };
 
-type MaybeDraft = {
-  id: DraftId;
-  binary: Uint8Array;
-};
+export type DraftMap = Map<string, DraftMetadata>
+
 export type DraftId = string;
 
 const debug = Debug("upwell");
-const LAYER_EXT = ".draft";
-const METADATA_KEY = "metadata.automerge";
 
 export function createAuthorId() {
   return crypto.randomBytes(16).toString("hex");
@@ -41,241 +34,138 @@ export function createAuthorId() {
 export class Upwell {
   _draftLayers: Map<string, Draft> = new Map();
   _archivedLayers: Map<string, Uint8Array> = new Map();
-  metadata: UpwellMetadata;
   author: Author;
+  doc: Automerge.Automerge;
 
-  constructor(metadata: UpwellMetadata, author: Author) {
-    this.metadata = metadata;
+  constructor(doc: Automerge.Automerge, author: Author) {
+    this.doc = doc
     this.author = author;
-    this.metadata.addAuthor(author);
+    this.addAuthor(author);
   }
 
-  get id() {
-    return this.metadata.id;
+  static load(binary: Uint8Array, author: Author) {
+    let doc = Automerge.loadDoc(binary)
+    return new Upwell(doc, author)
   }
 
-  get rootDraft() {
-    let rootId = this.metadata.main;
-    return this.get(rootId);
+  isArchived(id: string): boolean {
+    let draft = this.doc.materialize('/drafts/' + id)
+    return draft.archived
   }
+
+  archive(id: string): void {
+    let metadata = this.doc.materialize('/drafts/' + id)
+    if (metadata.archived) return debug('Already archived', id)
+    metadata.archived = true
+    this.doc.set_object('/drafts', id, metadata)
+  }
+
+  updateDraft(draft: DraftMetadata) {
+    if (this.isArchived(draft.id)) throw new Error('Cannot update an archived draft with draftid=' + draft.id)
+    this.doc.set_object('/drafts', draft.id, draft)
+  }
+
+  getDraft(id: string): DraftMetadata {
+    return this.doc.materialize('/drafts/' + id)
+  }
+
+  addAuthor(author: Author) {
+    let maybe = this.doc.value('/authors', author.id)
+    if (!maybe) {
+      console.log('adding author')
+      this.doc.set_object('/authors', author.id, author)
+    }
+  }
+
+  getAuthors() {
+    return this.doc.materialize('/authors')
+  }
+
+  getAuthor(authorId: AuthorId): Author | undefined {
+    return this.doc.materialize('/authors/' + authorId)
+  }
+
+  get rootDraft(): DraftMetadata {
+    let len = this.doc.length('/history')
+    let value = this.doc.value('/history', len - 1)
+    if (value && value[0] == 'str') {
+      let id = value[1]
+      return this.getDraft(id)
+    }
+    throw new Error('History value not a string')
+  }
+
+  set rootDraft(draft: DraftMetadata) {
+    this.updateDraft(draft)
+    this.archive(draft.id)
+    let len = this.doc.length('/history')
+    this.doc.insert('/history', len, draft.id)
+  }
+
+  get id(): string {
+    let value = this.doc.value(ROOT, 'id')
+    if (value) return value[1] as string
+    else return ''
+  }
+
 
   get history(): History {
     return new History(this);
   }
 
-  set rootDraft(draft: Draft) {
-    this.archive(draft.id)
-    this.metadata.main = draft.id;
+  drafts(): DraftMetadata[] {
+    let drafts: DraftMap = this.doc.materialize('/drafts')
+    let res: DraftMetadata[] = []
+    for (let draft of Object.values(drafts)) {
+      if (!draft.archived) res.push(draft)
+    }
+    return res
   }
 
-  drafts(): Draft[] {
-    // TODO: get draft list from metadata instead
-    return Array.from(this._draftLayers.values()).filter(draft => {
-      return !this.isArchived(draft.id)
-    })
-  }
-
-  getAuthorName(authorId: AuthorId): string | undefined {
-    let author = this.metadata.getAuthor(authorId);
-    if (author) return author.name;
-    else return undefined;
-  }
-
-  _add(draft: Draft) {
-    this._draftLayers.set(draft.id, draft)
-    this.metadata.addDraft(draft);
-  }
-
-  createDraft(message?: string) {
-    if (!message) message = getRandomDessert() as string;
-    let newDraft = this.rootDraft.fork(message, this.author);
-    this._add(newDraft)
+  addDraft(draft: Draft): DraftMetadata {
+    let newDraft = new DraftMetadata(draft.id, this)
+    let initialValues = {
+      message: 'Added draft to Upwell',
+      author: draft.currentAuthor,
+      shared: false,
+      time: Date.now(),
+      archived: false
+    }
+    this.doc.set_object('/drafts', draft.id, initialValues)
     return newDraft;
   }
 
   share(id: string): void {
-    let draft = this.get(id);
+    let draft = this.getDraft(id);
     draft.shared = true;
-    this._add(draft);
+    this.updateDraft(draft);
   }
 
-  updateToRoot(draft: Draft) {
-    let root = this.rootDraft;
-    let message = draft.message;
-    draft.merge(root);
-    draft.message = message;
-    draft.parent_id = root.id;
-    this._add(draft)
-  }
-
-  isArchived(id: string): boolean {
-    return this.metadata.isArchived(id);
-  }
-
-  archive(id: string): void {
-    if (this.isArchived(id)) return console.log('skipping', id)
-    let draft = this._draftLayers.get(id)
-    if (!draft) throw new Error('Draft with doesnt exist with id=' + id)
-    this.metadata.archive(draft.id);
-  }
-
-  _coerceDraft(id, buf: Draft | Uint8Array): Draft {
-    if (buf?.constructor.name === "Uint8Array")
-      return Draft.load(id, buf as Uint8Array, this.author.id);
-    else return buf as Draft;
-  }
-
-  get(id: string): Draft {
-    let draft = this._draftLayers.get(id)
-    if (!draft) {
-      let buf = this._archivedLayers.get(id)
-      if (!buf) throw new Error('mystery id=' + id)
-      // TODO: if draft doesn't exist locally, go fetch it on the server as a last-ditch effort
-      return this._coerceDraft(id, buf)
-    }
-    return draft
-  }
-
-  async toFile(): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
-      let pack = this.serialize();
-
-      let toBinaryStream = concat((binary: Buffer) => {
-        resolve(binary);
-      });
-
-      pack.pipe(toBinaryStream);
-    });
-  }
-
-  static deserialize(stream: Readable, author: Author): Promise<Upwell> {
-    return new Promise<Upwell>((resolve, reject) => {
-      let unpackFileStream = (stream: any, next: Function) => {
-        let concatStream = concat((buf: Buffer) => {
-          next(buf);
-        });
-        stream.on("error", (err: Error) => {
-          console.error(err);
-        });
-        stream.pipe(concatStream);
-        stream.resume();
-      };
-
-      let metadata: any = null;
-      let extract = tar.extract();
-      let drafts: MaybeDraft[] = [];
-
-      function onentry(header, stream, next) {
-        if (header.name === METADATA_KEY) {
-          unpackFileStream(stream, (buf: Buffer) => {
-            metadata = buf;
-            next();
-          });
-        } else {
-          unpackFileStream(stream, (binary: Buffer) => {
-            let filename = header.name;
-            let id = filename.split(".")[0];
-            drafts.push({
-              id,
-              binary: Uint8Array.from(binary),
-            });
-            next();
-          });
-        }
-      }
-
-      function finish() {
-        let upwell = new Upwell(UpwellMetadata.load(metadata), author);
-        drafts.forEach((item) => {
-          let { id, binary } = item;
-          if (!upwell.metadata.isArchived(id) || id === upwell.metadata.main) {
-            var start = new Date();
-            let draft = Draft.load(id, binary, author.id);
-            //@ts-ignore
-            var end = new Date() - start;
-            debug("(loadDoc): execution time %dms", end);
-            upwell._draftLayers.set(draft.id, draft);
-          } else {
-            upwell._archivedLayers.set(id, binary)
-          }
-        });
-        resolve(upwell);
-      }
-
-      extract.on("entry", onentry);
-      extract.on("finish", finish);
-
-      stream.pipe(extract);
-    });
-  }
-
-  serialize(): tar.Pack {
-    let start = Date.now();
-    let pack = tar.pack();
-    let drafts = this.drafts();
-    drafts.forEach((draft: Draft) => {
-      writeDraft(draft.id, draft.save());
-    });
-
-    writeDraft(this.rootDraft.id, this.rootDraft.save())
-
-    function writeDraft(id, binary: Uint8Array) {
-      pack.entry({ name: `${id}.${LAYER_EXT}` }, Buffer.from(binary));
-    }
-
-    pack.entry({ name: METADATA_KEY }, Buffer.from(this.metadata.doc.save()));
-    pack.finalize();
-    let end = Date.now() - start;
-    debug("(serialize): execution time %dms", end);
-    return pack;
-  }
-
-  static create(options?: UpwellOptions): Upwell {
-    let id = options?.id || nanoid();
-    let author = options?.author || UNKNOWN_AUTHOR;
-    let draft = Draft.create(SPECIAL_ROOT_DOCUMENT, author.id);
-    let metadata = UpwellMetadata.create(id);
-    let upwell = new Upwell(metadata, author);
-    upwell._add(draft)
-    upwell.rootDraft = draft
-    draft.parent_id = draft.id
-    upwell.createDraft(); // always create an initial draft
+  static create(id: string, rootDraft: Draft): Upwell {
+    let doc = Automerge.create()
+    console.log('id', id)
+    doc.set(ROOT, 'id', id)
+    doc.set_object(ROOT, 'drafts', {})
+    doc.set_object(ROOT, 'history', [])
+    doc.set_object(ROOT, 'authors', {})
+    let upwell = new Upwell(doc, rootDraft.currentAuthor);
+    let meta = upwell.addDraft(rootDraft)
+    upwell.rootDraft = meta
     return upwell;
   }
 
   merge(other: Upwell) {
-    let draftsToMerge = other.drafts();
-
-    let somethingChanged = false
-    //merge drafts
-    draftsToMerge.forEach((draft) => {
-      try {
-        let existing = this.get(draft.id);
-        let heads = existing.doc.getHeads()
-        let newHeads = draft.doc.getHeads()
-        if (!arrayEquals(heads, newHeads)) {
-          somethingChanged = true
-          existing.merge(draft);
-        }
-      } catch (err) {
-        somethingChanged = true
-        this._add(draft)
-      }
-    });
-
-    //merge metadata
-    let theirs = other.metadata;
-    let ours = this.metadata;
-    let heads = theirs.doc.getHeads()
-    let newHeads = ours.doc.getHeads()
+    let theirs = other.doc;
+    let ours = this.doc;
+    let heads = theirs.getHeads()
+    let newHeads = ours.getHeads()
     if (!arrayEquals(heads, newHeads)) {
-      ours.doc.merge(theirs.doc);
-      somethingChanged = true
+      ours.merge(theirs);
+      return true
     }
-    return somethingChanged
+    return false
   }
 }
-
 
 function arrayEquals(a: Array<any>, b: Array<any>) {
   return Array.isArray(a) &&

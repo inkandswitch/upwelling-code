@@ -4,7 +4,7 @@ import { css } from '@emotion/react/macro'
 import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
-import { Upwell, Draft } from 'api'
+import { Draft } from 'api'
 import { textCSS } from './Editor'
 import Documents from '../Documents'
 
@@ -15,16 +15,15 @@ type ReviewState = {
 }
 
 export function ReviewView(props: {
-  upwell: Upwell
   baseDraftId: string
   changeDraftIds: string[]
 }) {
-  const { upwell, baseDraftId, changeDraftIds } = props
+  const { baseDraftId, changeDraftIds } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      let baseDraft = upwell.get(baseDraftId)
-      let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
+      let baseDraft = documents.getDraft(baseDraftId)
+      let changeDrafts = changeDraftIds.map((id) => documents.getDraft(id))
       console.log('baseDraftId', baseDraftId)
 
       let editsDraft = Draft.mergeWithEdits(
@@ -35,7 +34,7 @@ export function ReviewView(props: {
       let atjsonDraft = UpwellSource.fromRaw(editsDraft)
       setState({ atjsonDraft })
     },
-    [upwell, baseDraftId, changeDraftIds]
+    [baseDraftId, changeDraftIds]
   )
 
   useEffect(() => {

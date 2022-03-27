@@ -1,30 +1,28 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
-import { Upwell, DraftMetadata, Comment, CommentState } from 'api'
+import { Upwell, Draft, Comment, CommentState } from 'api'
 import deterministicColor from '../color'
 import Documents from '../Documents'
 
 let documents = Documents()
 
 type CommentViewProps = {
-  upwell: Upwell
-  draft: DraftMetadata
+  draft: Draft
   comment: Comment
   mark: { start: number; end: number }
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { upwell, comment, draft } = props
-  let authorName = upwell.getAuthorName(comment.author)
+  let { comment, draft } = props
   let [state, setState] = useState({
     archived: comment.state !== CommentState.OPEN,
   })
 
   let archiveComment = () => {
-    let draftInstance = upwell.get(draft.id)
-    draftInstance.comments.archive(comment)
-    documents.save(upwell.id)
+    let draftInstance = documents.getDraft(draft.id)
+    draft.comments.archive(comment)
+    documents.saveDraft(draftInstance)
     setState({ archived: true })
   }
   if (state.archived) return <div></div>
@@ -43,10 +41,10 @@ export function CommentView(props: CommentViewProps) {
       <div
         css={css`
           font-size: small;
-          color: ${deterministicColor(comment.author).toString()};
+          color: ${deterministicColor(comment.author.id).toString()};
         `}
       >
-        {authorName}
+        {comment.author.name}
       </div>
       <div>{comment.message}</div>
       <div
@@ -70,15 +68,14 @@ export function CommentView(props: CommentViewProps) {
 }
 
 type CommentSidebarProps = {
-  draft: DraftMetadata
+  draft: Draft
   upwell: Upwell
   onChange: () => void
 }
 
 export default function CommentSidebar(props: CommentSidebarProps) {
-  let { upwell, draft } = props
-  let draftInstance = upwell.get(draft.id)
-  let comments = draftInstance.comments.objects()
+  let { draft } = props
+  let comments = draft.comments.objects()
 
   let commentObjs = Object.keys(comments)
     .map((id) => {
@@ -100,12 +97,7 @@ export default function CommentSidebar(props: CommentSidebarProps) {
       {commentObjs.map(({ comment, mark }) => {
         return (
           <div>
-            <CommentView
-              comment={comment}
-              mark={mark}
-              upwell={upwell}
-              draft={draft}
-            />
+            <CommentView comment={comment} mark={mark} draft={draft} />
           </div>
         )
       })}

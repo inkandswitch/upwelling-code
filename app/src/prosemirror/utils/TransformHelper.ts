@@ -34,7 +34,7 @@ const convertAddToStep: (draft: Draft) => ((added: ChangeSetAddition) => Replace
       }
     }
 
-    blocks.forEach((block) => {
+    blocks.forEach((block: any) => {
       // FIXME this might be wrong for e.g. a paste with multiple empty paragraphs
       if (block.length === 0) {
         nodes.push(schema.node('paragraph', {}, []))

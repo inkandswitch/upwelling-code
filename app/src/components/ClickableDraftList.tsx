@@ -65,7 +65,6 @@ const InfoText = (props: any) => (
 type Props = {
   onDraftClick: Function
   onShareClick?: Function
-  id: string
   did: string
   drafts: DraftMetadata[]
   isBottom?: boolean
@@ -76,15 +75,13 @@ type Props = {
 export default function ClickableDraftList({
   onDraftClick,
   onShareClick,
-  id,
   drafts,
   did,
   isBottom = false,
   colors = {},
   ...props
 }: Props) {
-  let upwell = documents.get(id)
-  let authors = upwell.metadata.getAuthors()
+  let authors = documents.upwell?.getAuthors()
   return (
     <div {...props}>
       {drafts

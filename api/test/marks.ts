@@ -2,6 +2,7 @@ import { createAuthorId, CommentState, Upwell } from '../src/index'
 import { it } from 'mocha';
 import { assert } from 'chai';
 
+/*
 describe('upwell', () => {
   let author = { id: createAuthorId(), name: 'susan' }
   let d = Upwell.create({ author })
@@ -58,3 +59,5 @@ describe('upwell', () => {
 
   })
 })
+
+*/

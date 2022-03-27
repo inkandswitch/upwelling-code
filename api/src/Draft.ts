@@ -1,122 +1,47 @@
+import * as Automerge from 'automerge-wasm-pack';
 import { nanoid } from "nanoid";
-import init, {
-  Automerge,
-  loadDoc,
-  create,
-  Value,
-  SyncMessage,
-  SyncState,
-  decodeChange,
-} from "automerge-wasm-pack";
-import { Author, AuthorId } from "./Upwell";
+import { AuthorId, Author } from '.';
 import { Comments, createAuthorId, CommentState } from ".";
 
-export async function loadForTheFirstTimeLoL() {
-  return new Promise<void>((resolve, reject) => {
-    init().then(() => {
-      resolve();
-    });
-  });
-}
-
-const ROOT = "_root";
-
-export type ChangeMetadata = {
-  message: string;
-  authorId: AuthorId;
-};
-
-export type Heads = string[];
-export type DraftMetadata = {
-  id: string;
-  heads: string[]
-  contributors: string[];
-  title: string;
-  text: string;
-  time: number;
-  marks: any;
-  comments: any;
-  shared: boolean;
-  parent_id: string;
-  authorId: AuthorId;
-  message: string;
-};
-
-export type Subscriber = (doc: Draft) => void;
-
-export class LazyDraft {
-  binary: Buffer;
-  id: string;
-  constructor(id: string, binary: Buffer) {
-    this.binary = binary;
-    this.id = id;
-  }
-
-  hydrate() {
-    return new Draft(this.id, loadDoc(this.binary));
-  }
-}
+const ROOT = '_root'
 
 export class Draft {
   id: string;
-  doc: Automerge;
+  doc: Automerge.Automerge;
   comments: Comments;
-  _heads?: Heads = []
-  subscriber: Subscriber = () => { };
+  currentAuthor: Author
+  _heads: Automerge.Heads;
 
-  constructor(id: string, doc: Automerge, heads?: Heads) {
-    this.id = id;
-    this.doc = doc;
+  constructor(id: string, doc: Automerge.Automerge, author: Author) {
+    this.id = id
+    this.doc = doc
+    this.currentAuthor = author
     this.comments = new Comments(doc, "comments");
+    this._heads = []
+  }
+
+  static load(id: string, binary: Uint8Array, author: Author) {
+    let doc = Automerge.loadDoc(binary)
+    return new Draft(id, doc, author)
+  }
+
+  addContributor(author: Author) {
+    this.doc.set_object("/contributors", author.id, author);
+  }
+
+  fork(author: Author) {
+    let id = nanoid()
+    let doc = this.doc.fork()
+    return new Draft(id, doc, author)
+  }
+
+  checkout(heads: Automerge.Heads) {
     this._heads = heads
   }
 
-  private _getAutomergeText(prop: string): string {
-    let value = this.doc.value(ROOT, prop, this._heads);
-    if (value && value[0] === "text") return this.doc.text(value[1], this._heads);
-    else return "";
-  }
-
-  private _getValue(prop: string) {
-    let value = this.doc.value(ROOT, prop, this._heads);
-    if (value && value[0]) return value[1];
-  }
-
-  get shared() {
-    return this._getValue("shared") as boolean;
-  }
-
-  get contributors(): string[] {
+  get contributors(): Author[] {
     let contribMap = this.doc.materialize("/contributors");
-    return Object.keys(contribMap);
-  }
-
-  set shared(value: boolean) {
-    this.doc.set(ROOT, "shared", value);
-  }
-
-  get time(): number {
-    return this._getValue("time") as number;
-  }
-
-  set time(value: number) {
-    this.doc.set(ROOT, "time", value);
-  }
-
-  get message(): string {
-    return this._getValue("message") as string;
-  }
-
-  set message(value: string) {
-    this.doc.set(ROOT, "message", value);
-  }
-
-  get text(): string {
-    return this._getAutomergeText("text");
-  }
-
-  get authorId(): AuthorId {
-    return this._getValue("author") as AuthorId;
+    return Object.values(contribMap);
   }
 
   set title(value: string) {
@@ -124,44 +49,81 @@ export class Draft {
   }
 
   get title(): string {
-    return this._getValue("title") as string;
+    return this.doc.materialize("/title") as string;
   }
 
-  get parent_id(): string {
-    return this._getValue("parent_id") as string;
+  merge(draft: Draft) {
+    return this.merge(draft)
   }
 
-  set parent_id(value: string) {
-    this.doc.set(ROOT, "parent_id", value);
+  get text() {
+    return this.doc.materialize('text')
   }
 
-  subscribe(subscriber: Subscriber) {
-    this.subscriber = subscriber;
+  static create(author: Author) {
+    let id = nanoid()
+    let doc = Automerge.create()
+    // for prosemirror, we can't have an empty document, so fill some space
+    doc.set_object(ROOT, "title", "");
+    let text = doc.set_object(ROOT, "text", " ");
+    let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
+    doc.set(initialParagraph, "type", "paragraph");
+    return new Draft(id, doc, author)
   }
 
-  checkout(heads: Heads) {
-    return new Draft(this.id, this.doc.clone(), heads)
-  }
+  static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]) {
+    // Fork the comparison draft, because we want to create a copy, not modify
+    // the original. It might make sense to remove this from here and force the
+    // caller to do the fork if this is the behaviour they want in order to
+    // parallel Draft.merge() behaviour.
+    let newDraft = ours.fork(author);
+    let origHead = newDraft.doc.getHeads();
 
-  materialize(heads?: Heads): DraftMetadata {
-    if (heads) {
-      let draft = this.checkout(heads)
-      return draft.materialize()
+    // Merge all the passed-in drafts to this one.
+    theirs.forEach((draft) => newDraft.merge(draft));
+
+    // Now do a blame against the heads of the comparison drafts.
+    let heads = theirs.map((draft) => draft.doc.getHeads());
+
+    let obj = newDraft.doc.value(ROOT, "text");
+    if (!obj || obj[0] !== "text")
+      throw new Error("Text field not properly initialized");
+
+    let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
+    console.log('attribution', attribution)
+
+    // blame contains an array with an entry for each draft passed in above,
+    // with edits (add, del) applied against newDraft's text. Convert those to marks!
+
+    for (let i = 0; i < attribution.length; i++) {
+      let draft = theirs[i]
+      let edits = attribution[i]
+
+      edits.add.forEach(edit => {
+        let text = newDraft.text.substring(edit.start, edit.end)
+        newDraft.mark(
+          'insert',
+          `(${edit.start}..${edit.end})`,
+          JSON.stringify({
+            author: draft.currentAuthor.id,
+            text
+          })
+        )
+      })
+
+      edits.del.forEach(edit => {
+        newDraft.mark(
+          'delete',
+          `(${edit.pos}..${edit.pos})`,
+          JSON.stringify({
+            author: draft.currentAuthor.id,
+            text: edit.val
+          })
+        )
+      })
     }
-    return {
-      id: this.id,
-      title: this.title,
-      heads: heads || this.doc.getHeads(),
-      parent_id: this.parent_id,
-      text: this.text,
-      contributors: this.contributors,
-      message: this.message,
-      time: this.time,
-      shared: this.shared,
-      marks: this.marks,
-      comments: this.comments.objects(),
-      authorId: this.authorId,
-    };
+
+    return newDraft
   }
 
   insertAt(position: number, value: string | Array<string>, prop = "text") {
@@ -178,28 +140,6 @@ export class Draft {
     else throw new Error("text not properly initialized");
   }
 
-  insertComment(
-    from: number,
-    to: number,
-    message: string,
-    authorId: string
-  ): string {
-    let comment_id = nanoid();
-    let comment = {
-      id: comment_id,
-      author: authorId,
-      message,
-      children: [],
-      state: CommentState.OPEN,
-    };
-
-    this.comments.insert(comment);
-
-    this.mark("comment", `[${from}..${to}]`, comment_id);
-
-    return comment_id;
-  }
-
   deleteAt(position: number, count: number = 1, prop = "text") {
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
@@ -207,7 +147,7 @@ export class Draft {
     else throw new Error("Text field not properly initialized");
   }
 
-  mark(name: string, range: string, value: Value, prop = "text") {
+  mark(name: string, range: string, value: Automerge.Value, prop = "text") {
     let obj = this.doc.value(ROOT, prop);
     if (obj && obj[0] === "text")
       return this.doc.mark(obj[1], range, name, value);
@@ -222,6 +162,31 @@ export class Draft {
 
   get marks() {
     return this.getMarks();
+  }
+
+  static getActorId(authorId: AuthorId) {
+    return authorId + "0000" + createAuthorId();
+  }
+
+  insertComment(
+    from: number,
+    to: number,
+    message: string,
+    author: Author
+  ): string {
+    let comment_id = nanoid();
+    let comment = {
+      id: comment_id,
+      author: author,
+      message,
+      children: [],
+      state: CommentState.OPEN,
+    };
+
+    this.comments.insert(comment);
+
+    this.mark("comment", `[${from}..${to}]`, comment_id);
+    return comment_id;
   }
 
   // TODO refactor this to use materialize or whatever because there is some
@@ -261,127 +226,4 @@ export class Draft {
     return blocks;
   }
 
-  save(): Uint8Array {
-    return this.doc.save();
-  }
-
-  fork(message: string, author: Author): Draft {
-    let id = nanoid();
-    let doc = this.doc.fork();
-    doc.set(ROOT, "message", message);
-    doc.set(ROOT, "author", author.id);
-    doc.set(ROOT, "shared", false);
-    doc.set(ROOT, "time", Date.now());
-    doc.set(ROOT, "archived", false);
-    doc.set(ROOT, "parent_id", this.id);
-    let draft = new Draft(id, doc);
-    draft.addContributor(author.id)
-    return draft;
-  }
-
-  addContributor(authorId: AuthorId) {
-    this.doc.set("/contributors", authorId, true);
-  }
-
-  merge(theirs: Draft): string[] {
-    let opIds = this.doc.merge(theirs.doc);
-    if (this.subscriber) this.subscriber(this);
-    return opIds
-  }
-
-  static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]) {
-    // Fork the comparison draft, because we want to create a copy, not modify
-    // the original. It might make sense to remove this from here and force the
-    // caller to do the fork if this is the behaviour they want in order to
-    // parallel Draft.merge() behaviour.
-    let newDraft = ours.fork("Merge", author);
-    let origHead = newDraft.doc.getHeads();
-
-    // Merge all the passed-in drafts to this one.
-    theirs.forEach((draft) => newDraft.merge(draft));
-
-    // Now do a blame against the heads of the comparison drafts.
-    let heads = theirs.map((draft) => draft.doc.getHeads());
-
-    let obj = newDraft.doc.value(ROOT, "text");
-    if (!obj || obj[0] !== "text")
-      throw new Error("Text field not properly initialized");
-
-    let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
-    console.log('attribution', attribution)
-
-    // blame contains an array with an entry for each draft passed in above,
-    // with edits (add, del) applied against newDraft's text. Convert those to marks!
-
-    for (let i = 0; i < attribution.length; i++) {
-      let draft = theirs[i]
-      let edits = attribution[i]
-
-      edits.add.forEach(edit => {
-        let text = newDraft.text.substring(edit.start, edit.end)
-        newDraft.mark(
-          'insert',
-          `(${edit.start}..${edit.end})`,
-          JSON.stringify({
-            author: draft.authorId,
-            text
-          })
-        )
-      })
-
-      edits.del.forEach(edit => {
-        newDraft.mark(
-          'delete',
-          `(${edit.pos}..${edit.pos})`,
-          JSON.stringify({
-            author: draft.authorId,
-            text: edit.val
-          })
-        )
-      })
-    }
-
-    newDraft.commit('Merge')
-
-    return newDraft
-  }
-
-  static getActorId(authorId: AuthorId) {
-    return authorId + "0000" + createAuthorId();
-  }
-
-  static load(id: string, binary: Uint8Array, authorId: AuthorId): Draft {
-    let doc = loadDoc(binary, this.getActorId(authorId));
-    let draft = new Draft(id, doc);
-    return draft;
-  }
-
-  static create(message: string, authorId: AuthorId): Draft {
-    let doc = create(this.getActorId(authorId));
-    let id = nanoid();
-    doc.set(ROOT, "message", message);
-    doc.set(ROOT, "author", authorId);
-    doc.set(ROOT, "shared", false, "boolean");
-    doc.set(ROOT, "pinned", false);
-    doc.set(ROOT, "parent_id", id)
-    doc.set(ROOT, "time", Date.now(), "timestamp");
-    doc.set(ROOT, "archived", false, "boolean");
-    doc.set(ROOT, "title", "");
-    doc.set_object(ROOT, "comments", {});
-    doc.set_object(ROOT, "contributors", {});
-    // for prosemirror, we can't have an empty document, so fill some space
-    let text = doc.set_object(ROOT, "text", " ");
-    let initialParagraph = doc.insert_object(text, 0, { type: "paragraph" });
-    doc.set(initialParagraph, "type", "paragraph");
-    let draft = new Draft(id, doc);
-    draft.addContributor(authorId);
-    return draft;
-  }
-
-  commit(message: string): Heads {
-    let meta: ChangeMetadata = { authorId: this.authorId, message };
-    let heads = this.doc.commit(JSON.stringify(meta));
-    if (this.subscriber) this.subscriber(this);
-    return heads;
-  }
 }

@@ -12,7 +12,7 @@ export default class PrefixedLocalStorage {
     return Buffer.from(payload, 'base64')
   }
 
-  setItem(id: string, value: Buffer): void {
+  setItem(id: string, value: Uint8Array): void {
     return localStorage.setItem(
       `${this.prefix}.${id}`,
       Buffer.from(value).toString('base64')

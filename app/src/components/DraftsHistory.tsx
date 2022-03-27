@@ -49,7 +49,7 @@ export const TabWrapper = (props: any) => (
 // only get the drafts you can see:
 // - your private drafts
 // - shared drafts
-function getYourDrafts(drafts: DraftMetadata[], rootId: string) {
+function getYourDrafts(drafts: DraftMetadata[], rootId: string | undefined) {
   const yourId = documents.author.id
 
   return drafts.filter((l) => {
@@ -68,7 +68,6 @@ function getYourDrafts(drafts: DraftMetadata[], rootId: string) {
 type Props = {
   drafts: DraftMetadata[]
   epoch: number
-  id: string
   did: string
   goToDraft: Function
   setHistorySelection: (id: string) => void
@@ -77,13 +76,11 @@ type Props = {
 export default function DraftsHistory({
   epoch,
   drafts,
-  id,
   did,
   goToDraft,
   setHistorySelection,
   colors = {},
 }: Props) {
-  const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
   const [isExpanded, setExpanded] = useState<boolean>(false)
   let [history, setHistory] = useState<DraftMetadata[]>([])
@@ -97,15 +94,16 @@ export default function DraftsHistory({
   }
 
   useEffect(() => {
-    let upwell = documents.get(id)
     const moreHistory: DraftMetadata[] = []
     for (let i = 0; i < fetchSize; i++) {
-      let value = upwell.history.get(i)
+      let value = documents.upwell?.history.get(i)
       if (value) moreHistory.push(value)
     }
-    setNoMoreHistory(upwell.history.length <= fetchSize)
+    setNoMoreHistory(
+      documents.upwell ? documents.upwell.history.length <= fetchSize : false
+    )
     setHistory(moreHistory)
-  }, [id, fetchSize, epoch])
+  }, [fetchSize, epoch])
 
   function onGetMoreClick() {
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
@@ -116,8 +114,7 @@ export default function DraftsHistory({
       // eslint-disable-next-line no-restricted-globals
       confirm("Do you want to share your draft? it can't be unshared.")
     ) {
-      let upwell = documents.get(id)
-      upwell.share(draft.id)
+      documents.upwell?.share(draft.id)
     }
   }
 
@@ -187,11 +184,10 @@ export default function DraftsHistory({
             css={css`
               width: 206px;
             `}
-            id={id}
             did={did}
             onDraftClick={(draft: DraftMetadata) => goToDraft(draft.id)}
             onShareClick={handleShareClick}
-            drafts={getYourDrafts(drafts, upwell.rootDraft.id)}
+            drafts={getYourDrafts(drafts, documents.upwell?.rootDraft.id)}
             colors={colors}
           />
         ) : (
@@ -200,7 +196,6 @@ export default function DraftsHistory({
               css={css`
                 width: 206px;
               `}
-              id={id}
               did={did}
               onDraftClick={(draft: DraftMetadata) =>
                 setHistorySelection(draft.id)

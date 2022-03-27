@@ -12,7 +12,6 @@ let documents = Documents()
 // root
 
 type Props = {
-  id: string
   did: string
   visible: string[]
   onChange: any
@@ -23,32 +22,21 @@ type Props = {
 }
 
 export function EditReviewView(props: Props) {
-  const {
-    id,
-    did,
-    historyDraftId,
-    epoch,
-    visible,
-    onChange,
-    reviewMode,
-    author,
-  } = props
+  const { did, historyDraftId, epoch, visible, onChange, reviewMode, author } =
+    props
   let [text, setText] = useState<string | undefined>()
-  let upwell = documents.get(id)
 
   useEffect(() => {
-    let upwell = documents.get(id)
-    let editableDraft = upwell.get(did)
+    let editableDraft = documents.getDraft(did)
     setText(editableDraft.text)
     setImmediate(() => setText(undefined))
-  }, [id, did, epoch])
+  }, [did, epoch])
 
   if (text) return <div>{text}</div>
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
     <ReviewView
-      upwell={upwell}
       baseDraftId={historyDraftId}
       changeDraftIds={[did]}
     ></ReviewView>
@@ -57,7 +45,6 @@ export function EditReviewView(props: Props) {
   if (visible.length === 1) {
     let textArea = (
       <Editor
-        upwell={upwell}
         author={author}
         onChange={onChange}
         baseDraftId={historyDraftId}

@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "ts-mocha -p tsconfig.json --type-check test/*.ts",
+    "test": "ts-mocha -p tsconfig.json --type-check test/*.ts --require mock-local-storage",
     "watch": "tsc --watch",
     "build": "tsc",
     "release": "npm run build:cjs && npm run build:esm && npm run build:umd && npm run build:types",
@@ -43,6 +43,7 @@
     "chai": "^4.3.6",
     "concat-stream": "^2.0.0",
     "debug": "^4.3.3",
+    "mock-local-storage": "^1.1.20",
     "nanoid": "^3.2.0",
     "random-desserts": "^0.2.2",
     "sializer": "^0.2.0",

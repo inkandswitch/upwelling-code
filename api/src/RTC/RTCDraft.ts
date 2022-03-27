@@ -28,7 +28,6 @@ export class RealTimeDraft extends RTC<DraftWebsocketMessage> {
     this.author = author
     this.on('syncMessage', ({ heads, msg, opIds }) => {
       let textObj = this.draft.doc.value('_root', 'text')
-      this.draft.subscriber && this.draft.subscriber(this.draft);
       if (textObj && textObj[0] === 'text' && opIds.indexOf(textObj[1]) > -1) {
         let newHeads = this.draft.doc.getHeads()
         let attribution = this.draft.doc.attribute(textObj[1], heads, [newHeads])
