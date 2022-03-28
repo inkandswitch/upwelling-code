@@ -1,12 +1,17 @@
-import { Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
+import { RealTimeUpwell, Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
 import catNames from 'cat-names'
+import debug from 'debug'
 
 const STORAGE_URL = process.env.STORAGE_URL
 
+let log = debug('upwell:documents')
+
 console.log(STORAGE_URL)
+
+// TODO: refactor to not store the whole upwell as a file but instead individual draft ids
 
 export class Documents {
   upwells = new Map<string, Upwell>()
@@ -14,7 +19,8 @@ export class Documents {
   remote = new HTTP(STORAGE_URL)
   subscriptions = new Map<string, Function>()
   author: Author
-  rtc?: RealTimeDraft
+  rtcUpwell?: RealTimeUpwell
+  rtcDraft?: RealTimeDraft
 
   constructor(author: Author) {
     this.author = author
@@ -31,34 +37,50 @@ export class Documents {
     this.subscriptions.set(id, fn)
   }
 
-  updatePeers(id: string, did: string) {
-    let upwell = this.get(id)
-    let draft = upwell.get(did)
-
-    if (this.rtc && this.rtc.draft.id === draft.id) {
-      this.rtc.updatePeers()
+  draftChanged(did: string) {
+    if (this.rtcDraft && this.rtcDraft.draft.id === did) {
+      this.rtcDraft.updatePeers()
     }
-    return this.save(id)
   }
 
   upwellChanged(id: string) {
-    return this.sync(id)
-  }
-
-  disconnect() {
-    if (this.rtc) {
-      this.rtc.destroy()
-      console.log('disconnecting')
-      this.rtc = undefined
+    if (this.rtcUpwell && this.rtcUpwell.id === id) {
+      log('updating peers')
+      this.sync(id).then(() => {
+        this.rtcUpwell?.sendChangedMessage()
+      })
     }
   }
 
-  connect(id: string, did: string): RealTimeDraft {
-    if (this.rtc) return this.rtc
+  disconnect(id: string) {
+    if (this.rtcUpwell && this.rtcUpwell.id === id) {
+      this.rtcUpwell.destroy()
+      log('disconnecting')
+      this.rtcUpwell = undefined
+    }
+    else if (this.rtcDraft && this.rtcDraft.id === id) {
+      this.rtcDraft.destroy()
+      log('disconnecting')
+      this.rtcDraft = undefined
+    }
+  }
+
+  connectUpwell(id: string) {
+    let upwell = this.get(id)
+    if (this.rtcUpwell) return
+    this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
+    this.rtcUpwell.on('data', () => {
+      log('got change')
+      this.notify(id, false)
+    })
+  }
+
+  connectDraft(id: string, did: string) {
     let upwell = this.get(id)
     let draft = upwell.get(did)
-    this.rtc = new RealTimeDraft(draft, this.author)
-    return this.rtc
+    if (this.rtcDraft) return
+    this.rtcDraft = new RealTimeDraft(draft, this.author)
+    return this.rtcDraft
   }
 
   unsubscribe(id: string) {
@@ -76,9 +98,9 @@ export class Documents {
     return upwell
   }
 
-  notify(id: string) {
-    let fn = this.subscriptions.get(id)
-    if (fn) fn(this.upwells.get(id))
+  notify(id: string, local: boolean) {
+    let fn = this.subscriptions.get(id) || noop
+    fn(local)
   }
 
   async save(id: string): Promise<Upwell> {
@@ -86,6 +108,8 @@ export class Documents {
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
     this.storage.setItem(id, binary)
+    this.notify(id, true)
+    this.upwellChanged(id)
     return upwell
   }
 
@@ -101,6 +125,7 @@ export class Documents {
           this.upwells.set(id, ours)
           return resolve(ours)
         } else {
+          // no local binary, get from server
           try {
             let remoteBinary = await this.remote.getItem(id)
             if (remoteBinary) {
@@ -113,12 +138,10 @@ export class Documents {
           }
         }
       }
-
-      this.sync(id).then(resolve).catch(reject)
     })
   }
 
-  async sync(id: string): Promise<Upwell> {
+  async sync(id: string): Promise<Response> {
     let inMemory = this.upwells.get(id)
     let remoteBinary = await this.remote.getItem(id)
     if (!inMemory) {
@@ -127,39 +150,17 @@ export class Documents {
     if (!remoteBinary) {
       let newFile = await inMemory.toFile()
       await this.storage.setItem(id, newFile)
-      try {
-        await this.remote.setItem(id, newFile)
-      } catch (err) {
-        console.error('Could not connect to server')
-      }
-      return inMemory
+      return this.remote.setItem(id, newFile)
     } else {
       // do sync
       let buf = Buffer.from(remoteBinary)
-      let inMemoryBuf = await inMemory.toFile()
-      if (buf.equals(inMemoryBuf)) {
-        // the one we have in memory is up to date
-        await this.storage.setItem(id, inMemoryBuf)
-        return inMemory
-      }
-      // update our local one
       let theirs = await this.toUpwell(buf)
+      // update our local one
       inMemory.merge(theirs)
-      this.notify(id)
-
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
-      this.notify(id)
-      this.remote
-        .setItem(id, newFile)
-        .then(() => {
-          console.log('Synced!')
-        })
-        .catch((err) => {
-          console.error('Failed to share!')
-        })
+      return this.remote.setItem(id, newFile)
     }
-    return inMemory
   }
 }
 
@@ -185,3 +186,6 @@ export default function initialize(): Documents {
   })
   return documents
 }
+
+
+function noop() { }

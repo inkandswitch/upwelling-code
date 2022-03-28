@@ -37,11 +37,11 @@ const convertAddToStep: (draft: Draft) => ((added: ChangeSetAddition) => Replace
     blocks.forEach((block) => {
       // FIXME this might be wrong for e.g. a paste with multiple empty paragraphs
       if (block.length === 0) {
-          nodes.push(schema.node('paragraph', {}, []))
-          return
+        nodes.push(schema.node('paragraph', {}, []))
+        return
       } else {
-          let node = schema.node('paragraph', {}, schema.text(block))
-          nodes.push(node)
+        let node = schema.node('paragraph', {}, schema.text(block))
+        nodes.push(node)
       }
     })
 
@@ -56,23 +56,23 @@ const convertDeleteToStep: (draft: Draft) => ((deleted: ChangeSetDeletion) => Re
   // FIXME this should work, but the attribution steps we're getting
   // back from automerge are incorrect, so it breaks.
   return (deleted) => {
-      /*
-      let text = deleted.val
-      let { from, to } = automergeToProsemirror(
-      { start: deleted.pos, end: deleted.pos + text.length },
-      editableDraft
-      )
-      let fragment = Fragment.fromArray([])
-      let slice = new Slice(fragment, 0, 0)
-      let step = new ReplaceStep(from, to, slice)
-      */
-     return
+    /*
+    let text = deleted.val
+    let { from, to } = automergeToProsemirror(
+    { start: deleted.pos, end: deleted.pos + text.length },
+    editableDraft
+    )
+    let fragment = Fragment.fromArray([])
+    let slice = new Slice(fragment, 0, 0)
+    let step = new ReplaceStep(from, to, slice)
+    */
+    return
   }
 }
 
 export const convertAutomergeTransactionToProsemirrorTransaction: (draft: Draft, state: EditorState, edits: AutomergeTransaction) => (Transaction | undefined) = (draft: Draft, state: EditorState, edits: AutomergeTransaction) => {
   if (!edits.changes) return
-  
+
   let steps: ReplaceStep[] = []
 
   for (const changeset of edits.changes) {

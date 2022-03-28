@@ -1,4 +1,5 @@
 /** @jsxImportSource @emotion/react */
+//import Documents from '../Documents'
 import React, { useEffect, useState, useRef } from 'react'
 import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
 import deterministicColor from '../color'
@@ -70,7 +71,7 @@ export function Editor(props: Props) {
       schema,
       doc: pmDoc,
       plugins: [
-        contextMenu([ commentButton(author) ]),
+        contextMenu([commentButton(author)]),
         remoteCursorPlugin(),
         history(),
         keymap({
@@ -94,9 +95,13 @@ export function Editor(props: Props) {
   const viewRef = useRef(null)
 
   useEffect(() => {
-    if (documents.rtc && documents.rtc.draft.id === editableDraftId) {
-      documents.rtc.transactions.subscribe((edits: AutomergeEdit) => {
-        let transaction = convertAutomergeTransactionToProsemirrorTransaction(editableDraft, state, edits)
+    if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
+      documents.rtcDraft.transactions.subscribe((edits: AutomergeEdit) => {
+        let transaction = convertAutomergeTransactionToProsemirrorTransaction(
+          editableDraft,
+          state,
+          edits
+        )
         if (transaction) {
           let newState = state.apply(transaction)
           setState(newState)
@@ -116,7 +121,7 @@ export function Editor(props: Props) {
       })
     }
     return () => {
-      documents.rtc?.transactions.unsubscribe()
+      documents.rtcDraft?.transactions.unsubscribe()
     }
   })
 
@@ -172,7 +177,7 @@ export function Editor(props: Props) {
       }
     }
 
-    documents.rtc?.sendCursorMessage(
+    documents.rtcDraft?.sendCursorMessage(
       prosemirrorToAutomerge(
         {
           from: transaction.curSelection.ranges[0].$from.pos,

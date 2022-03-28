@@ -37,7 +37,6 @@ export function EditReviewView(props: Props) {
   let upwell = documents.get(id)
 
   useEffect(() => {
-    console.log('effect triggered')
     let upwell = documents.get(id)
     let editableDraft = upwell.get(did)
     setText(editableDraft.text)

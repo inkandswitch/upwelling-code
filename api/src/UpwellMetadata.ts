@@ -1,6 +1,5 @@
 import * as Automerge from "automerge-wasm-pack"
-import { Author, AuthorId } from "."
-import debug from "debug"
+import { Draft, Author, AuthorId, DraftMetadata } from "."
 
 const ROOT = '_root'
 
@@ -16,51 +15,42 @@ export class UpwellMetadata {
     return new UpwellMetadata(Automerge.loadDoc(binary))
   }
 
-  static create(id: string, main_id: string, author: Author): UpwellMetadata {
-    debug(`creating metadata ${id}  ${main_id}`)
+  static create(id: string): UpwellMetadata {
     let doc = Automerge.create()
     doc.set(ROOT, 'id', id)
-    doc.set(ROOT, 'main_id', main_id)
-    doc.set_object(ROOT, 'archived', [])
+    doc.set_object(ROOT, 'drafts', {})
+    doc.set_object(ROOT, 'history', [])
     doc.set_object(ROOT, 'authors', {})
     let meta = new UpwellMetadata(doc)
-    meta.addAuthor(author)
     return meta
   }
 
-  _getArchivedDraftsObj(): Automerge.ObjID {
-    let value = this.doc.value(ROOT, 'archived')
-    let map
-    if (!value) {
-      map = this.doc.set_object(ROOT, 'archived', [])
-    } else if (value[0] === 'list') {
-      map = value[1]
-    } else {
-      throw new Error('Archived property not a map')
-    }
-    return map
-  }
-
   isArchived(id: string): boolean {
-    let list = this.doc.materialize('/archived')
-    if (list) {
-      let val = list.find(_id => _id === id) !== undefined
-      return val
-    } else {
-      return false
-    }
+    let draft = this.doc.materialize('/drafts/' + id)
+    return draft.archived
   }
 
   archive(id: string) {
-    let list = this._getArchivedDraftsObj()
-    let len = this.doc.length(list)
-    this.doc.insert(list, len, id)
+    let draft = this.doc.materialize('/drafts/' + id)
+    this.doc.set_object('/drafts', id, { id: draft.id, heads: draft.heads, archived: true })
+  }
+
+  addDraft(draft: Draft) {
+    let draftMetadata = draft.materialize()
+    if (this.isArchived(draft.id)) throw new Error('Cant update an archived draft')
+    this.doc.set_object('/drafts', draft.id, { id: draft.id, heads: draftMetadata.heads, archived: false })
+  }
+
+  getDraft(id: string): { id: string, heads: string[], archived: boolean } {
+    return this.doc.materialize('/drafts/' + id)
   }
 
   addAuthor(author: Author) {
-    let maybeAuthor = this.doc.value('/authors', author.id)
-    if (maybeAuthor && maybeAuthor[0] === 'str') return
-    this.doc.set('/authors', author.id, author.name)
+    let maybe = this.doc.value('/authors', author.id)
+    if (!maybe) {
+      console.log('addiung author')
+      this.doc.set_object('/authors', author.id, author)
+    }
   }
 
   getAuthors() {
@@ -68,13 +58,7 @@ export class UpwellMetadata {
   }
 
   getAuthor(authorId: AuthorId): Author | undefined {
-    let authors = this.doc.value(ROOT, 'authors')
-    if (authors && authors[0] === 'map') {
-      let value = this.doc.value(authors[1], authorId)
-      if (value && value[0] === 'str') return { id: authorId, name: value[1] }
-      else return undefined
-    }
-    else return undefined
+    return this.doc.materialize('/authors/' + authorId)
   }
 
   get id(): string {
@@ -84,12 +68,17 @@ export class UpwellMetadata {
   }
 
   get main(): string {
-    let value = this.doc.value(ROOT, 'main_id')
-    if (value) return value[1] as string
-    else return ''
+    let len = this.doc.length('/history')
+    let value = this.doc.value('/history', len - 1)
+    if (value && value[0] == 'str') return value[1]
+    throw new Error('History value not a string')
   }
 
   set main(id: string) {
-    this.doc.set(ROOT, 'main_id', id)
+    let draftMetadata = this.getDraft(id)
+    if (!draftMetadata) throw new Error('Cant set this draft to main without having added draft to metadata first')
+    let len = this.doc.length('/history')
+    this.archive(id)
+    this.doc.insert('/history', len, id)
   }
 }

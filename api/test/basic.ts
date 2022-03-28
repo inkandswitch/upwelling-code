@@ -8,11 +8,9 @@ describe("upwell", () => {
     let drafts = d.drafts();
     assert.lengthOf(drafts, 1);
 
-    let doc: Draft = drafts[0].fork("New draft", {
-      id: createAuthorId(),
-      name: "Susan",
-    });
-    d.add(doc);
+    assert.ok(d.history.get(0))
+
+    let doc: Draft = d.createDraft("New draft")
     assert.lengthOf(d.drafts(), 2);
 
     let times = 0;
@@ -41,23 +39,6 @@ describe("upwell", () => {
     assert.equal(times, 2);
   });
 
-  it("saves and loads from a file", () => {
-    let d = Upwell.create();
-    let e = Upwell.create();
-
-    let drafts = d.drafts();
-    let ddoc = drafts[0];
-    let file = ddoc.save();
-    let edoc = Draft.load(ddoc.id, file, createAuthorId());
-    e.add(edoc);
-
-    ddoc.title = "Upwelling: Contextual Writing";
-
-    let binary = ddoc.save();
-    let draft = Draft.load(ddoc.id, binary, createAuthorId());
-    e.add(draft);
-    assert.equal(draft.title, ddoc.title);
-  });
 
   it("creates drafts with authors", async () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
@@ -73,7 +54,7 @@ describe("upwell", () => {
     assert.equal(doc.text, "Hello\ufffc ");
     assert.equal(d.drafts()[0].text, "Hello\ufffc ");
 
-    d.setLatest(doc);
+    d.rootDraft = doc;
 
     let name = "Started typing on the train";
     let author: Author = { id: createAuthorId(), name: "Theroux" };
@@ -90,10 +71,28 @@ describe("upwell", () => {
     assert.equal(newDraft.text, "Hola\ufffc ");
     assert.equal(newDraft.authorId, author.id);
     assert.deepEqual(e.metadata.getAuthors(), {
-      [author.id]: author.name,
-      [first_author.id]: first_author.name,
+      [author.id]: author,
+      [first_author.id]: first_author,
     });
   });
+
+  it('merges many drafts to come to a single root', () => {
+    let first_author: Author = { id: createAuthorId(), name: "Susan" };
+    let d = Upwell.create({ author: first_author });
+    let drafts = d.drafts();
+    let doc = drafts[0];
+
+    d.createDraft()
+    assert.equal(d.drafts().length, 2)
+
+    d.rootDraft = doc
+
+    assert.equal(d.drafts().length, 1)
+
+    d.rootDraft = d.drafts()[0]
+
+    assert.equal(d.drafts().length, 0)
+  })
 
   describe("Draft", () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
@@ -110,7 +109,7 @@ describe("upwell", () => {
       doc.insertAt(3, "l");
       doc.insertAt(4, "o");
       assert.equal(doc.text, "Hello\ufffc ");
-      d.setLatest(doc);
+      d.rootDraft = doc;
     });
 
     it("forks", () => {
@@ -130,13 +129,16 @@ describe("upwell", () => {
       doc.merge(newDraft);
       assert.equal(doc.text, "Hello world\ufffc ");
 
-      d.add(doc);
       drafts = d.drafts();
-      assert.equal(drafts.length, 2);
+      assert.equal(drafts.length, 1);
     });
 
     it("can be archived", async () => {
       d.archive(newDraft.id);
+      assert.equal(d.isArchived(newDraft.id), true);
+    })
+
+    it('archives history', () => {
       let draft = d.history.get(0);
       assert.ok(draft);
       if (draft) {
@@ -147,8 +149,10 @@ describe("upwell", () => {
       }
     });
 
-    it("can get archived drafts from deserialized", async () => {
+    it("can get history from deserialized", async () => {
       let author = { id: createAuthorId(), name: "boop" };
+      let _new = d.createDraft()
+      d.rootDraft = _new
       let f = await Upwell.deserialize(d.serialize(), author);
       let e = await Upwell.deserialize(f.serialize(), author);
       let draft = e.history.get(0);
@@ -185,7 +189,7 @@ describe("upwell", () => {
     assert.deepEqual(root.text, doc.text);
     assert.deepEqual(root.title, doc.title);
 
-    d.add(doc.fork("beep boop", { id: createAuthorId(), name: "john" }));
+    d.createDraft("beep boop")
 
     root = d.rootDraft;
     assert.deepEqual(root.text, doc.text);
@@ -196,26 +200,38 @@ describe("upwell", () => {
     let first_author: Author = { id: createAuthorId(), name: "Susan" };
     let d = Upwell.create({ author: first_author });
 
-    let og = d.drafts()[0];
-
-    let draft = og.fork("", first_author);
-    d.add(draft);
+    let draft = d.createDraft()
     d.share(draft.id);
 
-    let boop = draft.fork("", first_author);
-    d.add(boop);
+    let boop = d.createDraft()
 
     assert.equal(d.drafts().filter((l) => l.shared).length, 1);
 
-    boop = boop.fork("", first_author);
-    d.add(boop);
-    d.share(boop.id);
+    let beep = d.createDraft()
+    d.share(beep.id);
 
-    boop = boop.fork("", first_author);
-    d.add(boop);
+    boop = d.createDraft()
 
     for (let i = 0; i < 100; i++) {
       assert.equal(d.drafts().filter((l) => l.shared).length, 2);
     }
   });
+
+  it('properly reports when an upwell changes', async () => {
+    let first_author: Author = { id: createAuthorId(), name: "Susan" };
+    let d = Upwell.create({ author: first_author });
+    // give upwell to friend
+    let second_author: Author = { id: createAuthorId(), name: "John" };
+    let e = await Upwell.deserialize(await d.serialize(), second_author)
+
+    // change upwell
+    let draft = d.createDraft()
+    d.rootDraft = draft
+
+    //sync
+    let f = await Upwell.deserialize(await d.serialize(), second_author)
+    let somethingChanged = e.merge(f)
+
+    assert.isTrue(somethingChanged)
+  })
 });

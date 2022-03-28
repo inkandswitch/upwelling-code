@@ -29,14 +29,13 @@ export type ChangeMetadata = {
 export type Heads = string[];
 export type DraftMetadata = {
   id: string;
+  heads: string[]
   contributors: string[];
   title: string;
-  pinned: boolean;
   text: string;
   time: number;
   marks: any;
   comments: any;
-  version: string;
   shared: boolean;
   parent_id: string;
   authorId: AuthorId;
@@ -62,22 +61,24 @@ export class Draft {
   id: string;
   doc: Automerge;
   comments: Comments;
-  private subscriber?: Subscriber;
+  _heads?: Heads = []
+  subscriber: Subscriber = () => { };
 
-  constructor(id: string, doc: Automerge) {
+  constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id;
     this.doc = doc;
     this.comments = new Comments(doc, "comments");
+    this._heads = heads
   }
 
   private _getAutomergeText(prop: string): string {
-    let value = this.doc.value(ROOT, prop);
-    if (value && value[0] === "text") return this.doc.text(value[1]);
+    let value = this.doc.value(ROOT, prop, this._heads);
+    if (value && value[0] === "text") return this.doc.text(value[1], this._heads);
     else return "";
   }
 
   private _getValue(prop: string) {
-    let value = this.doc.value(ROOT, prop);
+    let value = this.doc.value(ROOT, prop, this._heads);
     if (value && value[0]) return value[1];
   }
 
@@ -94,28 +95,12 @@ export class Draft {
     this.doc.set(ROOT, "shared", value);
   }
 
-  get version() {
-    return this._getValue("version") as string;
-  }
-
-  set version(value: string) {
-    this.doc.set(ROOT, "version", value);
-  }
-
   get time(): number {
     return this._getValue("time") as number;
   }
 
   set time(value: number) {
     this.doc.set(ROOT, "time", value);
-  }
-
-  get pinned() {
-    return this._getValue("pinned") as boolean;
-  }
-
-  set pinned(value: boolean) {
-    this.doc.set(ROOT, "pinned", value);
   }
 
   get message(): string {
@@ -150,31 +135,28 @@ export class Draft {
     this.doc.set(ROOT, "parent_id", value);
   }
 
-  receiveSyncMessage(state: SyncState, message: SyncMessage) {
-    let res = this.doc.receiveSyncMessage(state, message);
-    if (this.subscriber) this.subscriber(this);
-    return res
-  }
-
   subscribe(subscriber: Subscriber) {
     this.subscriber = subscriber;
   }
 
-  getChanges(heads: Heads) {
-    return this.doc.getChanges(heads).map(decodeChange);
+  checkout(heads: Heads) {
+    return new Draft(this.id, this.doc.clone(), heads)
   }
 
-  materialize(): DraftMetadata {
+  materialize(heads?: Heads): DraftMetadata {
+    if (heads) {
+      let draft = this.checkout(heads)
+      return draft.materialize()
+    }
     return {
       id: this.id,
       title: this.title,
-      pinned: this.pinned,
+      heads: heads || this.doc.getHeads(),
       parent_id: this.parent_id,
       text: this.text,
       contributors: this.contributors,
       message: this.message,
       time: this.time,
-      version: this.version,
       shared: this.shared,
       marks: this.marks,
       comments: this.comments.objects(),
@@ -292,7 +274,6 @@ export class Draft {
     doc.set(ROOT, "time", Date.now());
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
-    doc.set(ROOT, "pinned", false);
     let draft = new Draft(id, doc);
     draft.addContributor(author.id)
     return draft;
@@ -382,6 +363,7 @@ export class Draft {
     doc.set(ROOT, "author", authorId);
     doc.set(ROOT, "shared", false, "boolean");
     doc.set(ROOT, "pinned", false);
+    doc.set(ROOT, "parent_id", id)
     doc.set(ROOT, "time", Date.now(), "timestamp");
     doc.set(ROOT, "archived", false, "boolean");
     doc.set(ROOT, "title", "");

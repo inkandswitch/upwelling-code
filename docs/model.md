@@ -6,22 +6,34 @@
 
 An `.upwell` is a file format. An upwell is a tar file that contains multiple files.
 
-| filename             | type        | description                                           |
-| -------------------- | ----------- | ----------------------------------------------------- |
-| {draft_id}.automerge | UpwellDraft | Multiple documents, with the draft id in the filename |
-| metadata.automerge   | Metadata    | An automerge document with the upwell metadata in it  |
+| filename             | type           | description                                           |
+| -------------------- | -------------- | ----------------------------------------------------- |
+| {draft_id}.automerge | UpwellDraft    | Multiple documents, with the draft id in the filename |
+| metadata.automerge   | UpwellMetadata | An automerge document with the upwell metadata in it  |
 
 ### Files
 
-#### metadata.automerge
+#### UpwellMetadata
 
 The `metadata.automerge` file is an Automerge document that contains the metadata about this upwell. It is an Automerge document because we want to be able to update the id or authors in a way that respects the fact that multiple people could edit these properties concurrently over time. It is also separate from any particular draft or version of the document, as it contains information that is important for downstream applications to be able to properly render UI elements. It has the following properties:
 
-| prop     | type                 | description                                                                                                     |
-| -------- | -------------------- | --------------------------------------------------------------------------------------------------------------- |
-| main_id  | string               | The root id of the draft, which should point to a draft on disk. If that draft doesn't exist, things are bad!!! |
-| id       | string               | The id of this upwell                                                                                           |
-| archived | Map<string, boolean> | A map of draft ids to boolean indicating if they are archived                                                   |
+| prop    | type                          | description                                                         |
+| ------- | ----------------------------- | ------------------------------------------------------------------- |
+| id      | string                        | The id of this upwell                                               |
+| history | Array<DraftId>                | An array of draft ids, the one that is last in the list is the main |
+| drafts  | Map<DraftId, DraftMetadata>   | A lookup table of all drafts and their metadata                     |
+| authors | Map<AuthorId, AuthorMetadata> | A lookup table of all authors                                       |
+
+#### Definitions
+
+AuthorId: `string`
+AuthorMetadata:
+-- `string`
+DraftId: `string`
+DraftMetadata
+-- archived: `boolean`
+-- heads: `string[]`
+-- message: `string`
 
 #### {draft_id}.automerge
 
