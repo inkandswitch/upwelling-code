@@ -109,6 +109,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
   }
 
   sendOpen() {
+    log('Opened', this.id)
     this.send({
       author: this.author,
       peerId: this.peerId,
@@ -127,6 +128,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
     let url = STORAGE_URL.replace(httpProtocol, wsProtocol);
     url = `${url}/${this.id}/connect/${this.peerId}`;
     let ws = new WebSocket(url);
+    log('connecting')
     ws.onopen = () => {
       this.sendOpen();
       if (this.timeout) clearTimeout(this.timeout);

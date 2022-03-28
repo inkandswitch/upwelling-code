@@ -216,4 +216,22 @@ describe("upwell", () => {
       assert.equal(d.drafts().filter((l) => l.shared).length, 2);
     }
   });
+
+  it('properly reports when an upwell changes', async () => {
+    let first_author: Author = { id: createAuthorId(), name: "Susan" };
+    let d = Upwell.create({ author: first_author });
+    // give upwell to friend
+    let second_author: Author = { id: createAuthorId(), name: "John" };
+    let e = await Upwell.deserialize(await d.serialize(), second_author)
+
+    // change upwell
+    let draft = d.createDraft()
+    d.rootDraft = draft
+
+    //sync
+    let f = await Upwell.deserialize(await d.serialize(), second_author)
+    let somethingChanged = e.merge(f)
+
+    assert.isTrue(somethingChanged)
+  })
 });

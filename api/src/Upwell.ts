@@ -252,24 +252,30 @@ export class Upwell {
       try {
         let existing = this.get(draft.id);
         let heads = existing.doc.getHeads()
-        let newHeads = draft.doc.getHeads()
-        if (!arrayEquals(heads, newHeads)) {
+        let opIds = existing.merge(draft);
+        let newHeads = existing.doc.getHeads()
+        if (opIds.length > 0 || !arrayEquals(heads, newHeads)) {
           somethingChanged = true
-          existing.merge(draft);
         }
       } catch (err) {
         somethingChanged = true
         this._add(draft)
       }
     });
+    let localDrafts = this.drafts()
+    localDrafts.forEach(draft => {
+      try {
+        other.get(draft.id)
+      } catch (err) {
+        somethingChanged = true
+      }
+    })
 
     //merge metadata
-    let theirs = other.metadata;
-    let ours = this.metadata;
-    let heads = theirs.doc.getHeads()
-    let newHeads = ours.doc.getHeads()
-    if (!arrayEquals(heads, newHeads)) {
-      ours.doc.merge(theirs.doc);
+    let heads = this.metadata.doc.getHeads()
+    let opIds = this.metadata.doc.merge(other.metadata.doc);
+    let newHeads = this.metadata.doc.getHeads()
+    if (opIds.length > 0 || !arrayEquals(heads, newHeads)) {
       somethingChanged = true
     }
     return somethingChanged

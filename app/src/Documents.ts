@@ -44,10 +44,11 @@ export class Documents {
   }
 
   upwellChanged(id: string) {
-    log('upwellChanged')
     if (this.rtcUpwell && this.rtcUpwell.id === id) {
       log('updating peers')
-      this.rtcUpwell.updatePeers()
+      this.sync(id).then(() => {
+        this.rtcUpwell?.sendChangedMessage()
+      })
     }
   }
 
@@ -69,8 +70,8 @@ export class Documents {
     if (this.rtcUpwell) return
     this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
     this.rtcUpwell.on('data', () => {
-      console.log('got data')
-      this.notify(id)
+      log('got change')
+      this.notify(id, false)
     })
   }
 
@@ -97,9 +98,9 @@ export class Documents {
     return upwell
   }
 
-  notify(id: string, err?: Error) {
+  notify(id: string, local: boolean) {
     let fn = this.subscriptions.get(id) || noop
-    fn(err)
+    fn(local)
   }
 
   async save(id: string): Promise<Upwell> {
@@ -107,7 +108,7 @@ export class Documents {
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
     this.storage.setItem(id, binary)
-    this.notify(id)
+    this.notify(id, true)
     this.upwellChanged(id)
     return upwell
   }
@@ -130,7 +131,6 @@ export class Documents {
             if (remoteBinary) {
               let theirs = await this.toUpwell(Buffer.from(remoteBinary))
               this.upwells.set(id, theirs)
-              this.notify(id)
               return resolve(theirs)
             }
           } catch (err) {
@@ -141,7 +141,7 @@ export class Documents {
     })
   }
 
-  async sync(id: string): Promise<Upwell> {
+  async sync(id: string): Promise<Response> {
     let inMemory = this.upwells.get(id)
     let remoteBinary = await this.remote.getItem(id)
     if (!inMemory) {
@@ -150,33 +150,17 @@ export class Documents {
     if (!remoteBinary) {
       let newFile = await inMemory.toFile()
       await this.storage.setItem(id, newFile)
-      try {
-        await this.remote.setItem(id, newFile)
-      } catch (err) {
-        console.error('Could not connect to server')
-      }
-      return inMemory
+      return this.remote.setItem(id, newFile)
     } else {
       // do sync
       let buf = Buffer.from(remoteBinary)
       let theirs = await this.toUpwell(buf)
       // update our local one
-      let somethingChanged = inMemory.merge(theirs)
-      if (!somethingChanged) {
-        console.log('nothing changed')
-        return inMemory
-      }
-
-      console.log('SOMETHING CHANGED')
+      inMemory.merge(theirs)
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
-      this.remote.setItem(id, newFile).then(() => {
-        this.notify(id)
-      }).catch(err => {
-        this.notify(id, err)
-      })
+      return this.remote.setItem(id, newFile)
     }
-    return inMemory
   }
 }
 

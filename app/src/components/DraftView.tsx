@@ -13,6 +13,7 @@ import DraftsHistory from './DraftsHistory'
 import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
+import { debounce } from 'lodash'
 
 const log = debug('DraftView')
 
@@ -49,38 +50,43 @@ export default function DraftView(props: DraftViewProps) {
 
   const render = useCallback(() => {
     let upwell = documents.get(id)
-    const drafts = upwell.drafts()
     let draftInstance = upwell.get(draft.id)
+    const drafts = upwell.drafts()
     setDrafts(drafts)
     setDraft(draftInstance.materialize())
     log('rendering', id, draft.id)
   }, [id, draft.id])
 
-  useEffect(() => {
-    documents.subscribe(id, (err: Error) => {
-      log('got notified of a change', id)
+  const sync = useCallback(async () => {
+    try {
+      await documents.sync(id)
+      log('synced')
+      setSyncState(SYNC_STATE.SYNCED)
+    } catch (err) {
+      log('failed to sync', err)
+      setSyncState(SYNC_STATE.OFFLINE)
+    } finally {
       render()
-
-      documents
-        .sync(id)
-        .then(() => {
-          log('synced')
-          render()
-          setSyncState(SYNC_STATE.SYNCED)
-        })
-        .catch((err) => {
-          log('failed to sync', err)
-          setSyncState(SYNC_STATE.OFFLINE)
-        })
-    })
-
-    documents.connectUpwell(id)
-    render()
-
-    return () => {
-      documents.disconnect(id)
     }
   }, [id, render])
+
+  const debouncedSync = React.useMemo(
+    () =>
+      debounce(() => {
+        sync()
+      }, 50),
+    [sync]
+  )
+  useEffect(() => {
+    documents.subscribe(id, (local: boolean) => {
+      log('got notified of a change', id)
+      debouncedSync()
+      render()
+    })
+
+    sync()
+    render()
+  }, [id, sync, debouncedSync, render])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -110,7 +116,7 @@ export default function DraftView(props: DraftViewProps) {
         draftInstance.addContributor(documents.author.id)
         render()
       }
-      documents.draftChanged(did)
+      documents.draftChanged(draft.id)
       setSyncState(SYNC_STATE.LOADING)
     }
   }
@@ -156,8 +162,7 @@ export default function DraftView(props: DraftViewProps) {
 
   let handleMergeClick = () => {
     let upwell = documents.get(id)
-    let draft = upwell.get(did)
-    upwell.rootDraft = draft
+    upwell.rootDraft = upwell.get(draft.id)
     setEpoch(Date.now())
     documents.save(id)
   }
@@ -189,7 +194,7 @@ export default function DraftView(props: DraftViewProps) {
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
       <DraftsHistory
-        did={did}
+        did={draft.id}
         epoch={epoch}
         goToDraft={goToDraft}
         drafts={drafts.map((d) => d.materialize())}
@@ -252,20 +257,16 @@ export default function DraftView(props: DraftViewProps) {
               <select
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
               >
-                <option
-                  label="main"
-                  value={upwell.rootDraft.id}
-                  selected={upwell.rootDraft.id === draft.id}
-                />
                 {drafts.map((d) => (
                   <option
+                    key={draft.id}
                     label={d.message}
                     value={d.id}
                     selected={d.id === draft.id}
                   />
                 ))}
               </select>
-              {isLatest || upwell.isArchived(did) ? (
+              {isLatest || upwell.isArchived(draft.id) ? (
                 <Button onClick={createDraft}>Create Draft</Button>
               ) : (
                 <>

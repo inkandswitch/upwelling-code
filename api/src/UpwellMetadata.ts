@@ -1,6 +1,5 @@
 import * as Automerge from "automerge-wasm-pack"
 import { Draft, Author, AuthorId, DraftMetadata } from "."
-import debug from "debug"
 
 const ROOT = '_root'
 

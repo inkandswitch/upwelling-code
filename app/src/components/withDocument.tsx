@@ -22,29 +22,36 @@ export default function withDocument(
 
     useEffect(() => {
       let unmounted = false
-      let upwell: Upwell
+      let upwell: Upwell | undefined
       async function render() {
         try {
           upwell = await documents.open(id)
-          if (!unmounted) {
+          if (!unmounted && upwell) {
             console.log('getting rootDraft in main component')
             setRoot(upwell.rootDraft)
           }
         } catch (err) {}
 
         try {
-          upwell = await documents.sync(id)
+          await documents.sync(id)
+          upwell = documents.get(id)
         } catch (err) {
-          if (!upwell) upwell = await documents.create(props.id, author)
+          console.error(err)
+          if (!upwell) {
+            console.log('creating upwell')
+            upwell = await documents.create(props.id, author)
+          }
         } finally {
           if (!upwell) throw new Error('could not create upwell')
           if (!unmounted) setRoot(upwell.rootDraft)
+          documents.connectUpwell(id)
         }
       }
 
       render()
       return () => {
         unmounted = true
+        documents.disconnect(id)
       }
     }, [id, author, setLocation])
     if (!root) return <div></div>
