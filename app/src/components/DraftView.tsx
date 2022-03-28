@@ -257,9 +257,14 @@ export default function DraftView(props: DraftViewProps) {
               <select
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
               >
+                <option
+                  label="main"
+                  value={upwell.rootDraft.id}
+                  selected={upwell.rootDraft.id === draft.id}
+                />
+
                 {drafts.map((d) => (
                   <option
-                    key={draft.id}
                     label={d.message}
                     value={d.id}
                     selected={d.id === draft.id}
