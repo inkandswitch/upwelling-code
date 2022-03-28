@@ -54,8 +54,9 @@ export default function DraftView(props: DraftViewProps) {
     const drafts = upwell.drafts()
     setDrafts(drafts)
     setDraft(draftInstance.materialize())
+    setLocation(`/document/${id}#${draft.id}`)
     log('rendering', id, draft.id)
-  }, [id, draft.id])
+  }, [id, draft.id, setLocation])
 
   const sync = useCallback(async () => {
     setSyncState(SYNC_STATE.LOADING)
@@ -75,20 +76,21 @@ export default function DraftView(props: DraftViewProps) {
     () =>
       debounce(() => {
         sync()
-      }, 50),
+      }, 500),
     [sync]
   )
 
   useEffect(() => {
+    sync()
+  }, [id, sync])
+
+  useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       log('got notified of a change', id)
+      if (local) render()
       debouncedSync()
-      render()
     })
-
-    sync()
-    render()
-  }, [id, sync, debouncedSync, render])
+  }, [id, debouncedSync, render])
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -181,14 +183,13 @@ export default function DraftView(props: DraftViewProps) {
   function createDraft() {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft()
-    goToDraft(newDraft.id)
     documents.save(id)
+    goToDraft(newDraft.id)
   }
 
   function goToDraft(did: string) {
     let draft = upwell.get(did).materialize()
     setDraft(draft)
-    setLocation(`/document/${id}#${draft.id}`)
   }
 
   let rootId = upwell.rootDraft.id
