@@ -109,27 +109,29 @@ export default function DraftView(props: DraftViewProps) {
     }
   }, [id, draft.id, render])
 
-  let onTextChange = () => {
-    if (rootId === draft.id) {
-    } else {
-      setSyncState(SYNC_STATE.LOADING)
-      if (draft.contributors.indexOf(documents.author.id) === -1) {
+  let debouncedOnTextChange = React.useMemo(
+    () =>
+      debounce(() => {
         let upwell = documents.get(id)
-        let draftInstance = upwell.get(draft.id)
-        draftInstance.addContributor(documents.author.id)
-        render()
-      }
-      documents.draftChanged(draft.id)
-      debouncedTextChange()
-    }
+        if (upwell.rootDraft.id === draft.id) {
+        } else {
+          if (draft.contributors.indexOf(documents.author.id) === -1) {
+            let draftInstance = upwell.get(draft.id)
+            draftInstance.addContributor(documents.author.id)
+            render()
+          }
+          console.log('syncing from onTextChange')
+          documents.save(id)
+        }
+      }, 3000),
+    [draft.contributors, id, render, draft.id]
+  )
+
+  let onTextChange = () => {
+    setSyncState(SYNC_STATE.LOADING)
+    documents.draftChanged(draft.id)
+    debouncedOnTextChange()
   }
-
-  let debouncedTextChange = debounce(() => {
-    console.log('syncing')
-    documents.save(id)
-    sync()
-  }, 3000)
-
   let onCommentChange = () => {
     console.log('comment change!')
   }
