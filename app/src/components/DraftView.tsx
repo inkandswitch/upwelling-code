@@ -172,11 +172,7 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   let handleUpdateClick = () => {
-    let draftInstance = upwell.get(draft.id)
-    upwell.updateToRoot(draftInstance)
-    documents.save(id)
-    setReviewMode(false)
-    setEpoch(Date.now())
+    window.location.reload()
   }
 
   let handleMergeClick = () => {
