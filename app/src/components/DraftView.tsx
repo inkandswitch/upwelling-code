@@ -58,6 +58,7 @@ export default function DraftView(props: DraftViewProps) {
   }, [id, draft.id])
 
   const sync = useCallback(async () => {
+    setSyncState(SYNC_STATE.LOADING)
     try {
       await documents.sync(id)
       log('synced')
@@ -77,6 +78,7 @@ export default function DraftView(props: DraftViewProps) {
       }, 50),
     [sync]
   )
+
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       log('got notified of a change', id)
@@ -110,6 +112,7 @@ export default function DraftView(props: DraftViewProps) {
   let onTextChange = () => {
     if (rootId === draft.id) {
     } else {
+      setSyncState(SYNC_STATE.LOADING)
       if (draft.contributors.indexOf(documents.author.id) === -1) {
         let upwell = documents.get(id)
         let draftInstance = upwell.get(draft.id)
@@ -117,9 +120,15 @@ export default function DraftView(props: DraftViewProps) {
         render()
       }
       documents.draftChanged(draft.id)
-      setSyncState(SYNC_STATE.LOADING)
+      debouncedTextChange()
     }
   }
+
+  let debouncedTextChange = debounce(() => {
+    console.log('syncing')
+    documents.save(id)
+    sync()
+  }, 3000)
 
   let onCommentChange = () => {
     console.log('comment change!')
