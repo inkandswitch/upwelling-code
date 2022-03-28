@@ -84,14 +84,19 @@ export default function DraftView(props: DraftViewProps) {
     sync()
   }, [id, sync])
 
+  // every time the upwell id changes
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       log('got notified of a change', id)
       if (local) render()
       debouncedSync()
     })
+    return () => {
+      documents.unsubscribe(id)
+    }
   }, [id, debouncedSync, render])
 
+  // every time the draft.id changes
   useEffect(() => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
@@ -134,6 +139,7 @@ export default function DraftView(props: DraftViewProps) {
     documents.draftChanged(draft.id)
     debouncedOnTextChange()
   }
+
   let onCommentChange = () => {
     console.log('comment change!')
   }
