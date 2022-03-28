@@ -5,7 +5,7 @@ import { schema } from '../UpwellSchema'
 import { automergeToProsemirror, BLOCK_MARKER } from './PositionMapper'
 // @okdistribute is there a better way to re-export these, or should we wrap
 // them, or just use them like this?
-import { ChangeSetAddition, ChangeSetDeletion } from 'automerge-wasm-pack'
+import { ChangeSetAddition } from 'automerge-wasm-pack'
 
 import { Draft, Transaction as AutomergeTransaction } from 'api'
 
@@ -52,11 +52,11 @@ const convertAddToStep: (draft: Draft) => ((added: ChangeSetAddition) => Replace
   }
 }
 
+/*
 const convertDeleteToStep: (draft: Draft) => ((deleted: ChangeSetDeletion) => ReplaceStep | void) = (draft: Draft) => {
   // FIXME this should work, but the attribution steps we're getting
   // back from automerge are incorrect, so it breaks.
   return (deleted) => {
-    /*
     let text = deleted.val
     let { from, to } = automergeToProsemirror(
     { start: deleted.pos, end: deleted.pos + text.length },
@@ -65,10 +65,10 @@ const convertDeleteToStep: (draft: Draft) => ((deleted: ChangeSetDeletion) => Re
     let fragment = Fragment.fromArray([])
     let slice = new Slice(fragment, 0, 0)
     let step = new ReplaceStep(from, to, slice)
-    */
-    return
+return
   }
 }
+*/
 
 export const convertAutomergeTransactionToProsemirrorTransaction: (draft: Draft, state: EditorState, edits: AutomergeTransaction) => (Transaction | undefined) = (draft: Draft, state: EditorState, edits: AutomergeTransaction) => {
   if (!edits.changes) return
