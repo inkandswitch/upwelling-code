@@ -309,20 +309,22 @@ export default function DraftView(props: DraftViewProps) {
                   )}
                 </>
               )}
-              <Input
-                value={draft.message}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-                onChange={(e) => {
-                  e.stopPropagation()
-                  setDraft({ ...draft, message: e.target.value })
-                }}
-                onBlur={(e) => {
-                  //@ts-ignore
-                  handleFileNameInputBlur(e)
-                }}
-              />
+              {!isLatest && (
+                <Input
+                  value={draft.message}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                  }}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    setDraft({ ...draft, message: e.target.value })
+                  }}
+                  onBlur={(e) => {
+                    //@ts-ignore
+                    handleFileNameInputBlur(e)
+                  }}
+                />
+              )}
             </div>
             <Contributors
               upwell={upwell}

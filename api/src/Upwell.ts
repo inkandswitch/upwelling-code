@@ -11,7 +11,7 @@ import { UpwellMetadata } from "./UpwellMetadata";
 
 export type AuthorId = string;
 export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: "Anonymous" };
-export const SPECIAL_ROOT_DOCUMENT = "UPWELL_ROOT@@@";
+export const SPECIAL_ROOT_DOCUMENT = "First draft";
 
 export type Author = {
   id: AuthorId;
