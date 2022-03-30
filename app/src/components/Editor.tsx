@@ -196,6 +196,7 @@ export function Editor(props: Props) {
   let color = deterministicColor(editableDraft.authorId)
   return (
     <ProseMirror
+      editable={() => props.editableDraftId !== upwell.rootDraft.id}
       state={state}
       ref={viewRef}
       dispatchTransaction={dispatchHandler}
