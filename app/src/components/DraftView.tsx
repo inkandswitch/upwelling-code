@@ -27,14 +27,12 @@ type DraftViewProps = {
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author } = props
-  let [, setLocation] = useLocation()
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
-  let did = getDraftHash()
+  let [did, setDraftId] = useState<string>(getDraftHash())
   let maybeDraft
-
   try {
     maybeDraft = upwell.get(did)
   } catch (err) {
@@ -50,13 +48,12 @@ export default function DraftView(props: DraftViewProps) {
 
   const render = useCallback(() => {
     let upwell = documents.get(id)
-    let draftInstance = upwell.get(draft.id)
+    let draftInstance = upwell.get(did)
     const drafts = upwell.drafts()
     setDrafts(drafts)
     setDraft(draftInstance.materialize())
-    setLocation(`/document/${id}#${draft.id}`)
-    log('rendering', id, draft.id)
-  }, [id, draft.id, setLocation])
+    log('rendering', id, did)
+  }, [id, did])
 
   const sync = useCallback(async () => {
     setSyncState(SYNC_STATE.LOADING)
@@ -86,6 +83,10 @@ export default function DraftView(props: DraftViewProps) {
 
   // every time the upwell id changes
   useEffect(() => {
+    window.addEventListener('hashchange', () => {
+      let id = getDraftHash()
+      setDraftId(id)
+    })
     documents.subscribe(id, (local: boolean) => {
       log('got notified of a change', id)
       if (local) render()
@@ -191,7 +192,7 @@ export default function DraftView(props: DraftViewProps) {
 
   function goToDraft(did: string) {
     let draft = upwell.get(did).materialize()
-    setDraft(draft)
+    window.location.hash = draft.id
   }
 
   let rootId = upwell.rootDraft.id
@@ -270,19 +271,16 @@ export default function DraftView(props: DraftViewProps) {
               />
               <select
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
+                value={draft.id}
               >
                 <option
+                  key={upwell.rootDraft.id}
                   label="main"
                   value={upwell.rootDraft.id}
-                  selected={upwell.rootDraft.id === draft.id}
                 />
 
                 {drafts.map((d) => (
-                  <option
-                    label={d.message}
-                    value={d.id}
-                    selected={d.id === draft.id}
-                  />
+                  <option key={draft.id} label={d.message} value={d.id} />
                 ))}
               </select>
               {isLatest || upwell.isArchived(draft.id) ? (
