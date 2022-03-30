@@ -170,10 +170,15 @@ export function Editor(props: Props) {
           )
           documents.save(upwell.id)
         } else {
-          editableDraft.mark(mark.type.name, `(${start}..${end})`, '')
+          editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }
       } else if (step instanceof RemoveMarkStep) {
         // TK not implemented because automerge doesn't support removing marks yet
+        let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
+        let mark = step.mark
+        if (mark.type.name === 'strong' || mark.type.name === 'em') {
+          editableDraft.mark(mark.type.name, `(${start}..${end})`, false)
+        }
       }
     }
 

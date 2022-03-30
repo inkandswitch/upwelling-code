@@ -216,7 +216,7 @@ export class Draft {
 
   getMarks(prop = "text") {
     let obj = this.doc.value(ROOT, "text");
-    if (obj && obj[0] === "text") return this.doc.raw_spans(obj[1]);
+    if (obj && obj[0] === "text") return this.doc.spans(obj[1]);
     else throw new Error("Text field not properly initialized");
   }
 
