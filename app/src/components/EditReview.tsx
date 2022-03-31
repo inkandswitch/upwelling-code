@@ -16,23 +16,14 @@ type Props = {
   did: string
   visible: string[]
   onChange: any
-  historyDraftId: string
+  heads: string[]
   author: Author
   epoch: number
   reviewMode: boolean
 }
 
 export function EditReviewView(props: Props) {
-  const {
-    id,
-    did,
-    historyDraftId,
-    epoch,
-    visible,
-    onChange,
-    reviewMode,
-    author,
-  } = props
+  const { id, did, heads, epoch, visible, onChange, reviewMode, author } = props
   let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
 
@@ -49,7 +40,7 @@ export function EditReviewView(props: Props) {
   let reviewView = (
     <ReviewView
       upwell={upwell}
-      baseDraftId={historyDraftId}
+      heads={heads}
       changeDraftIds={[did]}
     ></ReviewView>
   )
@@ -60,7 +51,7 @@ export function EditReviewView(props: Props) {
         upwell={upwell}
         author={author}
         onChange={onChange}
-        baseDraftId={historyDraftId}
+        heads={heads}
         editableDraftId={visible[0]}
       ></Editor>
     )
@@ -71,10 +62,14 @@ export function EditReviewView(props: Props) {
 
   return (
     <div
+      id="writing-surface"
       css={css`
         background-color: white;
         width: 100%;
-        height: 100%;
+        box-shadow: 0px 4px 4px 0px #00000040;
+        border: 1px solid #c6c6c6;
+        flex: 1 1 auto;
+        overflow: auto;
       `}
     >
       {component}

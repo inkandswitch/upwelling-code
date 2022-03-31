@@ -5,7 +5,7 @@ import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
 import { Upwell, Draft } from 'api'
-import { textCSS } from './Editor'
+import { editorSharedCSS, textCSS } from './Editor'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -16,16 +16,17 @@ type ReviewState = {
 
 export function ReviewView(props: {
   upwell: Upwell
-  baseDraftId: string
+  heads: string[]
   changeDraftIds: string[]
 }) {
-  const { upwell, baseDraftId, changeDraftIds } = props
+  const { upwell, heads, changeDraftIds } = props
 
   let updateAtjsonState = useCallback(
     async function () {
-      let baseDraft = upwell.get(baseDraftId)
+      let baseDraft = upwell.rootDraft.checkout(heads)
       let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
-      console.log('baseDraftId', baseDraftId)
+      console.log(baseDraft.text, baseDraft.message)
+      console.log(changeDrafts[0].text, changeDrafts[0].message)
 
       let editsDraft = Draft.mergeWithEdits(
         documents.author,
@@ -35,12 +36,12 @@ export function ReviewView(props: {
       let atjsonDraft = UpwellSource.fromRaw(editsDraft)
       setState({ atjsonDraft })
     },
-    [upwell, baseDraftId, changeDraftIds]
+    [upwell, heads, changeDraftIds]
   )
 
   useEffect(() => {
     updateAtjsonState()
-  }, [updateAtjsonState, baseDraftId, changeDraftIds])
+  }, [updateAtjsonState, heads, changeDraftIds])
 
   // This is not a good proxy for the correct state, but DEMO MODE.
   let [state, setState] = React.useState<ReviewState>({})
@@ -51,6 +52,7 @@ export function ReviewView(props: {
       <ReactRendererProvider value={components}>
         <article
           css={css`
+            ${editorSharedCSS}
             ${textCSS}
             cursor: not-allowed;
           `}

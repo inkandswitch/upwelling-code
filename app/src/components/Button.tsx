@@ -18,8 +18,8 @@ export function Button(props: ButtonType) {
         flex-direction: row;
         align-items: center;
         justify-content: center;
-        background: white;
-        color: black;
+        background: black;
+        color: white;
         &:hover {
           background: #d1eaff;
         }

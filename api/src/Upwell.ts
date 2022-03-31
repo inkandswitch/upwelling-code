@@ -66,6 +66,9 @@ export class Upwell {
   set rootDraft(draft: Draft) {
     this.archive(draft.id)
     this.metadata.main = draft.id;
+    for (let draft of this.drafts()) {
+      this.updateToRoot(draft)
+    }
   }
 
   drafts(): Draft[] {
@@ -126,6 +129,7 @@ export class Upwell {
   }
 
   get(id: string): Draft {
+    if (id === 'stack') return this.rootDraft
     let draft = this._draftLayers.get(id)
     if (!draft) {
       let buf = this._archivedLayers.get(id)
@@ -188,7 +192,7 @@ export class Upwell {
         let upwell = new Upwell(UpwellMetadata.load(metadata), author);
         drafts.forEach((item) => {
           let { id, binary } = item;
-          if (!upwell.metadata.isArchived(id) || id === upwell.metadata.main) {
+          if (!upwell.isArchived(id) || id === upwell.metadata.main) {
             var start = new Date();
             let draft = Draft.load(id, binary, author.id);
             //@ts-ignore

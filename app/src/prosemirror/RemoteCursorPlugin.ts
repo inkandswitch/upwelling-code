@@ -21,26 +21,28 @@ export const remoteCursorPlugin: () => Plugin = () => {
         const newCursors = tr.getMeta(remoteCursorKey)
 
         if (newCursors) {
-        let decorations = Object.keys(newCursors).map((author) => {
-          let cursor = newCursors[author]
-          let { from, to } = cursor
-          if (from === to) {
-            let cursorElement = window.document.createElement('span')
-            cursorElement.style.borderRight = `2px solid ${deterministicColor(author).toString()}`
-            cursorElement.style.boxSizing = 'content-box'
-            cursorElement.style.marginLeft = '-2px'
-            return Decoration.widget(from, cursorElement)
-          } else {
-            return Decoration.inline(from, to, {
-              style: `background: ${deterministicColor(author)}`,
-            })
-          }
-        })
-        return DecorationSet.create(tr.doc, decorations)
-      } else {
-        // just update the positions of the decorations
-        return cursors.map(tr.mapping, tr.doc)
-      }
+          let decorations = Object.keys(newCursors).map((author) => {
+            let cursor = newCursors[author]
+            let { from, to } = cursor
+            if (from === to) {
+              let cursorElement = window.document.createElement('span')
+              cursorElement.style.borderRight = `2px solid ${deterministicColor(
+                author
+              ).toString()}`
+              cursorElement.style.boxSizing = 'content-box'
+              cursorElement.style.marginLeft = '-2px'
+              return Decoration.widget(from, cursorElement)
+            } else {
+              return Decoration.inline(from, to, {
+                style: `background: ${deterministicColor(author)}`,
+              })
+            }
+          })
+          return DecorationSet.create(tr.doc, decorations)
+        } else {
+          // just update the positions of the decorations
+          return cursors.map(tr.mapping, tr.doc)
+        }
       },
     },
 

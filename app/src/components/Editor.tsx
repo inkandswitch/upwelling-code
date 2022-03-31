@@ -36,17 +36,19 @@ let documents = Documents()
 type Props = {
   upwell: Upwell
   editableDraftId: string
-  baseDraftId?: string
+  heads?: string[]
   author: Author
   onChange: any
 }
 
+export const editorSharedCSS = css`
+  padding: 3rem calc(0.09 * 100vw); /* this isn't exactly what I want, just trying to keep padding slightly proportional to screen size. */
+`
+
 export const textCSS = css`
   width: 100%;
   height: 100%;
-  border: 1px solid lightgray;
-  border-width: 0 1px 1px 0;
-  padding: 10px 20px;
+  border: none;
   resize: none;
   font-size: 16px;
   line-height: 20px;
@@ -56,7 +58,9 @@ export const textCSS = css`
   white-space: pre-line;
 
   .ProseMirror {
+    width: 100%;
     height: 100%;
+    ${editorSharedCSS}
   }
   .ProseMirror:focus-visible {
     outline: 0;
@@ -64,7 +68,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author } = props
+  let { heads, upwell, editableDraftId, onChange, author } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
@@ -93,6 +97,7 @@ export function Editor(props: Props) {
   //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
 
   const viewRef = useRef(null)
+  console.log('heads', heads)
 
   useEffect(() => {
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
@@ -168,7 +173,7 @@ export function Editor(props: Props) {
             mark.attrs.message,
             mark.attrs.author.id
           )
-          documents.save(upwell.id)
+          documents.draftChanged(upwell.id, editableDraft.id)
         } else {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }

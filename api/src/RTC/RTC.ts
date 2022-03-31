@@ -45,11 +45,10 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
 
   retry() {
     this.retries++;
-    if (this.retries > MAX_RETRIES)
-      return log("MAX RETRIES", this.retries);
+    log('Retrying in 3 seconds')
     this.timeout = setTimeout(() => {
       this.ws = this.connect();
-    }, 3000 * Math.pow(2, this.retries));
+    }, 3000);
   }
 
   _getPeerState(peerId: string) {
@@ -141,7 +140,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
         console.error("Original error", err);
         return;
       }
-      log('got syncMessage', value.peerId)
+      log('got syncMessage from peerId=', value.peerId)
       switch (value.method) {
         case "OPEN":
           this.emit('peer', value)

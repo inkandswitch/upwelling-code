@@ -133,7 +133,7 @@ export default function DraftsHistory({
           css={css`
             font-size: 24px;
             color: #00000080;
-            top: 30px;
+            top: 22px;
             left: 14px;
             background: transparent;
             position: absolute;
@@ -202,9 +202,9 @@ export default function DraftsHistory({
               `}
               id={id}
               did={did}
-              onDraftClick={(draft: DraftMetadata) =>
+              onDraftClick={(draft: DraftMetadata) => {
                 setHistorySelection(draft.id)
-              }
+              }}
               drafts={history}
               colors={colors}
             />
