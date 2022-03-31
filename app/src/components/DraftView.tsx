@@ -262,6 +262,9 @@ export default function DraftView(props: DraftViewProps) {
                 onChange={(e) => {
                   e.stopPropagation()
                   setDraft({ ...draft, title: e.target.value })
+                  let draftInstance = upwell.get(did)
+                  draftInstance.title = e.target.value
+                  documents.draftChanged(id, did)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)
