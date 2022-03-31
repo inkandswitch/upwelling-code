@@ -5,7 +5,7 @@ import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
 import { Upwell, Draft } from 'api'
-import { textCSS } from './Editor'
+import { editorSharedCSS, textCSS } from './Editor'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -51,6 +51,7 @@ export function ReviewView(props: {
       <ReactRendererProvider value={components}>
         <article
           css={css`
+            ${editorSharedCSS}
             ${textCSS}
             cursor: not-allowed;
           `}

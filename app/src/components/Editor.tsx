@@ -41,11 +41,14 @@ type Props = {
   onChange: any
 }
 
+export const editorSharedCSS = css`
+  padding: 3rem calc(0.09 * 100vw); /* this isn't exactly what I want, just trying to keep padding slightly proportional to screen size. */
+`
+
 export const textCSS = css`
   width: 100%;
   height: 100%;
   border: none;
-  padding: 2rem 3rem;
   resize: none;
   font-size: 16px;
   line-height: 20px;
@@ -55,8 +58,9 @@ export const textCSS = css`
   white-space: pre-line;
 
   .ProseMirror {
-    max-width: 700px;
-    margin: 0 auto;
+    width: 100%;
+    height: 100%;
+    ${editorSharedCSS}
   }
   .ProseMirror:focus-visible {
     outline: 0;
