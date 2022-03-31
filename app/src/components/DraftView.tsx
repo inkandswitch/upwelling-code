@@ -319,10 +319,6 @@ export default function DraftView(props: DraftViewProps) {
                 />
               )}
             </div>
-            <Contributors
-              upwell={upwell}
-              contributors={draft.contributors}
-            ></Contributors>
           </div>
           <div
             css={css`
@@ -338,13 +334,15 @@ export default function DraftView(props: DraftViewProps) {
             ) : (
               <div></div>
             )}
-            <div>
-              <span
-                css={css`
-                  gap: 20px;
-                  display: flex;
-                `}
-              ></span>
+            <div
+              css={css`
+                gap: 20px;
+                display: flex;
+                flex-direction: row;
+                align-items: baseline;
+              `}
+            >
+              <Contributors upwell={upwell} contributors={draft.contributors} />
               <span>
                 view changes{' '}
                 <Button
