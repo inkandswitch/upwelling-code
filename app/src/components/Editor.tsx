@@ -97,7 +97,6 @@ export function Editor(props: Props) {
   //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
 
   const viewRef = useRef(null)
-  console.log('heads', heads)
 
   useEffect(() => {
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
