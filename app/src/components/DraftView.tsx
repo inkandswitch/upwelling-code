@@ -215,6 +215,7 @@ export default function DraftView(props: DraftViewProps) {
         setHistorySelection={(draftId) => {
           let draft = upwell.metadata.getDraft(draftId)
           setHistoryHeads(draft.heads)
+          setEpoch(Date.now())
         }}
         id={id}
       />
