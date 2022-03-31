@@ -34,11 +34,14 @@ export class Documents {
   }
 
   subscribe(id: string, fn: Function) {
+    if (this.subscriptions.get(id)) return
     this.subscriptions.set(id, fn)
   }
 
-  draftChanged(did: string) {
+  draftChanged(id: string, did: string) {
+    this.save(id)
     if (this.rtcDraft && this.rtcDraft.draft.id === did) {
+      log('updating peers')
       this.rtcDraft.updatePeers()
     }
   }
@@ -69,7 +72,7 @@ export class Documents {
   connectDraft(id: string, did: string) {
     let upwell = this.get(id)
     let draft = upwell.get(did)
-    if (this.rtcDraft) return
+    if (this.rtcDraft) return this.rtcDraft
     this.rtcDraft = new RealTimeDraft(draft, this.author)
     return this.rtcDraft
   }
@@ -149,6 +152,7 @@ export class Documents {
       inMemory.merge(theirs)
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
+      log('uploading', id)
       return this.remote.setItem(id, newFile)
     }
   }

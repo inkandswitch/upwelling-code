@@ -1,30 +1,32 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
-import { Upwell, DraftMetadata, Comment, CommentState } from 'api'
+import { DraftMetadata, Comment, CommentState } from 'api'
 import deterministicColor from '../color'
 import Documents from '../Documents'
 
 let documents = Documents()
 
 type CommentViewProps = {
-  upwell: Upwell
+  id: string
   draft: DraftMetadata
   comment: Comment
   mark: { start: number; end: number }
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { upwell, comment, draft } = props
+  let { id, comment, draft } = props
+  let upwell = documents.get(id)
   let authorName = upwell.getAuthorName(comment.author)
   let [state, setState] = useState({
     archived: comment.state !== CommentState.OPEN,
   })
 
   let archiveComment = () => {
+    let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
     draftInstance.comments.archive(comment)
-    documents.save(upwell.id)
+    documents.draftChanged(upwell.id, draft.id)
     setState({ archived: true })
   }
   if (state.archived) return <div></div>
@@ -71,12 +73,12 @@ export function CommentView(props: CommentViewProps) {
 
 type CommentSidebarProps = {
   draft: DraftMetadata
-  upwell: Upwell
-  onChange: () => void
+  id: string
 }
 
 export default function CommentSidebar(props: CommentSidebarProps) {
-  let { upwell, draft } = props
+  let { id, draft } = props
+  let upwell = documents.get(id)
   let draftInstance = upwell.get(draft.id)
   let comments = draftInstance.comments.objects()
 
@@ -101,9 +103,10 @@ export default function CommentSidebar(props: CommentSidebarProps) {
         return (
           <div>
             <CommentView
+              key={comment.id}
               comment={comment}
               mark={mark}
-              upwell={upwell}
+              id={id}
               draft={draft}
             />
           </div>

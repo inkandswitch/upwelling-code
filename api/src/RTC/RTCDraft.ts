@@ -18,6 +18,7 @@ export interface DraftWebsocketMessage extends WebsocketSyncMessage {
   cursor?: CursorPosition;
 }
 
+
 export class RealTimeDraft extends RTC<DraftWebsocketMessage> {
   draft: Draft;
   transactions: Queue<Transaction> = new Queue()
@@ -36,6 +37,10 @@ export class RealTimeDraft extends RTC<DraftWebsocketMessage> {
           author: msg.author,
           changes: attribution
         })
+      }
+
+      if (opIds.length > 0) {
+        this.emit('data')
       }
     })
 

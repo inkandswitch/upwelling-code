@@ -42,7 +42,9 @@ export default function DraftView(props: DraftViewProps) {
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [historyDraftId, setHistoryDraft] = useState<string>(upwell.rootDraft.id)
-
+  let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
+    did !== 'stack' && upwell.rootDraft.id !== draft.parent_id
+  )
   const sync = useCallback(async () => {
     setSyncState(SYNC_STATE.LOADING)
     let upwell = documents.get(id)
@@ -55,8 +57,10 @@ export default function DraftView(props: DraftViewProps) {
       setSyncState(SYNC_STATE.OFFLINE)
     } finally {
       setDrafts(upwell.drafts())
+      setDraft(upwell.get(did).materialize())
+      log('rendering')
     }
-  }, [id])
+  }, [id, did])
 
   const debouncedSync = React.useMemo(
     () =>
@@ -73,34 +77,37 @@ export default function DraftView(props: DraftViewProps) {
   // every time the upwell id changes
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
-      log('got notified of a change', id)
       let upwell = documents.get(id)
-      let draft = upwell.get(did)
-      setDraft(draft.materialize())
-      setDrafts(upwell.drafts())
-      console.log(upwell.drafts())
-      debouncedSync()
+      if (!local && did === upwell.rootDraft.id && did !== 'stack') {
+        return (window.location.href = 'stack')
+      }
+      if (!local && did === 'stack' && upwell.rootDraft.id !== draft.id) {
+        setHasPendingChanges(true)
+      } else if (did !== 'stack' && upwell.rootDraft.id !== draft.parent_id) {
+        setHasPendingChanges(true)
+      }
+      if (local) {
+        let instance = upwell.get(did)
+        setDraft(instance.materialize())
+      }
+      if (!local) {
+        debouncedSync()
+      }
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, did, debouncedSync])
+  }, [id, draft.parent_id, draft.id, did, debouncedSync])
 
   // every time the draft id changes
   useEffect(() => {
-    let upwell = documents.get(id)
-    let draftInstance = upwell.get(did)
-    if (
-      draftInstance.id !== upwell.rootDraft.id &&
-      draftInstance.parent_id !== upwell.rootDraft.id &&
-      !upwell.isArchived(draftInstance.id)
-    ) {
-      upwell.updateToRoot(draftInstance)
-      documents.save(id)
-    } else {
-      setDraft(draftInstance.materialize())
-    }
-    documents.connectDraft(id, did)
+    let emitter = documents.connectDraft(id, did)
+    emitter.on('data', () => {
+      log('updating draft metadata')
+      let upwell = documents.get(id)
+      let instance = upwell.get(did)
+      setDraft(instance.materialize())
+    })
     return () => {
       documents.disconnect(did)
     }
@@ -126,12 +133,8 @@ export default function DraftView(props: DraftViewProps) {
 
   let onTextChange = () => {
     setSyncState(SYNC_STATE.LOADING)
-    documents.draftChanged(did)
+    documents.rtcDraft?.updatePeers()
     debouncedOnTextChange()
-  }
-
-  let onCommentChange = () => {
-    console.log('comment change!')
   }
 
   const handleTitleInputBlur = (
@@ -168,23 +171,29 @@ export default function DraftView(props: DraftViewProps) {
   let handleMergeClick = () => {
     let upwell = documents.get(id)
     upwell.rootDraft = upwell.get(draft.id)
-    setEpoch(Date.now())
-    documents.save(id)
+    goToDraft('stack')
   }
 
   function createDraft() {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft()
+
     documents.save(id)
     goToDraft(newDraft.id)
   }
 
   function goToDraft(did: string) {
-    setLocation(`/${id}/${did}`)
+    documents
+      .sync(id)
+      .then(() => {
+        window.location.href = `/${id}/${did}`
+      })
+      .catch((err) => {
+        window.location.href = `/${id}/${did}`
+      })
   }
 
-  let rootId = upwell.rootDraft.id
-  const isLatest = rootId === did
+  const isLatest = did === 'stack'
   return (
     <div
       id="draft-view"
@@ -262,7 +271,7 @@ export default function DraftView(props: DraftViewProps) {
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
                 value={did}
               >
-                <option label="main" value={upwell.rootDraft.id} />
+                <option label="main" value={'stack'} />
 
                 {drafts.map((d) => (
                   <option label={d.message} value={d.id} />
@@ -273,7 +282,7 @@ export default function DraftView(props: DraftViewProps) {
               ) : (
                 <>
                   <Button
-                    disabled={rootId !== draft.parent_id}
+                    disabled={hasPendingChanges}
                     onClick={handleMergeClick}
                   >
                     Merge
@@ -319,7 +328,7 @@ export default function DraftView(props: DraftViewProps) {
               align-items: center;
             `}
           >
-            {draft.id !== rootId && rootId !== draft.parent_id ? (
+            {hasPendingChanges ? (
               <Button onClick={handleUpdateClick}>Pending changes</Button>
             ) : (
               <div></div>
@@ -370,11 +379,7 @@ export default function DraftView(props: DraftViewProps) {
           padding: 10px;
         `}
       >
-        <CommentSidebar
-          draft={draft}
-          onChange={onCommentChange}
-          upwell={upwell}
-        />
+        <CommentSidebar draft={draft} id={id} />
       </div>
     </div>
   )

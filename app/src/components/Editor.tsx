@@ -172,7 +172,7 @@ export function Editor(props: Props) {
             mark.attrs.message,
             mark.attrs.author.id
           )
-          documents.save(upwell.id)
+          documents.draftChanged(upwell.id, editableDraft.id)
         } else {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }
