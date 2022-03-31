@@ -13,24 +13,26 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
+import { useLocation } from 'wouter'
 
 const log = debug('DraftView')
 
 let documents = Documents()
 
 type DraftViewProps = {
+  did: string
   id: string
   root: Draft
   author: Author
 }
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author } = props
+  let { id, author, did } = props
+  let [, setLocation] = useLocation()
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
-  let [did, setDraftId] = useState<string>(getDraftHash())
   let maybeDraft
   try {
     maybeDraft = upwell.get(did)
@@ -38,24 +40,12 @@ export default function DraftView(props: DraftViewProps) {
     maybeDraft = upwell.rootDraft
   }
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
-  let [drafts, setDrafts] = useState<Draft[]>([])
+  let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [historyDraftId, setHistoryDraft] = useState<string>(upwell.rootDraft.id)
-
-  function getDraftHash() {
-    return window.location.hash.replace('#', '')
-  }
-
-  const render = useCallback(() => {
-    let upwell = documents.get(id)
-    let draftInstance = upwell.get(did)
-    const drafts = upwell.drafts()
-    setDrafts(drafts)
-    setDraft(draftInstance.materialize())
-    log('rendering', id, did)
-  }, [id, did])
 
   const sync = useCallback(async () => {
     setSyncState(SYNC_STATE.LOADING)
+    let upwell = documents.get(id)
     try {
       await documents.sync(id)
       log('synced')
@@ -64,9 +54,9 @@ export default function DraftView(props: DraftViewProps) {
       log('failed to sync', err)
       setSyncState(SYNC_STATE.OFFLINE)
     } finally {
-      render()
+      setDrafts(upwell.drafts())
     }
-  }, [id, render])
+  }, [id])
 
   const debouncedSync = React.useMemo(
     () =>
@@ -82,24 +72,24 @@ export default function DraftView(props: DraftViewProps) {
 
   // every time the upwell id changes
   useEffect(() => {
-    window.addEventListener('hashchange', () => {
-      let id = getDraftHash()
-      setDraftId(id)
-    })
     documents.subscribe(id, (local: boolean) => {
       log('got notified of a change', id)
-      if (local) render()
+      let upwell = documents.get(id)
+      let draft = upwell.get(did)
+      setDraft(draft.materialize())
+      setDrafts(upwell.drafts())
+      console.log(upwell.drafts())
       debouncedSync()
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, debouncedSync, render])
+  }, [id, did, debouncedSync])
 
-  // every time the draft.id changes
+  // every time the draft id changes
   useEffect(() => {
     let upwell = documents.get(id)
-    let draftInstance = upwell.get(draft.id)
+    let draftInstance = upwell.get(did)
     if (
       draftInstance.id !== upwell.rootDraft.id &&
       draftInstance.parent_id !== upwell.rootDraft.id &&
@@ -108,35 +98,35 @@ export default function DraftView(props: DraftViewProps) {
       upwell.updateToRoot(draftInstance)
       documents.save(id)
     } else {
-      render()
+      setDraft(draftInstance.materialize())
     }
-    documents.connectDraft(id, draft.id)
+    documents.connectDraft(id, did)
     return () => {
-      documents.disconnect(draft.id)
+      documents.disconnect(did)
     }
-  }, [id, draft.id, render])
+  }, [id, did])
 
   let debouncedOnTextChange = React.useMemo(
     () =>
       debounce(() => {
         let upwell = documents.get(id)
-        if (upwell.rootDraft.id === draft.id) {
+        if (upwell.rootDraft.id === did) {
         } else {
           if (draft.contributors.indexOf(documents.author.id) === -1) {
-            let draftInstance = upwell.get(draft.id)
+            let draftInstance = upwell.get(did)
             draftInstance.addContributor(documents.author.id)
-            render()
+            setDraft(draftInstance.materialize())
           }
           console.log('syncing from onTextChange')
           documents.save(id)
         }
       }, 3000),
-    [draft.contributors, id, render, draft.id]
+    [draft.contributors, id, did]
   )
 
   let onTextChange = () => {
     setSyncState(SYNC_STATE.LOADING)
-    documents.draftChanged(draft.id)
+    documents.draftChanged(did)
     debouncedOnTextChange()
   }
 
@@ -147,7 +137,7 @@ export default function DraftView(props: DraftViewProps) {
   const handleTitleInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let draftInstance = upwell.get(draft.id)
+    let draftInstance = upwell.get(did)
     draftInstance.title = e.target.value
     documents.save(id)
   }
@@ -155,7 +145,7 @@ export default function DraftView(props: DraftViewProps) {
   const handleFileNameInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let draftInstance = upwell.get(draft.id)
+    let draftInstance = upwell.get(did)
     draftInstance.message = e.target.value
     documents.save(id)
   }
@@ -190,12 +180,11 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   function goToDraft(did: string) {
-    let draft = upwell.get(did).materialize()
-    window.location.hash = draft.id
+    setLocation(`/${id}/${did}`)
   }
 
   let rootId = upwell.rootDraft.id
-  const isLatest = rootId === draft.id
+  const isLatest = rootId === did
   return (
     <div
       id="draft-view"
@@ -210,7 +199,7 @@ export default function DraftView(props: DraftViewProps) {
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
       <DraftsHistory
-        did={draft.id}
+        did={did}
         epoch={epoch}
         goToDraft={goToDraft}
         drafts={drafts.map((d) => d.materialize())}
@@ -271,7 +260,7 @@ export default function DraftView(props: DraftViewProps) {
               />
               <select
                 onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
-                value={draft.id}
+                value={did}
               >
                 <option label="main" value={upwell.rootDraft.id} />
 

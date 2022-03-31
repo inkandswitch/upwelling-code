@@ -43,15 +43,6 @@ export class Documents {
     }
   }
 
-  upwellChanged(id: string) {
-    if (this.rtcUpwell && this.rtcUpwell.id === id) {
-      log('updating peers')
-      this.sync(id).then(() => {
-        this.rtcUpwell?.sendChangedMessage()
-      })
-    }
-  }
-
   disconnect(id: string) {
     if (this.rtcUpwell && this.rtcUpwell.id === id) {
       this.rtcUpwell.destroy()
@@ -71,7 +62,7 @@ export class Documents {
     this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
     this.rtcUpwell.on('data', () => {
       log('got change')
-      this.notify(id, false)
+      this.upwellChanged(id, false)
     })
   }
 
@@ -98,7 +89,7 @@ export class Documents {
     return upwell
   }
 
-  notify(id: string, local: boolean) {
+  upwellChanged(id: string, local: boolean) {
     let fn = this.subscriptions.get(id) || noop
     fn(local)
   }
@@ -108,8 +99,7 @@ export class Documents {
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
     this.storage.setItem(id, binary)
-    this.notify(id, true)
-    this.upwellChanged(id)
+    this.upwellChanged(id, true)
     return upwell
   }
 

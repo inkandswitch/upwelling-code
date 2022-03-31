@@ -11,8 +11,10 @@ export class RealTimeUpwell extends RTC<WebsocketSyncMessage> {
   constructor(upwell: Upwell, author: Author) {
     super(upwell.id, upwell.metadata.doc, author)
     this.upwell = upwell
-    this.on('message', (value: WebsocketSyncMessage) => {
-      if (value.method === 'CHANGED') {
+    this.on('syncMessage', ({ heads, opIds }) => {
+      let newHeads = upwell.metadata.doc.getHeads()
+      console.log(opIds, newHeads, heads)
+      if (opIds.length) {
         this.emit('data')
       }
     })
