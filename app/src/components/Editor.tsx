@@ -1,12 +1,7 @@
 /** @jsxImportSource @emotion/react */
 //import Documents from '../Documents'
 import React, { useEffect, useState, useRef } from 'react'
-import {
-  DraftMetadata,
-  Transaction as AutomergeEdit,
-  Upwell,
-  Author,
-} from 'api'
+import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
 import deterministicColor from '../color'
 
 import { schema } from '../prosemirror/UpwellSchema'

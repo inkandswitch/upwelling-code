@@ -1,4 +1,10 @@
-import { RealTimeUpwell, Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
+import {
+  RealTimeUpwell,
+  Author,
+  RealTimeDraft,
+  Upwell,
+  createAuthorId,
+} from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
@@ -51,8 +57,7 @@ export class Documents {
       this.rtcUpwell.destroy()
       log('disconnecting')
       this.rtcUpwell = undefined
-    }
-    else if (this.rtcDraft && this.rtcDraft.id === id) {
+    } else if (this.rtcDraft && this.rtcDraft.id === id) {
       this.rtcDraft.destroy()
       log('disconnecting')
       this.rtcDraft = undefined
@@ -181,5 +186,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-
-function noop() { }
+function noop() {}
