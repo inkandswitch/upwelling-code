@@ -44,9 +44,8 @@ type Props = {
 export const textCSS = css`
   width: 100%;
   height: 100%;
-  border: 1px solid lightgray;
-  border-width: 0 1px 1px 0;
-  padding: 10px 20px;
+  border: none;
+  padding: 2rem 3rem;
   resize: none;
   font-size: 16px;
   line-height: 20px;
@@ -56,7 +55,8 @@ export const textCSS = css`
   white-space: pre-line;
 
   .ProseMirror {
-    height: 100%;
+    max-width: 700px;
+    margin: 0 auto;
   }
   .ProseMirror:focus-visible {
     outline: 0;

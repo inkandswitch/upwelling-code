@@ -201,9 +201,11 @@ export default function DraftView(props: DraftViewProps) {
       id="draft-view"
       css={css`
         height: 100vh;
+        overflow: auto;
         display: flex;
         flex-direction: row;
-        background: url('/wood.png');
+        background: #f9f9fa;
+        justify-content: space-between;
       `}
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
@@ -218,11 +220,11 @@ export default function DraftView(props: DraftViewProps) {
       <div
         id="folio"
         css={css`
-          height: 100%;
           width: 100%;
           display: flex;
           flex-direction: column;
-          padding: 30px;
+          padding-right: 20px;
+          max-width: 1000px;
         `}
       >
         <div
@@ -230,9 +232,8 @@ export default function DraftView(props: DraftViewProps) {
           css={css`
             display: flex;
             flex-direction: column;
-            padding-bottom: 20px;
-            margin: 10px 0;
             row-gap: 10px;
+            padding: 30px 0;
           `}
         >
           <div
@@ -344,7 +345,7 @@ export default function DraftView(props: DraftViewProps) {
             >
               <Contributors upwell={upwell} contributors={draft.contributors} />
               <span>
-                view changes{' '}
+                show changes{' '}
                 <Button
                   css={css`
                     margin-bottom: 1ex;
@@ -373,6 +374,8 @@ export default function DraftView(props: DraftViewProps) {
         id="comments"
         css={css`
           width: 20vw;
+          min-width: 17vw;
+          flex: 1 1 auto;
           background: rgba(0, 0, 0, 0.2);
           color: white;
           padding: 10px;
