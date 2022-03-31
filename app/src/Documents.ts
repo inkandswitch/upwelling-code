@@ -1,4 +1,10 @@
-import { RealTimeUpwell, Author, RealTimeDraft, Upwell, createAuthorId } from 'api'
+import {
+  RealTimeUpwell,
+  Author,
+  RealTimeDraft,
+  Upwell,
+  createAuthorId,
+} from 'api'
 import FS from './storage/localStorage'
 import intoStream from 'into-stream'
 import HTTP from './storage/http'
@@ -34,21 +40,15 @@ export class Documents {
   }
 
   subscribe(id: string, fn: Function) {
+    if (this.subscriptions.get(id)) return
     this.subscriptions.set(id, fn)
   }
 
-  draftChanged(did: string) {
+  draftChanged(id: string, did: string) {
+    this.save(id)
     if (this.rtcDraft && this.rtcDraft.draft.id === did) {
-      this.rtcDraft.updatePeers()
-    }
-  }
-
-  upwellChanged(id: string) {
-    if (this.rtcUpwell && this.rtcUpwell.id === id) {
       log('updating peers')
-      this.sync(id).then(() => {
-        this.rtcUpwell?.sendChangedMessage()
-      })
+      this.rtcDraft.updatePeers()
     }
   }
 
@@ -57,8 +57,7 @@ export class Documents {
       this.rtcUpwell.destroy()
       log('disconnecting')
       this.rtcUpwell = undefined
-    }
-    else if (this.rtcDraft && this.rtcDraft.id === id) {
+    } else if (this.rtcDraft && this.rtcDraft.id === id) {
       this.rtcDraft.destroy()
       log('disconnecting')
       this.rtcDraft = undefined
@@ -71,14 +70,14 @@ export class Documents {
     this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
     this.rtcUpwell.on('data', () => {
       log('got change')
-      this.notify(id, false)
+      this.upwellChanged(id, false)
     })
   }
 
   connectDraft(id: string, did: string) {
     let upwell = this.get(id)
     let draft = upwell.get(did)
-    if (this.rtcDraft) return
+    if (this.rtcDraft) return this.rtcDraft
     this.rtcDraft = new RealTimeDraft(draft, this.author)
     return this.rtcDraft
   }
@@ -98,7 +97,7 @@ export class Documents {
     return upwell
   }
 
-  notify(id: string, local: boolean) {
+  upwellChanged(id: string, local: boolean) {
     let fn = this.subscriptions.get(id) || noop
     fn(local)
   }
@@ -108,8 +107,7 @@ export class Documents {
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
     this.storage.setItem(id, binary)
-    this.notify(id, true)
-    this.upwellChanged(id)
+    this.upwellChanged(id, true)
     return upwell
   }
 
@@ -159,6 +157,7 @@ export class Documents {
       inMemory.merge(theirs)
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
+      log('uploading', id)
       return this.remote.setItem(id, newFile)
     }
   }
@@ -187,5 +186,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-
-function noop() { }
+function noop() {}

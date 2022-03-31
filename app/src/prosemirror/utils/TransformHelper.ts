@@ -9,7 +9,9 @@ import { ChangeSetAddition, ChangeSetDeletion } from 'automerge-wasm-pack'
 
 import { Draft, Transaction as AutomergeTransaction } from 'api'
 
-const convertAddToStep: (draft: Draft) => ((added: ChangeSetAddition) => ReplaceStep) = (draft: Draft) => {
+const convertAddToStep: (
+  draft: Draft
+) => (added: ChangeSetAddition) => ReplaceStep = (draft: Draft) => {
   return (added: ChangeSetAddition) => {
     let text = draft.text.substring(added.start, added.end)
     let { from } = automergeToProsemirror(added, draft)
@@ -52,7 +54,9 @@ const convertAddToStep: (draft: Draft) => ((added: ChangeSetAddition) => Replace
   }
 }
 
-const convertDeleteToStep: (draft: Draft) => ((deleted: ChangeSetDeletion) => ReplaceStep) = (draft: Draft) => {
+const convertDeleteToStep: (
+  draft: Draft
+) => (deleted: ChangeSetDeletion) => ReplaceStep = (draft: Draft) => {
   // FIXME this should work, but the attribution steps we're getting
   // back from automerge are incorrect, so it breaks.
   return (deleted) => {
@@ -67,7 +71,15 @@ const convertDeleteToStep: (draft: Draft) => ((deleted: ChangeSetDeletion) => Re
   }
 }
 
-export const convertAutomergeTransactionToProsemirrorTransaction: (draft: Draft, state: EditorState, edits: AutomergeTransaction) => (Transaction | undefined) = (draft: Draft, state: EditorState, edits: AutomergeTransaction) => {
+export const convertAutomergeTransactionToProsemirrorTransaction: (
+  draft: Draft,
+  state: EditorState,
+  edits: AutomergeTransaction
+) => Transaction | undefined = (
+  draft: Draft,
+  state: EditorState,
+  edits: AutomergeTransaction
+) => {
   if (!edits.changes) return
 
   let steps: ReplaceStep[] = []

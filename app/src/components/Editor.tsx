@@ -36,7 +36,7 @@ let documents = Documents()
 type Props = {
   upwell: Upwell
   editableDraftId: string
-  baseDraftId?: string
+  heads?: string[]
   author: Author
   onChange: any
 }
@@ -68,7 +68,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author } = props
+  let { heads, upwell, editableDraftId, onChange, author } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
@@ -97,6 +97,7 @@ export function Editor(props: Props) {
   //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
 
   const viewRef = useRef(null)
+  console.log('heads', heads)
 
   useEffect(() => {
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
@@ -172,7 +173,7 @@ export function Editor(props: Props) {
             mark.attrs.message,
             mark.attrs.author.id
           )
-          documents.save(upwell.id)
+          documents.draftChanged(upwell.id, editableDraft.id)
         } else {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }

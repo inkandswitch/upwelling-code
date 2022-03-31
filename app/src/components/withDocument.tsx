@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Upwell, Draft, Author } from 'api'
+import Debug from 'debug'
 import { useLocation } from 'wouter'
 import Documents from '../Documents'
 
 let documents = Documents()
+
+let log = Debug('withDocument')
 
 type DocumentProps = {
   id: string
@@ -27,7 +30,7 @@ export default function withDocument(
         try {
           upwell = await documents.open(id)
           if (!unmounted && upwell) {
-            console.log('getting rootDraft in main component')
+            log('getting rootDraft in main component')
             setRoot(upwell.rootDraft)
           }
         } catch (err) {}
@@ -38,7 +41,7 @@ export default function withDocument(
         } catch (err) {
           console.error(err)
           if (!upwell) {
-            console.log('creating upwell')
+            log('creating upwell')
             upwell = await documents.create(props.id, author)
           }
         } finally {
