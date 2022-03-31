@@ -202,9 +202,9 @@ export default function DraftsHistory({
               `}
               id={id}
               did={did}
-              onDraftClick={(draft: DraftMetadata) =>
+              onDraftClick={(draft: DraftMetadata) => {
                 setHistorySelection(draft.id)
-              }
+              }}
               drafts={history}
               colors={colors}
             />

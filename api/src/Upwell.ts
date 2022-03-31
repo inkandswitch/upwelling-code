@@ -192,7 +192,7 @@ export class Upwell {
         let upwell = new Upwell(UpwellMetadata.load(metadata), author);
         drafts.forEach((item) => {
           let { id, binary } = item;
-          if (!upwell.metadata.isArchived(id) || id === upwell.metadata.main) {
+          if (!upwell.isArchived(id) || id === upwell.metadata.main) {
             var start = new Date();
             let draft = Draft.load(id, binary, author.id);
             //@ts-ignore

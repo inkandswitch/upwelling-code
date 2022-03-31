@@ -13,7 +13,6 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
-import { useLocation } from 'wouter'
 
 const log = debug('DraftView')
 
@@ -28,7 +27,6 @@ type DraftViewProps = {
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did } = props
-  let [, setLocation] = useLocation()
   let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
@@ -41,7 +39,9 @@ export default function DraftView(props: DraftViewProps) {
   }
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
-  let [historyDraftId, setHistoryDraft] = useState<string>(upwell.rootDraft.id)
+  let [heads, setHistoryHeads] = useState<string[]>(
+    upwell.rootDraft.materialize().heads
+  )
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     did !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
@@ -81,7 +81,7 @@ export default function DraftView(props: DraftViewProps) {
       if (!local && did === upwell.rootDraft.id && did !== 'stack') {
         return (window.location.href = 'stack')
       }
-      if (!local && did === 'stack' && upwell.rootDraft.id !== draft.id) {
+      if (!local && did === 'stack' && upwell.metadata.main !== draft.id) {
         setHasPendingChanges(true)
       } else if (did !== 'stack' && upwell.rootDraft.id !== draft.parent_id) {
         setHasPendingChanges(true)
@@ -212,7 +212,10 @@ export default function DraftView(props: DraftViewProps) {
         epoch={epoch}
         goToDraft={goToDraft}
         drafts={drafts.map((d) => d.materialize())}
-        setHistorySelection={(did) => setHistoryDraft(did)}
+        setHistorySelection={(draftId) => {
+          let draft = upwell.metadata.getDraft(draftId)
+          setHistoryHeads(draft.heads)
+        }}
         id={id}
       />
       <div
@@ -364,7 +367,7 @@ export default function DraftView(props: DraftViewProps) {
           id={id}
           author={author}
           reviewMode={reviewMode}
-          historyDraftId={historyDraftId}
+          heads={heads}
           onChange={onTextChange}
         />
       </div>
