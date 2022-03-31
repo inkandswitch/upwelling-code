@@ -51,7 +51,6 @@ export default class UpwellSource extends Document {
     let annotations: any = []
     draft.marks.forEach((m: any, e: number) => {
       let attrs: any = {}
-      console.log(i, e)
       if (Array.isArray(m)) {
         if (!m.length) return
         let [type, , value] = m[0]
