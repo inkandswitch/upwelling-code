@@ -71,10 +71,14 @@ export function EditReviewView(props: Props) {
 
   return (
     <div
+      id="writing-surface"
       css={css`
         background-color: white;
         width: 100%;
-        height: 100%;
+        box-shadow: 0px 4px 4px 0px #00000040;
+        border: 1px solid #c6c6c6;
+        flex: 1 1 auto;
+        overflow: auto;
       `}
     >
       {component}
