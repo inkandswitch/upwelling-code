@@ -68,7 +68,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { heads, upwell, editableDraftId, onChange, author } = props
+  let { upwell, editableDraftId, onChange, author } = props
 
   function getState(pmDoc: any) {
     return EditorState.create({
