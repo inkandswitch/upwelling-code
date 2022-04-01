@@ -295,6 +295,7 @@ export default function DraftView(props: DraftViewProps) {
                   renderValue={renderValue}
                 >
                   <DetailedOption
+                    key={upwell.rootDraft.id}
                     option={{
                       ...upwell.rootDraft.materialize(),
                       message: 'STACK',
@@ -313,6 +314,7 @@ export default function DraftView(props: DraftViewProps) {
                     author.id
                   ).map((d) => (
                     <DetailedOption
+                      key={d.id}
                       option={d}
                       authors={authors}
                       icon={Pancake}

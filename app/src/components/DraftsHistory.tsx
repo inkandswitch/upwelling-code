@@ -73,6 +73,7 @@ export default function DraftsHistory({
         renderValue={renderValue}
       >
         <DetailedOption
+          key={upwell.rootDraft.id}
           option={{
             ...upwell.rootDraft.materialize(),
             message: 'STACK',
@@ -80,20 +81,13 @@ export default function DraftsHistory({
           }}
           authors={authors}
           icon={Pancakes}
-          iconStyles={css`
-            // margin-left: 0;
-            // margin-right: 5px;
-          `}
         />
         {history.map((d) => (
           <DetailedOption
+            key={d.id}
             option={d}
             authors={authors}
             icon={OffsetPancakes}
-            iconStyles={css`
-              // margin-left: 0;
-              // margin-right: 5px;
-            `}
           />
         ))}
       </HistorySelect>
