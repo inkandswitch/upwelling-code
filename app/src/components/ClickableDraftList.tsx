@@ -84,7 +84,6 @@ export default function ClickableDraftList({
   ...props
 }: Props) {
   let upwell = documents.get(id)
-  let authors = upwell.metadata.getAuthors()
   return (
     <div {...props}>
       {drafts
@@ -115,7 +114,7 @@ export default function ClickableDraftList({
               <div>
                 {draft.message}
                 <InfoText>
-                  {authors[draft.authorId].name} created{' '}
+                  {upwell.getAuthorName(draft.authorId)} created{' '}
                   {relativeDate(new Date(draft.time))}
                 </InfoText>
               </div>
