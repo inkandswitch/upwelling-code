@@ -411,7 +411,6 @@ export default function DraftView(props: DraftViewProps) {
 
         <EditReviewView
           did={draft.id}
-          epoch={epoch}
           visible={[draft.id]}
           id={id}
           author={author}

@@ -18,23 +18,13 @@ type Props = {
   onChange: any
   heads: string[]
   author: Author
-  epoch: number
   reviewMode: boolean
 }
 
 export function EditReviewView(props: Props) {
-  const { id, did, heads, epoch, visible, onChange, reviewMode, author } = props
-  let [text, setText] = useState<string | undefined>()
+  const { id, did, heads, visible, onChange, reviewMode, author } = props
+  //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
-
-  useEffect(() => {
-    let upwell = documents.get(id)
-    let editableDraft = upwell.get(did)
-    setText(editableDraft.text)
-    setImmediate(() => setText(undefined))
-  }, [id, did, epoch])
-
-  if (text) return <div>{text}</div>
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
