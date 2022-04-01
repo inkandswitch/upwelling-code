@@ -216,8 +216,44 @@ export class Draft {
 
   getMarks(prop = "text") {
     let obj = this.doc.value(ROOT, "text");
-    if (obj && obj[0] === "text") return this.doc.spans(obj[1]);
-    else throw new Error("Text field not properly initialized");
+    if (!obj || obj[0] !== "text") throw new Error("Text field not properly initialized");
+
+    let rawSpans = this.doc.raw_spans(obj[1])
+    let spanCollector = {
+      strong: new Array(this.text.length).fill(false, 0, this.text.length),
+      italic: new Array(this.text.length).fill(false, 0, this.text.length) 
+    }
+    let spanActors = {
+      strong: new Array(this.text.length),
+      italic: new Array(this.text.length)
+    }
+
+    let filteredSpans: any[] = []
+    for (let span of rawSpans) {
+      if (!spanCollector[span.type]) {
+        filteredSpans.push(span)
+        continue
+      }
+      spanCollector[span.type].fill(span.value, span.start, span.end)
+      spanActors[span.type].fill(span.id, span.start, span.end)
+    }
+
+    for (let type of Object.keys(spanCollector)) {
+      let spanOffsets = spanCollector[type]
+      let idx = 0
+      while (true) {
+        let start = spanOffsets.indexOf(true, idx)
+        if (start === -1) break
+        let end = spanOffsets.indexOf(false, start + 1)
+        if (end === -1) break
+        filteredSpans.push({
+          start, end, type, value: true, id: spanActors[type][start]
+        })
+        idx = end + 1
+      }
+    }
+
+    return filteredSpans
   }
 
   get marks() {

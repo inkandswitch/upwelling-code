@@ -25,15 +25,42 @@ export function ReviewView(props: {
     async function () {
       let baseDraft = upwell.rootDraft.checkout(heads)
       let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
-      console.log(baseDraft.text, baseDraft.message)
-      console.log(changeDrafts[0].text, changeDrafts[0].message)
 
-      let editsDraft = Draft.mergeWithEdits(
+      let { draft, attribution } = Draft.mergeWithEdits(
         documents.author,
         baseDraft,
         ...changeDrafts
       )
-      let atjsonDraft = UpwellSource.fromRaw(editsDraft)
+
+      for (let i = 0; i < attribution.length; i++) {
+        let edits = attribution[i]
+
+        edits.add.forEach(edit => {
+          let text = draft.text.substring(edit.start, edit.end)
+          draft.mark(
+            'insert',
+            `(${edit.start}..${edit.end})`,
+            JSON.stringify({
+              author: edit.actor,
+              text
+            })
+          )
+        })
+
+        edits.del.forEach(edit => {
+          draft.mark(
+            'delete',
+            `(${edit.pos}..${edit.pos})`,
+            JSON.stringify({
+              author: edit.actor,
+              text: edit.val
+            })
+          )
+        })
+      }
+
+
+      let atjsonDraft = UpwellSource.fromRaw(draft)
       setState({ atjsonDraft })
     },
     [upwell, heads, changeDraftIds]
