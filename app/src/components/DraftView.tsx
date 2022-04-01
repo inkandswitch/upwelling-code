@@ -2,6 +2,7 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
+import Switch from '@mui/material/Switch'
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -393,20 +394,17 @@ export default function DraftView(props: DraftViewProps) {
                 gap: 20px;
                 display: flex;
                 flex-direction: row;
-                align-items: baseline;
+                align-items: center;
               `}
             >
               <Contributors upwell={upwell} contributors={draft.contributors} />
               <span>
                 show changes{' '}
-                <Button
-                  css={css`
-                    margin-bottom: 1ex;
-                  `}
+                <Switch
+                  inputProps={{ 'aria-label': 'show changes' }}
+                  checked={reviewMode}
                   onClick={() => setReviewMode(!reviewMode)}
-                >
-                  {reviewMode ? 'on' : 'off'}
-                </Button>
+                />
               </span>
               <DraftsHistory
                 did={did}
