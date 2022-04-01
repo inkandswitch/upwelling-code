@@ -1,5 +1,5 @@
 /** @jsxImportSource @emotion/react */
-import { css } from '@emotion/react/macro'
+import { css, SerializedStyles } from '@emotion/react/macro'
 import * as React from 'react'
 import SelectUnstyled, {
   SelectUnstyledProps,
@@ -10,7 +10,6 @@ import PopperUnstyled from '@mui/base/PopperUnstyled'
 import { styled } from '@mui/system'
 //@ts-ignore
 import relativeDate from 'relative-date'
-import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { DraftMetadata, Author } from 'api'
 import { InfoText } from './Text'
 
@@ -36,6 +35,37 @@ const grey = {
   900: '#1A2027',
 }
 
+const HistoryButton = styled('button')(
+  ({ theme }) => `
+  box-sizing: border-box;
+  border: none;
+  font-size: 30px;
+  background: none;
+  line-height: 22px;
+
+  color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
+
+  &:hover {
+    background: ${theme.palette.mode === 'dark' ? '' : grey[100]};
+    border-color: ${theme.palette.mode === 'dark' ? grey[700] : grey[400]};
+  }
+
+  &.${selectUnstyledClasses.focusVisible} {
+    outline: 3px solid ${theme.palette.mode === 'dark' ? blue[600] : blue[100]};
+  }
+
+  &.${selectUnstyledClasses.expanded} {
+    &::after {
+      content: '▴';
+    }
+  }
+
+  &::after {
+    content: '▾';
+    float: right;
+  }
+  `
+)
 const StyledButton = styled('button')(
   ({ theme }) => `
   box-sizing: border-box;
@@ -144,12 +174,32 @@ export default function Select<TValue extends {}>(
   return <SelectUnstyled {...props} components={components} />
 }
 
+export function HistorySelect<TValue extends {}>(
+  props: SelectUnstyledProps<TValue>
+) {
+  const components: SelectUnstyledProps<TValue>['components'] = {
+    Root: HistoryButton,
+    Listbox: StyledListbox,
+    Popper: StyledPopper,
+    ...props.components,
+  }
+
+  return <SelectUnstyled {...props} components={components} />
+}
+
 type DetailedOptionProps = {
   option: DraftMetadata
   authors: { [key: string]: Author }
+  icon?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>
+  iconStyles?: SerializedStyles
 }
 
-export function DetailedOption({ option, authors }: DetailedOptionProps) {
+export function DetailedOption({
+  option,
+  authors,
+  icon: Icon,
+  iconStyles,
+}: DetailedOptionProps) {
   return (
     <Option key={option.id} value={option}>
       <div
@@ -159,12 +209,15 @@ export function DetailedOption({ option, authors }: DetailedOptionProps) {
           align-items: center;
         `}
       >
-        <Pancake
-          css={css`
-            margin-left: 3px;
-            margin-right: 10px;
-          `}
-        />
+        {Icon ? (
+          <Icon
+            css={css`
+              margin-left: 3px;
+              margin-right: 10px;
+              ${iconStyles}
+            `}
+          />
+        ) : null}
         <div>
           {option.message}
           <div

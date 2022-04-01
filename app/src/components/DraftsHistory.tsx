@@ -1,12 +1,14 @@
 /** @jsxImportSource @emotion/react */
 import { useEffect } from 'react'
+import { css } from '@emotion/react/macro'
 import FormControl from '@mui/material/FormControl'
 import { DraftMetadata, Author } from 'api'
 import { useState } from 'react'
 import Documents from '../Documents'
-import Select, { DetailedOption } from './Select'
-import { getYourDrafts } from '../util'
+import { DetailedOption, HistorySelect } from './Select'
 import { AuthorColorsType } from './ClickableDraftList'
+import { ReactComponent as OffsetPancakes } from '../components/icons/OffsetPancakes.svg'
+import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 
 let documents = Documents()
 
@@ -53,14 +55,13 @@ export default function DraftsHistory({
   //   setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
   // }
 
-  // Hack because the params are always undefined?
   function renderValue() {
-    return 'intentionally left blank'
+    return ''
   }
 
   return (
     <FormControl>
-      <Select
+      <HistorySelect
         value={history.find((d) => d.id === did)}
         onChange={(value: DraftMetadata | null) => {
           if (value === null) {
@@ -71,10 +72,31 @@ export default function DraftsHistory({
         }}
         renderValue={renderValue}
       >
-        {getYourDrafts(history, upwell.rootDraft.id, author.id).map((d) => (
-          <DetailedOption option={d} authors={authors} />
+        <DetailedOption
+          option={{
+            ...upwell.rootDraft.materialize(),
+            message: 'STACK',
+            id: 'stack',
+          }}
+          authors={authors}
+          icon={Pancakes}
+          iconStyles={css`
+            // margin-left: 0;
+            // margin-right: 5px;
+          `}
+        />
+        {history.map((d) => (
+          <DetailedOption
+            option={d}
+            authors={authors}
+            icon={OffsetPancakes}
+            iconStyles={css`
+              // margin-left: 0;
+              // margin-right: 5px;
+            `}
+          />
         ))}
-      </Select>
+      </HistorySelect>
     </FormControl>
   )
 }

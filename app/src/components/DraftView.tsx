@@ -14,8 +14,9 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
-import Select, { DetailedOption, Option } from './Select'
+import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { getYourDrafts } from '../util'
 
 const log = debug('DraftView')
@@ -224,6 +225,7 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
+      <div id="spacer-placeholder" />
       <div
         id="folio"
         css={css`
@@ -291,31 +293,29 @@ export default function DraftView(props: DraftViewProps) {
                   }}
                   renderValue={renderValue}
                 >
-                  <Option
-                    key={upwell.rootDraft.id}
-                    value={{ message: 'STACK', id: 'stack' }}
-                  >
-                    <div
-                      css={css`
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                      `}
-                    >
-                      <Pancakes
-                        css={css`
-                          margin-right: 5px;
-                        `}
-                      />
-                      STACK
-                    </div>
-                  </Option>
+                  <DetailedOption
+                    option={{
+                      ...upwell.rootDraft.materialize(),
+                      message: 'STACK',
+                      id: 'stack',
+                    }}
+                    authors={authors}
+                    icon={Pancakes}
+                    iconStyles={css`
+                      margin-left: 0;
+                      margin-right: 5px;
+                    `}
+                  />
                   {getYourDrafts(
                     draftsMeta,
                     upwell.rootDraft.id,
                     author.id
                   ).map((d) => (
-                    <DetailedOption option={d} authors={authors} />
+                    <DetailedOption
+                      option={d}
+                      authors={authors}
+                      icon={Pancake}
+                    />
                   ))}
                 </Select>
               </FormControl>
