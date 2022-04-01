@@ -224,7 +224,6 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
-
       <div
         id="folio"
         css={css`
@@ -373,7 +372,19 @@ export default function DraftView(props: DraftViewProps) {
             `}
           >
             {hasPendingChanges ? (
-              <Button onClick={handleUpdateClick}>Pending changes</Button>
+              <Button
+                css={css`
+                  background: white;
+                  color: #da1e28;
+                  border: 1px solid #da1e28;
+                  &:hover {
+                    background: #ffdede;
+                  }
+                `}
+                onClick={handleUpdateClick}
+              >
+                Pending changes
+              </Button>
             ) : (
               <div></div>
             )}
