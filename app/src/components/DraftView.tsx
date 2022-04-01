@@ -19,6 +19,9 @@ import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
 import Select, { Option } from './Select'
+import { InfoText } from './Text'
+import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
+import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 
 const log = debug('DraftView')
 
@@ -28,6 +31,7 @@ type DraftOption = {
   did: string
   authorId: string
   message: string
+  time: number
 }
 
 type DraftViewProps = {
@@ -293,6 +297,7 @@ export default function DraftView(props: DraftViewProps) {
                     did: draft.id,
                     authorId: draft.authorId,
                     message: draft.message,
+                    time: draft.time,
                   }}
                   onChange={(value: DraftOption | null) => {
                     if (value === null) {
@@ -309,25 +314,34 @@ export default function DraftView(props: DraftViewProps) {
                       did: upwell.rootDraft.id,
                       authorId: upwell.rootDraft.authorId,
                       message: upwell.rootDraft.message,
+                      time: upwell.rootDraft.time,
                     }}
                   >
-                    stack
+                    <div
+                      css={css`
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                      `}
+                    >
+                      <Pancakes
+                        css={css`
+                          margin-right: 5px;
+                        `}
+                      />
+                      STACK
+                    </div>
                   </Option>
                   {drafts.map((d) => (
-                    <Option
-                      key={d.id}
-                      value={{
+                    <DetailedOption
+                      option={{
                         did: d.id,
                         authorId: d.authorId,
                         message: d.message,
+                        time: d.time,
                       }}
-                    >
-                      {d.message}
-                      <div>
-                        {authors[d.authorId].name} created{' '}
-                        {relativeDate(new Date(draft.time))}
-                      </div>
-                    </Option>
+                      authors={authors}
+                    />
                   ))}
                 </Select>
               </FormControl>
@@ -441,4 +455,42 @@ function renderValue(option: SelectOption<DraftOption> | null) {
     return <span>Select a draft...</span>
   }
   return <span>{option.value.message}</span>
+}
+type DetailedOptionProps = {
+  option: DraftOption
+  authors: { [key: string]: Author }
+}
+
+function DetailedOption({ option, authors }: DetailedOptionProps) {
+  return (
+    <Option key={option.did} value={option}>
+      <div
+        css={css`
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+        `}
+      >
+        <Pancake
+          css={css`
+            margin-left: 3px;
+            margin-right: 10px;
+          `}
+        />
+        <div>
+          {option.message}
+          <div
+            css={css`
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+            `}
+          >
+            <InfoText>{authors[option.authorId].name} created </InfoText>
+            <InfoText>{relativeDate(new Date(option.time))}</InfoText>
+          </div>
+        </div>
+      </div>
+    </Option>
+  )
 }
