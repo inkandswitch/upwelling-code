@@ -224,18 +224,7 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
-      <DraftsHistory
-        did={did}
-        epoch={epoch}
-        goToDraft={goToDraft}
-        drafts={draftsMeta}
-        setHistorySelection={(draftId) => {
-          let draft = upwell.metadata.getDraft(draftId)
-          setHistoryHeads(draft.heads)
-          setEpoch(Date.now())
-        }}
-        id={id}
-      />
+
       <div
         id="folio"
         css={css`
@@ -408,6 +397,19 @@ export default function DraftView(props: DraftViewProps) {
                   {reviewMode ? 'on' : 'off'}
                 </Button>
               </span>
+              <DraftsHistory
+                did={did}
+                epoch={epoch}
+                goToDraft={goToDraft}
+                drafts={draftsMeta}
+                setHistorySelection={(draftId) => {
+                  let draft = upwell.metadata.getDraft(draftId)
+                  setHistoryHeads(draft.heads)
+                  setEpoch(Date.now())
+                }}
+                id={id}
+                author={author}
+              />
             </div>
           </div>
         </div>
