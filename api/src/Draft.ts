@@ -7,8 +7,9 @@ import init, {
   SyncMessage,
   SyncState,
   decodeChange,
+  ChangeSet,
 } from "automerge-wasm-pack";
-import { Author, AuthorId } from "./Upwell";
+import { Author, AuthorId, isAuthor } from "./Upwell";
 import { Comments, createAuthorId, CommentState } from ".";
 
 export async function loadForTheFirstTimeLoL() {
@@ -301,17 +302,18 @@ export class Draft {
     return this.doc.save();
   }
 
-  fork(message: string, author: Author): Draft {
+  fork(message: string, author: Author | AuthorId): Draft {
     let id = nanoid();
     let doc = this.doc.fork();
     doc.set(ROOT, "message", message);
-    doc.set(ROOT, "author", author.id);
+    let authorId = isAuthor(author) ? author.id : author.toString()
+    doc.set(ROOT, "author", authorId);
     doc.set(ROOT, "shared", false);
     doc.set(ROOT, "time", Date.now());
     doc.set(ROOT, "archived", false);
     doc.set(ROOT, "parent_id", this.id);
     let draft = new Draft(id, doc);
-    draft.addContributor(author.id)
+    draft.addContributor(authorId)
     return draft;
   }
 
@@ -325,61 +327,26 @@ export class Draft {
     return opIds
   }
 
-  static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]) {
+  static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]): { draft: Draft, attribution: ChangeSet[] } {
     // Fork the comparison draft, because we want to create a copy, not modify
     // the original. It might make sense to remove this from here and force the
     // caller to do the fork if this is the behaviour they want in order to
     // parallel Draft.merge() behaviour.
-    let newDraft = ours.fork("Merge", author);
-    let origHead = newDraft.doc.getHeads();
+    let newDraft = ours.fork('Attribution merge', author)
+    let origHead = newDraft.doc.getHeads()
 
     // Merge all the passed-in drafts to this one.
-    theirs.forEach((draft) => newDraft.merge(draft));
+    theirs.forEach(draft => newDraft.merge(draft))
 
     // Now do a blame against the heads of the comparison drafts.
-    let heads = theirs.map((draft) => draft.doc.getHeads());
+    let heads = theirs.map(draft => draft.doc.getHeads())
 
-    let obj = newDraft.doc.value(ROOT, "text");
-    if (!obj || obj[0] !== "text")
-      throw new Error("Text field not properly initialized");
+    let obj = newDraft.doc.value(ROOT, 'text')
+    if (!obj || obj[0] !== 'text') throw new Error('Text field not properly initialized')
 
     let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
-    console.log('attribution', attribution)
 
-    // blame contains an array with an entry for each draft passed in above,
-    // with edits (add, del) applied against newDraft's text. Convert those to marks!
-
-    for (let i = 0; i < attribution.length; i++) {
-      let draft = theirs[i]
-      let edits = attribution[i]
-
-      edits.add.forEach(edit => {
-        let text = newDraft.text.substring(edit.start, edit.end)
-        newDraft.mark(
-          'insert',
-          `(${edit.start}..${edit.end})`,
-          JSON.stringify({
-            author: draft.authorId,
-            text
-          })
-        )
-      })
-
-      edits.del.forEach(edit => {
-        newDraft.mark(
-          'delete',
-          `(${edit.pos}..${edit.pos})`,
-          JSON.stringify({
-            author: draft.authorId,
-            text: edit.val
-          })
-        )
-      })
-    }
-
-    newDraft.commit('Merge')
-
-    return newDraft
+    return {draft: newDraft, attribution}
   }
 
   static getActorId(authorId: AuthorId) {
