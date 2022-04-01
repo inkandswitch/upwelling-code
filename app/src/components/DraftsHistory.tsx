@@ -67,7 +67,7 @@ export default function DraftsHistory({
             console.log('draft is null')
             return
           }
-          goToDraft(value.id)
+          setHistorySelection(value.id)
         }}
         renderValue={renderValue}
       >
