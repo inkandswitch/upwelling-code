@@ -1,6 +1,11 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
+import FormControl from '@mui/material/FormControl'
+import { SelectOption } from '@mui/base/SelectUnstyled'
+//@ts-ignore
+import relativeDate from 'relative-date'
+
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -13,10 +18,17 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
+import Select, { Option } from './Select'
 
 const log = debug('DraftView')
 
 let documents = Documents()
+
+type DraftOption = {
+  did: string
+  authorId: string
+  message: string
+}
 
 type DraftViewProps = {
   did: string
@@ -31,6 +43,7 @@ export default function DraftView(props: DraftViewProps) {
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
+  const authors = upwell.metadata.getAuthors()
   let maybeDraft
   try {
     maybeDraft = upwell.get(did)
@@ -274,16 +287,50 @@ export default function DraftView(props: DraftViewProps) {
                   font-weight: 600;
                 `}
               />
-              <select
-                onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
-                value={did}
-              >
-                <option label="main" value={'stack'} />
-
-                {drafts.map((d) => (
-                  <option label={d.message} value={d.id} />
-                ))}
-              </select>
+              <FormControl>
+                <Select
+                  value={{
+                    did: draft.id,
+                    authorId: draft.authorId,
+                    message: draft.message,
+                  }}
+                  onChange={(value: DraftOption | null) => {
+                    if (value === null) {
+                      console.log('draft is null')
+                      return
+                    }
+                    goToDraft(value.did)
+                  }}
+                  renderValue={renderValue}
+                >
+                  <Option
+                    key={upwell.rootDraft.id}
+                    value={{
+                      did: upwell.rootDraft.id,
+                      authorId: upwell.rootDraft.authorId,
+                      message: upwell.rootDraft.message,
+                    }}
+                  >
+                    stack
+                  </Option>
+                  {drafts.map((d) => (
+                    <Option
+                      key={d.id}
+                      value={{
+                        did: d.id,
+                        authorId: d.authorId,
+                        message: d.message,
+                      }}
+                    >
+                      {d.message}
+                      <div>
+                        {authors[d.authorId].name} created{' '}
+                        {relativeDate(new Date(draft.time))}
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
+              </FormControl>
               {isLatest || upwell.isArchived(draft.id) ? (
                 <Button onClick={createDraft}>Create Draft</Button>
               ) : (
@@ -378,16 +425,20 @@ export default function DraftView(props: DraftViewProps) {
       <div
         id="comments"
         css={css`
-          width: 20vw;
-          min-width: 17vw;
-          flex: 1 1 auto;
+          flex: 0 1 auto;
           background: rgba(0, 0, 0, 0.2);
           color: white;
-          padding: 10px;
         `}
       >
         <CommentSidebar draft={draft} id={id} />
       </div>
     </div>
   )
+}
+
+function renderValue(option: SelectOption<DraftOption> | null) {
+  if (option == null) {
+    return <span>Select a draft...</span>
+  }
+  return <span>{option.value.message}</span>
 }
