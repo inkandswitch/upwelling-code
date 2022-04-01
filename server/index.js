@@ -5,7 +5,6 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const { GetObjectCommand, S3Client } = require("@aws-sdk/client-s3");
 var expressWs = require("express-ws");
-var Automerge = require("automerge-wasm-pack");
 
 let accessKeyId = "ZRJT7RHB37KDQC72YYAT";
 let secretAccessKey = process.env.SPACES_SECRET;
