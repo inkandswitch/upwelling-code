@@ -2,6 +2,7 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
+import Switch from '@mui/material/Switch'
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -14,8 +15,9 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
-import Select, { DetailedOption, Option } from './Select'
+import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { getYourDrafts } from '../util'
 
 const log = debug('DraftView')
@@ -224,18 +226,7 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <SyncIndicator state={sync_state}></SyncIndicator>
-      <DraftsHistory
-        did={did}
-        epoch={epoch}
-        goToDraft={goToDraft}
-        drafts={draftsMeta}
-        setHistorySelection={(draftId) => {
-          let draft = upwell.metadata.getDraft(draftId)
-          setHistoryHeads(draft.heads)
-          setEpoch(Date.now())
-        }}
-        id={id}
-      />
+      <div id="spacer-placeholder" />
       <div
         id="folio"
         css={css`
@@ -303,31 +294,31 @@ export default function DraftView(props: DraftViewProps) {
                   }}
                   renderValue={renderValue}
                 >
-                  <Option
+                  <DetailedOption
                     key={upwell.rootDraft.id}
-                    value={{ message: 'STACK', id: 'stack' }}
-                  >
-                    <div
-                      css={css`
-                        display: flex;
-                        flex-direction: row;
-                        align-items: center;
-                      `}
-                    >
-                      <Pancakes
-                        css={css`
-                          margin-right: 5px;
-                        `}
-                      />
-                      STACK
-                    </div>
-                  </Option>
+                    option={{
+                      ...upwell.rootDraft.materialize(),
+                      message: 'STACK',
+                      id: 'stack',
+                    }}
+                    authors={authors}
+                    icon={Pancakes}
+                    iconStyles={css`
+                      margin-left: 0;
+                      margin-right: 5px;
+                    `}
+                  />
                   {getYourDrafts(
                     draftsMeta,
                     upwell.rootDraft.id,
                     author.id
                   ).map((d) => (
-                    <DetailedOption option={d} authors={authors} />
+                    <DetailedOption
+                      key={d.id}
+                      option={d}
+                      authors={authors}
+                      icon={Pancake}
+                    />
                   ))}
                 </Select>
               </FormControl>
@@ -405,21 +396,31 @@ export default function DraftView(props: DraftViewProps) {
                 gap: 20px;
                 display: flex;
                 flex-direction: row;
-                align-items: baseline;
+                align-items: center;
               `}
             >
               <Contributors upwell={upwell} contributors={draft.contributors} />
               <span>
                 show changes{' '}
-                <Button
-                  css={css`
-                    margin-bottom: 1ex;
-                  `}
+                <Switch
+                  inputProps={{ 'aria-label': 'show changes' }}
+                  checked={reviewMode}
                   onClick={() => setReviewMode(!reviewMode)}
-                >
-                  {reviewMode ? 'on' : 'off'}
-                </Button>
+                />
               </span>
+              <DraftsHistory
+                did={did}
+                epoch={epoch}
+                goToDraft={goToDraft}
+                drafts={draftsMeta}
+                setHistorySelection={(draftId) => {
+                  let draft = upwell.metadata.getDraft(draftId)
+                  setHistoryHeads(draft.heads)
+                  setEpoch(Date.now())
+                }}
+                id={id}
+                author={author}
+              />
             </div>
           </div>
         </div>
