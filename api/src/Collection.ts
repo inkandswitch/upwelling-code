@@ -1,4 +1,12 @@
-import init, { ObjID, Automerge, loadDoc, create, Value, SyncMessage, SyncState } from 'automerge-wasm-pack'
+import init, {
+  ObjID,
+  Automerge,
+  loadDoc,
+  create,
+  Value,
+  SyncMessage,
+  SyncState,
+} from 'automerge-wasm-pack'
 import { v4 as uuid } from 'uuid'
 
 const ROOT = '_root'
@@ -41,7 +49,7 @@ export class Collection<T extends CollectionRow> {
     let id = data.id || uuid()
     data.id = id
     let map = this._getMap()
-    Object.keys(data).forEach(key => {
+    Object.keys(data).forEach((key) => {
       let value = this.doc.value(map, id)
       let obj: ObjID
       if (value && value[0] === 'map') {

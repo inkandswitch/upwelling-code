@@ -1,4 +1,4 @@
-import { DraftId, Upwell } from './Upwell';
+import { DraftId, Upwell } from './Upwell'
 
 export default class History {
   upwell: Upwell

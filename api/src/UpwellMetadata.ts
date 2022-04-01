@@ -1,5 +1,5 @@
-import * as Automerge from "automerge-wasm-pack"
-import { Draft, Author, AuthorId, DraftMetadata } from "."
+import * as Automerge from 'automerge-wasm-pack'
+import { Draft, Author, AuthorId, DraftMetadata } from '.'
 
 const ROOT = '_root'
 
@@ -32,16 +32,25 @@ export class UpwellMetadata {
 
   archive(id: string) {
     let draft = this.doc.materialize('/drafts/' + id)
-    this.doc.set_object('/drafts', id, { id: draft.id, heads: draft.heads, archived: true })
+    this.doc.set_object('/drafts', id, {
+      id: draft.id,
+      heads: draft.heads,
+      archived: true,
+    })
   }
 
   addDraft(draft: Draft) {
     let draftMetadata = draft.materialize()
-    if (this.isArchived(draft.id)) throw new Error('Cant update an archived draft')
-    this.doc.set_object('/drafts', draft.id, { id: draft.id, heads: draftMetadata.heads, archived: false })
+    if (this.isArchived(draft.id))
+      throw new Error('Cant update an archived draft')
+    this.doc.set_object('/drafts', draft.id, {
+      id: draft.id,
+      heads: draftMetadata.heads,
+      archived: false,
+    })
   }
 
-  getDraft(id: string): { id: string, heads: string[], archived: boolean } {
+  getDraft(id: string): { id: string; heads: string[]; archived: boolean } {
     return this.doc.materialize('/drafts/' + id)
   }
 
@@ -75,7 +84,10 @@ export class UpwellMetadata {
 
   set main(id: string) {
     let draftMetadata = this.getDraft(id)
-    if (!draftMetadata) throw new Error('Cant set this draft to main without having added draft to metadata first')
+    if (!draftMetadata)
+      throw new Error(
+        'Cant set this draft to main without having added draft to metadata first'
+      )
     let len = this.doc.length('/history')
     this.archive(id)
     this.doc.insert('/history', len, id)

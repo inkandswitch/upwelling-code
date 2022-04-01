@@ -5,7 +5,7 @@ export type CommentId = string
 export enum CommentState {
   OPEN,
   CLOSED,
-  CHILD
+  CHILD,
 }
 
 export type Comment = {
