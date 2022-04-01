@@ -43,10 +43,12 @@ export function EditReviewView(props: Props) {
         onChange={onChange}
         heads={heads}
         editableDraftId={visible[0]}
+        showEdits={reviewMode}
       ></Editor>
     )
     component = (
-      <React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
+      //<React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
+      <React.Fragment>{textArea}</React.Fragment>
     )
   }
 
