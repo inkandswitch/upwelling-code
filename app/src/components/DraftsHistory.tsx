@@ -84,7 +84,7 @@ export default function DraftsHistory({
   colors = {},
 }: Props) {
   const upwell = documents.get(id)
-  let [tab, setTab] = useState<Tab>(Tab.DRAFTS)
+  let [tab, setTab] = useState<Tab>(Tab.HISTORY)
   const [isExpanded, setExpanded] = useState<boolean>(false)
   let [history, setHistory] = useState<DraftMetadata[]>([])
   let [noMoreHistory, setNoMoreHistory] = useState<boolean>(false)
@@ -161,12 +161,6 @@ export default function DraftsHistory({
       >
         <TabWrapper>
           <SidebarTab
-            onClick={handleTabClick(Tab.DRAFTS)}
-            isActive={tab === Tab.DRAFTS}
-          >
-            Drafts
-          </SidebarTab>
-          <SidebarTab
             onClick={handleTabClick(Tab.HISTORY)}
             isActive={tab === Tab.HISTORY}
           >
@@ -174,46 +168,33 @@ export default function DraftsHistory({
           </SidebarTab>
           <Button
             css={css`
+              background-color: white;
               font-size: 24px;
-              color: #00000052;
+              color: black;
             `}
             onClick={() => setExpanded(false)}
           >
             «
           </Button>
         </TabWrapper>
-        {tab === Tab.DRAFTS ? (
+        <>
           <ClickableDraftList
             css={css`
               width: 206px;
             `}
             id={id}
             did={did}
-            onDraftClick={(draft: DraftMetadata) => goToDraft(draft.id)}
-            onShareClick={handleShareClick}
-            drafts={getYourDrafts(drafts, upwell.rootDraft.id)}
+            onDraftClick={(draft: DraftMetadata) => {
+              setHistorySelection(draft.id)
+            }}
+            drafts={history}
             colors={colors}
           />
-        ) : (
-          <>
-            <ClickableDraftList
-              css={css`
-                width: 206px;
-              `}
-              id={id}
-              did={did}
-              onDraftClick={(draft: DraftMetadata) => {
-                setHistorySelection(draft.id)
-              }}
-              drafts={history}
-              colors={colors}
-            />
 
-            {!noMoreHistory && (
-              <Button onClick={onGetMoreClick}>load more</Button>
-            )}
-          </>
-        )}
+          {!noMoreHistory && (
+            <Button onClick={onGetMoreClick}>load more</Button>
+          )}
+        </>
       </div>
     </div>
   )
