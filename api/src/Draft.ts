@@ -327,7 +327,11 @@ export class Draft {
     return opIds
   }
 
-  static mergeWithEdits(author: Author, ours: Draft, ...theirs: Draft[]): { draft: Draft, attribution: ChangeSet[] } {
+  static mergeWithEdits(
+    author: Author | AuthorId,
+    ours: Draft,
+    ...theirs: Draft[]
+  ): { draft: Draft; attribution: ChangeSet[] } {
     // Fork the comparison draft, because we want to create a copy, not modify
     // the original. It might make sense to remove this from here and force the
     // caller to do the fork if this is the behaviour they want in order to
