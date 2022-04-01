@@ -46,25 +46,6 @@ export const TabWrapper = (props: any) => (
   />
 )
 
-// only get the drafts you can see:
-// - your private drafts
-// - shared drafts
-function getYourDrafts(drafts: DraftMetadata[], rootId: string) {
-  const yourId = documents.author.id
-
-  return drafts.filter((l) => {
-    // don't show root draft
-    if (l.id === rootId) {
-      return false
-    }
-    // don't show if it's someone elses' and not shared
-    if (l.authorId !== yourId && !l.shared) {
-      return false
-    }
-    return true
-  })
-}
-
 type Props = {
   drafts: DraftMetadata[]
   epoch: number
@@ -83,7 +64,6 @@ export default function DraftsHistory({
   setHistorySelection,
   colors = {},
 }: Props) {
-  const upwell = documents.get(id)
   let [tab, setTab] = useState<Tab>(Tab.HISTORY)
   const [isExpanded, setExpanded] = useState<boolean>(false)
   let [history, setHistory] = useState<DraftMetadata[]>([])
@@ -109,16 +89,6 @@ export default function DraftsHistory({
 
   function onGetMoreClick() {
     setFetchSize(fetchSize + HISTORY_FETCH_SIZE)
-  }
-
-  const handleShareClick = (draft: DraftMetadata) => {
-    if (
-      // eslint-disable-next-line no-restricted-globals
-      confirm("Do you want to share your draft? it can't be unshared.")
-    ) {
-      let upwell = documents.get(id)
-      upwell.share(draft.id)
-    }
   }
 
   return (
