@@ -1,6 +1,5 @@
 /** @jsxImportSource @emotion/react */
-//import Documents from '../Documents'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
 import deterministicColor from '../color'
 
