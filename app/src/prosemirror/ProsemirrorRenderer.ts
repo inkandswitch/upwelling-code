@@ -1,5 +1,6 @@
 import { Annotation } from '@atjson/document'
 import Renderer, { Context } from '@atjson/renderer-hir'
+import { CommentState } from 'api'
 import { schema } from './UpwellSchema'
 
 export default class ProsemirrorRenderer extends Renderer {
@@ -21,6 +22,8 @@ export default class ProsemirrorRenderer extends Renderer {
         return c.mark([...c.marks, schema.mark(annotation.type)])
       })
     } else if (annotation.type === 'comment') {
+      if (annotation.attributes['state'] === CommentState.CLOSED)
+        return annotationChildren
       return annotationChildren.map((c: any) => {
         return c.mark([
           ...c.marks,
