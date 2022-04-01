@@ -18,6 +18,10 @@ export type Author = {
   name: string;
 };
 
+export function isAuthor(author: Author | AuthorId): author is Author {
+  return (author as Author).id !== undefined
+}
+
 export type UpwellOptions = {
   id?: string;
   author: Author;

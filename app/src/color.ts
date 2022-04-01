@@ -15,8 +15,8 @@ const pjw = (str: string) => {
 }
 
 // returns a css color string
-function deterministicColor(str: string): HCLColor {
+function deterministicColor(str: string, alpha: number = 0.47): HCLColor {
   const hue = pjw(str)
-  return lch(80, 132, hue, 0.47)
+  return lch(80, 132, hue, alpha)
 }
 export default deterministicColor

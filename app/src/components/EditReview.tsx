@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Author } from 'api'
 import { ReviewView } from './Review'
 import { Editor } from './Editor'
@@ -18,23 +18,13 @@ type Props = {
   onChange: any
   heads: string[]
   author: Author
-  epoch: number
   reviewMode: boolean
 }
 
 export function EditReviewView(props: Props) {
-  const { id, did, heads, epoch, visible, onChange, reviewMode, author } = props
-  let [text, setText] = useState<string | undefined>()
+  const { id, did, heads, visible, onChange, reviewMode, author } = props
+  //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
-
-  useEffect(() => {
-    let upwell = documents.get(id)
-    let editableDraft = upwell.get(did)
-    setText(editableDraft.text)
-    setImmediate(() => setText(undefined))
-  }, [id, did, epoch])
-
-  if (text) return <div>{text}</div>
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
@@ -53,10 +43,12 @@ export function EditReviewView(props: Props) {
         onChange={onChange}
         heads={heads}
         editableDraftId={visible[0]}
+        showEdits={reviewMode}
       ></Editor>
     )
     component = (
-      <React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
+      //<React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
+      <React.Fragment>{textArea}</React.Fragment>
     )
   }
 

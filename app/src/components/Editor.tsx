@@ -1,6 +1,5 @@
 /** @jsxImportSource @emotion/react */
-//import Documents from '../Documents'
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
 import deterministicColor from '../color'
 
@@ -10,11 +9,10 @@ import {
   prosemirrorToAutomerge,
 } from '../prosemirror/utils/PositionMapper'
 
-import { ProseMirror } from 'use-prosemirror'
+import { ProseMirror, useProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
-import { EditorState } from 'prosemirror-state'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
@@ -30,6 +28,10 @@ import { css } from '@emotion/react'
 import Documents from '../Documents'
 import { commentButton } from '../prosemirror/context-menu-items/CommentButton'
 import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemirror/utils/TransformHelper'
+import {
+  showEditsKey,
+  automergeChangesPlugin,
+} from '../prosemirror/AutomergeChangesPlugin'
 
 let documents = Documents()
 
@@ -39,6 +41,7 @@ type Props = {
   heads?: string[]
   author: Author
   onChange: any
+  showEdits: boolean
 }
 
 export const editorSharedCSS = css`
@@ -68,35 +71,41 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author } = props
-
-  function getState(pmDoc: any) {
-    return EditorState.create({
-      schema,
-      doc: pmDoc,
-      plugins: [
-        contextMenu([commentButton(author)]),
-        remoteCursorPlugin(),
-        history(),
-        keymap({
-          ...baseKeymap,
-          'Mod-z': undo,
-          'Mod-y': redo,
-          'Mod-Shift-z': redo,
-          'Mod-b': toggleBold,
-          'Mod-i': toggleItalic,
-        }),
-      ],
-    })
-  }
+  let { upwell, editableDraftId, onChange, author, showEdits } = props
 
   let editableDraft = upwell.get(editableDraftId)
+
   let atjsonDraft = UpwellSource.fromRaw(editableDraft)
   let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
-  const [state, setState] = useState<EditorState>(getState(pmDoc))
-  //const [heads, setHeads] = useState<string[]>(editableDraft.doc.getHeads())
+  let editorConfig = {
+    schema,
+    doc: pmDoc,
+    plugins: [
+      contextMenu([commentButton(author)]),
+      remoteCursorPlugin(),
+      automergeChangesPlugin(upwell, editableDraft, author.id),
+      history(),
+      keymap({
+        ...baseKeymap,
+        'Mod-z': undo,
+        'Mod-y': redo,
+        'Mod-Shift-z': redo,
+        'Mod-b': toggleBold,
+        'Mod-i': toggleItalic,
+      }),
+    ],
+  }
+
+  const [state, setState] = useProseMirror(editorConfig)
 
   const viewRef = useRef(null)
+
+  useEffect(() => {
+    let transaction = state.tr.setMeta(showEditsKey, showEdits)
+    let newState = state.apply(transaction)
+    setState(newState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEdits])
 
   useEffect(() => {
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
