@@ -90,9 +90,7 @@ export default function DraftView(props: DraftViewProps) {
         let instance = upwell.get(did)
         setDraft(instance.materialize())
       }
-      if (!local) {
-        debouncedSync()
-      }
+      debouncedSync()
     })
     return () => {
       documents.unsubscribe(id)
@@ -127,7 +125,7 @@ export default function DraftView(props: DraftViewProps) {
           console.log('syncing from onTextChange')
           documents.save(id)
         }
-      }, 3000),
+      }, 1000),
     [draft.contributors, id, did]
   )
 
