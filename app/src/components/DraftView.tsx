@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
+import FormControl from '@mui/material/FormControl'
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -13,6 +14,8 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
+import Select, { DetailedOption, Option } from './Select'
+import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 
 const log = debug('DraftView')
 
@@ -31,6 +34,8 @@ export default function DraftView(props: DraftViewProps) {
   let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
+  const authors = upwell.metadata.getAuthors()
+  const isLatest = did === 'stack'
   let maybeDraft
   try {
     maybeDraft = upwell.get(did)
@@ -143,13 +148,13 @@ export default function DraftView(props: DraftViewProps) {
     documents.save(id)
   }
 
-  const handleFileNameInputBlur = (
-    e: React.FocusEvent<HTMLInputElement, Element>
-  ) => {
-    let draftInstance = upwell.get(did)
-    draftInstance.message = e.target.value
-    documents.save(id)
-  }
+  // const handleFileNameInputBlur = (
+  //   e: React.FocusEvent<HTMLInputElement, Element>
+  // ) => {
+  //   let draftInstance = upwell.get(did)
+  //   draftInstance.message = e.target.value
+  //   documents.save(id)
+  // }
 
   const handleShareClick = (draft: DraftMetadata) => {
     if (
@@ -191,7 +196,19 @@ export default function DraftView(props: DraftViewProps) {
       })
   }
 
-  const isLatest = did === 'stack'
+  // Hack because the params are always undefined?
+  function renderValue() {
+    return isLatest ? 'STACK' : draft.message
+  }
+  // borked?
+  // function renderValue(option: SelectOption<DraftMetadata> | null) {
+  //   console.log('renderValue', option)
+  //   if (option === null || option === undefined) {
+  //     return <span>Select a draft...</span>
+  //   }
+  //   return <span>{option.value.message}</span>
+  // }
+
   return (
     <div
       id="draft-view"
@@ -272,16 +289,45 @@ export default function DraftView(props: DraftViewProps) {
                   font-weight: 600;
                 `}
               />
-              <select
-                onChange={(e) => goToDraft(e.target.selectedOptions[0].value)}
-                value={did}
-              >
-                <option label="main" value={'stack'} />
-
-                {drafts.map((d) => (
-                  <option label={d.message} value={d.id} />
-                ))}
-              </select>
+              <FormControl>
+                <Select
+                  value={drafts.find((d) => d.id === draft.id)?.materialize()}
+                  onChange={(value: DraftMetadata | null) => {
+                    if (value === null) {
+                      console.log('draft is null')
+                      return
+                    }
+                    goToDraft(value.id)
+                  }}
+                  renderValue={renderValue}
+                >
+                  <Option
+                    key={upwell.rootDraft.id}
+                    value={{ message: 'STACK', id: 'stack' }}
+                  >
+                    <div
+                      css={css`
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                      `}
+                    >
+                      <Pancakes
+                        css={css`
+                          margin-right: 5px;
+                        `}
+                      />
+                      STACK
+                    </div>
+                  </Option>
+                  {drafts.map((d) => (
+                    <DetailedOption
+                      option={d.materialize()}
+                      authors={authors}
+                    />
+                  ))}
+                </Select>
+              </FormControl>
               {isLatest || upwell.isArchived(draft.id) ? (
                 <Button onClick={createDraft}>Create Draft</Button>
               ) : (
@@ -306,7 +352,8 @@ export default function DraftView(props: DraftViewProps) {
                   )}
                 </>
               )}
-              {!isLatest && (
+              {/** Edit draft name */}
+              {/* {!isLatest && (
                 <Input
                   value={draft.message}
                   onClick={(e) => {
@@ -321,7 +368,7 @@ export default function DraftView(props: DraftViewProps) {
                     handleFileNameInputBlur(e)
                   }}
                 />
-              )}
+              )} */}
             </div>
           </div>
           <div
@@ -376,12 +423,9 @@ export default function DraftView(props: DraftViewProps) {
       <div
         id="comments"
         css={css`
-          width: 20vw;
-          min-width: 17vw;
-          flex: 1 1 auto;
+          flex: 0 1 auto;
           background: rgba(0, 0, 0, 0.2);
           color: white;
-          padding: 10px;
         `}
       >
         <CommentSidebar draft={draft} id={id} />

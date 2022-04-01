@@ -34,6 +34,7 @@ export function CommentView(props: CommentViewProps) {
   return (
     <div
       css={css`
+        width: 15vw;
         display: flex;
         flex-direction: column;
         padding: 5px;
