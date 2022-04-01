@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Author } from 'api'
 import { ReviewView } from './Review'
 import { Editor } from './Editor'
