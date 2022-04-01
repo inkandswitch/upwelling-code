@@ -1,3 +1,5 @@
+/** @jsxImportSource @emotion/react */
+import { css } from '@emotion/react/macro'
 import * as React from 'react'
 import SelectUnstyled, {
   SelectUnstyledProps,
@@ -6,6 +8,11 @@ import SelectUnstyled, {
 import OptionUnstyled, { optionUnstyledClasses } from '@mui/base/OptionUnstyled'
 import PopperUnstyled from '@mui/base/PopperUnstyled'
 import { styled } from '@mui/system'
+//@ts-ignore
+import relativeDate from 'relative-date'
+import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
+import { DraftMetadata, Author } from 'api'
+import { InfoText } from './Text'
 
 const blue = {
   100: '#DAECFF',
@@ -135,4 +142,49 @@ export default function Select<TValue extends {}>(
   }
 
   return <SelectUnstyled {...props} components={components} />
+}
+
+type DetailedOptionProps = {
+  option: DraftMetadata
+  authors: { [key: string]: Author }
+}
+
+export function DetailedOption({ option, authors }: DetailedOptionProps) {
+  return (
+    <Option key={option.id} value={option}>
+      <div
+        css={css`
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+        `}
+      >
+        <Pancake
+          css={css`
+            margin-left: 3px;
+            margin-right: 10px;
+          `}
+        />
+        <div>
+          {option.message}
+          <div
+            css={css`
+              display: flex;
+              flex-direction: row;
+              justify-content: space-between;
+            `}
+          >
+            <InfoText
+              css={css`
+                flex: 1;
+              `}
+            >
+              {authors[option.authorId].name} created
+            </InfoText>
+            <InfoText>{relativeDate(new Date(option.time))}</InfoText>
+          </div>
+        </div>
+      </div>
+    </Option>
+  )
 }

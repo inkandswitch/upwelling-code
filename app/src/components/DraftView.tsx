@@ -2,10 +2,6 @@
 import { css } from '@emotion/react/macro'
 import React, { useEffect, useCallback, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
-import { SelectOption } from '@mui/base/SelectUnstyled'
-//@ts-ignore
-import relativeDate from 'relative-date'
-
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
@@ -18,9 +14,7 @@ import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
-import Select, { Option } from './Select'
-import { InfoText } from './Text'
-import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
+import Select, { DetailedOption, Option } from './Select'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 
 const log = debug('DraftView')
@@ -41,6 +35,7 @@ export default function DraftView(props: DraftViewProps) {
   let [epoch, setEpoch] = useState<number>(Date.now())
   let upwell = documents.get(id)
   const authors = upwell.metadata.getAuthors()
+  const isLatest = did === 'stack'
   let maybeDraft
   try {
     maybeDraft = upwell.get(did)
@@ -155,13 +150,13 @@ export default function DraftView(props: DraftViewProps) {
     documents.save(id)
   }
 
-  const handleFileNameInputBlur = (
-    e: React.FocusEvent<HTMLInputElement, Element>
-  ) => {
-    let draftInstance = upwell.get(did)
-    draftInstance.message = e.target.value
-    documents.save(id)
-  }
+  // const handleFileNameInputBlur = (
+  //   e: React.FocusEvent<HTMLInputElement, Element>
+  // ) => {
+  //   let draftInstance = upwell.get(did)
+  //   draftInstance.message = e.target.value
+  //   documents.save(id)
+  // }
 
   const handleShareClick = (draft: DraftMetadata) => {
     if (
@@ -205,7 +200,7 @@ export default function DraftView(props: DraftViewProps) {
 
   // Hack because the params are always undefined?
   function renderValue() {
-    return draft.message
+    return isLatest ? 'STACK' : draft.message
   }
   // borked?
   // function renderValue(option: SelectOption<DraftMetadata> | null) {
@@ -216,7 +211,6 @@ export default function DraftView(props: DraftViewProps) {
   //   return <span>{option.value.message}</span>
   // }
 
-  const isLatest = did === 'stack'
   return (
     <div
       id="draft-view"
@@ -311,9 +305,7 @@ export default function DraftView(props: DraftViewProps) {
                 >
                   <Option
                     key={upwell.rootDraft.id}
-                    value={drafts
-                      .find((d) => d.id === upwell.rootDraft.id)
-                      ?.materialize()}
+                    value={{ message: 'STACK', id: 'stack' }}
                   >
                     <div
                       css={css`
@@ -441,50 +433,5 @@ export default function DraftView(props: DraftViewProps) {
         <CommentSidebar draft={draft} id={id} />
       </div>
     </div>
-  )
-}
-
-type DetailedOptionProps = {
-  option: DraftMetadata
-  authors: { [key: string]: Author }
-}
-
-function DetailedOption({ option, authors }: DetailedOptionProps) {
-  return (
-    <Option key={option.id} value={option}>
-      <div
-        css={css`
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-        `}
-      >
-        <Pancake
-          css={css`
-            margin-left: 3px;
-            margin-right: 10px;
-          `}
-        />
-        <div>
-          {option.message}
-          <div
-            css={css`
-              display: flex;
-              flex-direction: row;
-              justify-content: space-between;
-            `}
-          >
-            <InfoText
-              css={css`
-                flex: 1;
-              `}
-            >
-              {authors[option.authorId].name} created
-            </InfoText>
-            <InfoText>{relativeDate(new Date(option.time))}</InfoText>
-          </div>
-        </div>
-      </div>
-    </Option>
   )
 }
