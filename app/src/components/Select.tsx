@@ -38,6 +38,7 @@ const grey = {
 const HistoryButton = styled('button')(
   ({ theme }) => `
   font-family: inherit;
+  font-size: inherit;
   box-sizing: border-box;
   border: none;
   font-size: 30px;
@@ -57,7 +58,7 @@ const HistoryButton = styled('button')(
 
   &.${selectUnstyledClasses.expanded} {
     &::after {
-      content: '▴';
+      transform: rotate(180deg);
     }
   }
 
@@ -70,6 +71,7 @@ const HistoryButton = styled('button')(
 const StyledButton = styled('button')(
   ({ theme }) => `
   font-family: inherit;
+  font-size: inherit;
   box-sizing: border-box;
   min-width: 280px;
   background: ${theme.palette.mode === 'dark' ? grey[900] : '#fff'};
