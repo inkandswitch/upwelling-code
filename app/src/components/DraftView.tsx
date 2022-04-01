@@ -16,6 +16,7 @@ import debug from 'debug'
 import { debounce } from 'lodash'
 import Select, { DetailedOption, Option } from './Select'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { getYourDrafts } from '../util'
 
 const log = debug('DraftView')
 
@@ -209,6 +210,7 @@ export default function DraftView(props: DraftViewProps) {
   //   return <span>{option.value.message}</span>
   // }
 
+  const draftsMeta = drafts.map((d) => d.materialize())
   return (
     <div
       id="draft-view"
@@ -226,7 +228,7 @@ export default function DraftView(props: DraftViewProps) {
         did={did}
         epoch={epoch}
         goToDraft={goToDraft}
-        drafts={drafts.map((d) => d.materialize())}
+        drafts={draftsMeta}
         setHistorySelection={(draftId) => {
           let draft = upwell.metadata.getDraft(draftId)
           setHistoryHeads(draft.heads)
@@ -291,7 +293,7 @@ export default function DraftView(props: DraftViewProps) {
               />
               <FormControl>
                 <Select
-                  value={drafts.find((d) => d.id === draft.id)?.materialize()}
+                  value={draftsMeta.find((d) => d.id === draft.id)}
                   onChange={(value: DraftMetadata | null) => {
                     if (value === null) {
                       console.log('draft is null')
@@ -320,11 +322,12 @@ export default function DraftView(props: DraftViewProps) {
                       STACK
                     </div>
                   </Option>
-                  {drafts.map((d) => (
-                    <DetailedOption
-                      option={d.materialize()}
-                      authors={authors}
-                    />
+                  {getYourDrafts(
+                    draftsMeta,
+                    upwell.rootDraft.id,
+                    author.id
+                  ).map((d) => (
+                    <DetailedOption option={d} authors={authors} />
                   ))}
                 </Select>
               </FormControl>
