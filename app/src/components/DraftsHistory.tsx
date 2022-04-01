@@ -1,6 +1,5 @@
 /** @jsxImportSource @emotion/react */
 import { useEffect } from 'react'
-import { css } from '@emotion/react/macro'
 import FormControl from '@mui/material/FormControl'
 import { DraftMetadata, Author } from 'api'
 import { useState } from 'react'
