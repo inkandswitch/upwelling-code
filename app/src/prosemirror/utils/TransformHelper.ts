@@ -82,19 +82,16 @@ export const convertAutomergeTransactionToProsemirrorTransaction: (
 ) => {
   if (!edits.changes) return
 
-  let steps: ReplaceStep[] = []
-
   for (const changeset of edits.changes) {
     //{add: {start: 3, end: 4}, del: []}
 
-    //steps = changeset.del.map(convertDeleteToStep(draft))
-    steps = changeset.add.map(convertAddToStep(draft))
-    // once delete is enabled uncomment this:
-    steps = steps.concat(changeset.del.map(convertDeleteToStep(draft)))
-  }
-  if (!steps.length) {
-    return
+    changeset.add
+      .map(convertAddToStep(draft))
+      .map((step) => state.tr.step(step))
+    changeset.del
+      .map(convertDeleteToStep(draft))
+      .map((step) => state.tr.step(step))
   }
 
-  return state.tr.step(steps[0])
+  return state.tr
 }
