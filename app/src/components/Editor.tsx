@@ -29,6 +29,10 @@ import { css } from '@emotion/react'
 import Documents from '../Documents'
 import { commentButton } from '../prosemirror/context-menu-items/CommentButton'
 import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemirror/utils/TransformHelper'
+import {
+  showEditsKey,
+  automergeChangesPlugin,
+} from '../prosemirror/AutomergeChangesPlugin'
 
 let documents = Documents()
 
@@ -38,6 +42,7 @@ type Props = {
   heads?: string[]
   author: Author
   onChange: any
+  showEdits: boolean
 }
 
 export const editorSharedCSS = css`
@@ -95,6 +100,13 @@ export function Editor(props: Props) {
   const [state, setState] = useProseMirror(editorConfig)
 
   const viewRef = useRef(null)
+
+  useEffect(() => {
+    let transaction = state.tr.setMeta(showEditsKey, showEdits)
+    let newState = state.apply(transaction)
+    setState(newState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEdits])
 
   useEffect(() => {
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {

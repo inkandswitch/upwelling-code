@@ -8,6 +8,7 @@ import { automergeToProsemirror, BLOCK_MARKER } from './PositionMapper'
 import { ChangeSetAddition, ChangeSetDeletion } from 'automerge-wasm-pack'
 
 import { Draft, Transaction as AutomergeTransaction } from 'api'
+import { automergeChangesKey } from '../AutomergeChangesPlugin'
 
 const convertAddToStep: (
   draft: Draft
@@ -82,16 +83,23 @@ export const convertAutomergeTransactionToProsemirrorTransaction: (
 ) => {
   if (!edits.changes) return
 
+  let tr = state.tr
+
   for (const changeset of edits.changes) {
     //{add: {start: 3, end: 4}, del: []}
 
-    changeset.add
-      .map(convertAddToStep(draft))
-      .map((step) => state.tr.step(step))
-    changeset.del
-      .map(convertDeleteToStep(draft))
-      .map((step) => state.tr.step(step))
+    changeset.add.map(convertAddToStep(draft)).map((step) => tr.step(step))
+    changeset.del.map(convertDeleteToStep(draft)).map((step) => tr.step(step))
   }
 
-  return state.tr
+  // This is pretty inefficient. This whole changes thing kind of needs a
+  // refactor to just pass around minimal diffs.
+  let automergeChangesState = tr.getMeta(automergeChangesKey)
+  if (!automergeChangesState) automergeChangesState = {}
+  if (automergeChangesState.draft !== draft) {
+    automergeChangesState.draft = draft
+    tr.setMeta(automergeChangesKey, automergeChangesState)
+  }
+
+  return tr
 }
