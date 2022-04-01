@@ -27,13 +27,6 @@ const log = debug('DraftView')
 
 let documents = Documents()
 
-type DraftOption = {
-  did: string
-  authorId: string
-  message: string
-  time: number
-}
-
 type DraftViewProps = {
   did: string
   id: string
@@ -210,6 +203,19 @@ export default function DraftView(props: DraftViewProps) {
       })
   }
 
+  // Hack because the params are always undefined?
+  function renderValue() {
+    return draft.message
+  }
+  // borked?
+  // function renderValue(option: SelectOption<DraftMetadata> | null) {
+  //   console.log('renderValue', option)
+  //   if (option === null || option === undefined) {
+  //     return <span>Select a draft...</span>
+  //   }
+  //   return <span>{option.value.message}</span>
+  // }
+
   const isLatest = did === 'stack'
   return (
     <div
@@ -293,29 +299,21 @@ export default function DraftView(props: DraftViewProps) {
               />
               <FormControl>
                 <Select
-                  value={{
-                    did: draft.id,
-                    authorId: draft.authorId,
-                    message: draft.message,
-                    time: draft.time,
-                  }}
-                  onChange={(value: DraftOption | null) => {
+                  value={drafts.find((d) => d.id === draft.id)?.materialize()}
+                  onChange={(value: DraftMetadata | null) => {
                     if (value === null) {
                       console.log('draft is null')
                       return
                     }
-                    goToDraft(value.did)
+                    goToDraft(value.id)
                   }}
                   renderValue={renderValue}
                 >
                   <Option
                     key={upwell.rootDraft.id}
-                    value={{
-                      did: upwell.rootDraft.id,
-                      authorId: upwell.rootDraft.authorId,
-                      message: upwell.rootDraft.message,
-                      time: upwell.rootDraft.time,
-                    }}
+                    value={drafts
+                      .find((d) => d.id === upwell.rootDraft.id)
+                      ?.materialize()}
                   >
                     <div
                       css={css`
@@ -334,12 +332,7 @@ export default function DraftView(props: DraftViewProps) {
                   </Option>
                   {drafts.map((d) => (
                     <DetailedOption
-                      option={{
-                        did: d.id,
-                        authorId: d.authorId,
-                        message: d.message,
-                        time: d.time,
-                      }}
+                      option={d.materialize()}
                       authors={authors}
                     />
                   ))}
@@ -369,7 +362,8 @@ export default function DraftView(props: DraftViewProps) {
                   )}
                 </>
               )}
-              {!isLatest && (
+              {/** Edit draft name */}
+              {/* {!isLatest && (
                 <Input
                   value={draft.message}
                   onClick={(e) => {
@@ -384,7 +378,7 @@ export default function DraftView(props: DraftViewProps) {
                     handleFileNameInputBlur(e)
                   }}
                 />
-              )}
+              )} */}
             </div>
           </div>
           <div
@@ -450,20 +444,14 @@ export default function DraftView(props: DraftViewProps) {
   )
 }
 
-function renderValue(option: SelectOption<DraftOption> | null) {
-  if (option == null) {
-    return <span>Select a draft...</span>
-  }
-  return <span>{option.value.message}</span>
-}
 type DetailedOptionProps = {
-  option: DraftOption
+  option: DraftMetadata
   authors: { [key: string]: Author }
 }
 
 function DetailedOption({ option, authors }: DetailedOptionProps) {
   return (
-    <Option key={option.did} value={option}>
+    <Option key={option.id} value={option}>
       <div
         css={css`
           display: flex;
@@ -486,7 +474,13 @@ function DetailedOption({ option, authors }: DetailedOptionProps) {
               justify-content: space-between;
             `}
           >
-            <InfoText>{authors[option.authorId].name} created </InfoText>
+            <InfoText
+              css={css`
+                flex: 1;
+              `}
+            >
+              {authors[option.authorId].name} created
+            </InfoText>
             <InfoText>{relativeDate(new Date(option.time))}</InfoText>
           </div>
         </div>
