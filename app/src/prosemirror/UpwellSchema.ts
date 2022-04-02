@@ -7,6 +7,7 @@ import {
 export const nodes = {
   doc: basicNodes.doc,
   paragraph: basicNodes.paragraph,
+  heading: basicNodes.heading,
   text: basicNodes.text,
 }
 
