@@ -26,6 +26,13 @@ export class Paragraph extends BlockAnnotation<{}> {
   static type = 'paragraph'
 }
 
+export class Heading extends BlockAnnotation<{
+  level: number
+}> {
+  static vendorPrefix = 'upwell'
+  static type = 'heading'
+}
+
 export class Strong extends InlineAnnotation<{}> {
   static vendorPrefix = 'upwell'
   static type = 'strong'
@@ -42,7 +49,7 @@ export class Comment extends InlineAnnotation<{}> {
 }
 
 export default class UpwellSource extends Document {
-  static schema = [Comment, Deletion, Emphasis, Insertion, Paragraph, Strong]
+  static schema = [Comment, Deletion, Emphasis, Heading, Insertion, Paragraph, Strong]
 
   // This converts an upwell/automerge draft to an atjson document.
   static fromRaw(draft: Draft) {
@@ -83,6 +90,7 @@ export default class UpwellSource extends Document {
 
     // next convert blocks to annotations
     for (let b of draft.blocks) {
+      if (['paragraph', 'heading'].indexOf(b.type) === -1) b.type = 'paragraph'
       b.type = `-upwell-${b.type}`
       marks.push(b)
     }
