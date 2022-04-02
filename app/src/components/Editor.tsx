@@ -11,7 +11,7 @@ import {
 
 import { ProseMirror, useProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { baseKeymap } from 'prosemirror-commands'
+import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep, ReplaceAroundStep } from 'prosemirror-transform'
 
@@ -92,6 +92,13 @@ export function Editor(props: Props) {
         'Mod-Shift-z': redo,
         'Mod-b': toggleBold,
         'Mod-i': toggleItalic,
+        'Ctrl-Alt-0': setBlockType(schema.nodes.paragraph),
+        'Ctrl-Alt-1': setBlockType(schema.nodes.heading, { level: 1 }),
+        'Ctrl-Alt-2': setBlockType(schema.nodes.heading, { level: 2 }),
+        'Ctrl-Alt-3': setBlockType(schema.nodes.heading, { level: 3 }),
+        'Ctrl-Alt-4': setBlockType(schema.nodes.heading, { level: 4 }),
+        'Ctrl-Alt-5': setBlockType(schema.nodes.heading, { level: 5 }),
+        'Ctrl-Alt-6': setBlockType(schema.nodes.heading, { level: 6 }),
       }),
     ],
   }
