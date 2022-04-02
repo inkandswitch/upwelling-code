@@ -193,15 +193,14 @@ export class Draft {
     let blockObj = this.doc.value(text[1], position)
     if (blockObj && blockObj[0] === 'map') {
       let block = this.doc.materialize(blockObj[1])
-      let reformedBlock = {}
+      block.attributes = {}
       for (let attr of Object.keys(block)) {
         if (attr.indexOf('attribute-') === 0) {
-          reformedBlock[attr.substring(10)] = block[attr]
-        } else {
-          reformedBlock[attr] = block[attr]
+          block.attributes[attr.substring(10)] = block[attr]
+          delete block[attr]
         }
       }
-      return reformedBlock
+      return block
     }
   }
 
