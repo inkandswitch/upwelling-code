@@ -19,10 +19,6 @@ export default function App() {
 
   return (
     <>
-      {/* <div id="topbar">
-      My name is {author}
-    </div> */}
-
       <Route path="/:id/:did">
         {(params) => {
           let props = {

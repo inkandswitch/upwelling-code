@@ -1,13 +1,11 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useEffect, useCallback, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
-import { SYNC_STATE } from '../types'
-import { SyncIndicator } from './SyncIndicator'
 import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
@@ -26,19 +24,21 @@ let documents = Documents()
 
 type DraftViewProps = {
   did: string
+  epoch: number
   id: string
   root: Draft
   author: Author
+  sync: () => void
 }
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author, did } = props
-  let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
+  let { id, author, did, epoch, sync } = props
   let [reviewMode, setReviewMode] = useState<boolean>(false)
-  let [epoch, setEpoch] = useState<number>(Date.now())
+
   let upwell = documents.get(id)
   const authors = upwell.metadata.getAuthors()
   const isLatest = did === 'stack'
+
   let maybeDraft
   try {
     maybeDraft = upwell.get(did)
@@ -53,34 +53,13 @@ export default function DraftView(props: DraftViewProps) {
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     did !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
-  const sync = useCallback(async () => {
-    setSyncState(SYNC_STATE.LOADING)
-    let upwell = documents.get(id)
-    try {
-      await documents.sync(id)
-      log('synced')
-      setSyncState(SYNC_STATE.SYNCED)
-    } catch (err) {
-      log('failed to sync', err)
-      setSyncState(SYNC_STATE.OFFLINE)
-    } finally {
-      setDrafts(upwell.drafts())
-      setDraft(upwell.get(did).materialize())
-      log('rendering')
-    }
-  }, [id, did])
-
-  const debouncedSync = React.useMemo(
-    () =>
-      debounce(() => {
-        sync()
-      }, 500),
-    [sync]
-  )
 
   useEffect(() => {
-    sync()
-  }, [id, sync])
+    let upwell = documents.get(id)
+    setDrafts(upwell.drafts())
+    setDraft(upwell.get(did).materialize())
+    log('rendering')
+  }, [id, did, epoch])
 
   // every time the upwell id changes
   useEffect(() => {
@@ -98,12 +77,12 @@ export default function DraftView(props: DraftViewProps) {
         let instance = upwell.get(did)
         setDraft(instance.materialize())
       }
-      debouncedSync()
+      sync()
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, did, debouncedSync])
+  }, [id, draft.parent_id, draft.id, did, sync])
 
   // every time the draft id changes
   useEffect(() => {
@@ -138,7 +117,6 @@ export default function DraftView(props: DraftViewProps) {
   )
 
   let onTextChange = () => {
-    setSyncState(SYNC_STATE.LOADING)
     documents.rtcDraft?.updatePeers()
     debouncedOnTextChange()
   }
@@ -225,7 +203,6 @@ export default function DraftView(props: DraftViewProps) {
         justify-content: space-between;
       `}
     >
-      <SyncIndicator state={sync_state}></SyncIndicator>
       <div id="spacer-placeholder" />
       <div
         id="folio"

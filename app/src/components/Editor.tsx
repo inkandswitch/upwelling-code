@@ -14,6 +14,7 @@ import { keymap } from 'prosemirror-keymap'
 import { baseKeymap } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
+import Debug from 'debug'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import {
@@ -33,7 +34,8 @@ import {
   automergeChangesPlugin,
 } from '../prosemirror/AutomergeChangesPlugin'
 
-let documents = Documents()
+const documents = Documents()
+const log = Debug('Editor')
 
 type Props = {
   upwell: Upwell
@@ -71,7 +73,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author, showEdits } = props
+  let { upwell, heads, editableDraftId, onChange, author, showEdits } = props
 
   let editableDraft = upwell.get(editableDraftId)
 
@@ -97,6 +99,7 @@ export function Editor(props: Props) {
   }
 
   const [state, setState] = useProseMirror(editorConfig)
+  log('got heads', heads)
 
   const viewRef = useRef(null)
 

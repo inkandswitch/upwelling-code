@@ -7,33 +7,30 @@ export function SyncIndicator(props: { state: SYNC_STATE }) {
   let indicator
   switch (props.state) {
     case SYNC_STATE.SYNCED:
-      indicator = <div>✔️</div>
+      indicator = <span>✔️</span>
       break
     case SYNC_STATE.ERROR:
       indicator = <LoadingIcons.Bars fill="red" speed="0" />
       break
     case SYNC_STATE.OFFLINE:
-      indicator = <div>Offline</div>
+      indicator = <span>Offline</span>
       break
     default:
-      indicator = <div>Saving...</div>
+      indicator = <span>Saving...</span>
       break
   }
   return (
-    <span
+    <div
       css={css`
-        position: absolute;
-        top: 5px;
-        left: 5px;
         font-size: 0.5em;
-        color: #333333;
         svg {
+          color: white;
           width: 20px;
         }
       `}
       id="sync-indicator"
     >
       {indicator}
-    </span>
+    </div>
   )
 }
