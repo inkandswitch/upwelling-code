@@ -166,7 +166,7 @@ export default function DraftView(props: DraftViewProps) {
     ) {
       let upwell = documents.get(id)
       upwell.share(draft.id)
-      documents.save(id)
+      documents.draftChanged(id, draft.id)
     }
   }
 
@@ -180,17 +180,17 @@ export default function DraftView(props: DraftViewProps) {
     goToDraft('stack')
   }
 
-  function createDraft() {
+  const createDraft = debounce(() => {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft()
 
     documents.save(id)
     goToDraft(newDraft.id)
-  }
+  }, 30)
 
   function goToDraft(did: string) {
     documents
-      .sync(id)
+      .save(id)
       .then(() => {
         window.location.href = `/${id}/${did}`
       })
@@ -211,6 +211,11 @@ export default function DraftView(props: DraftViewProps) {
   //   }
   //   return <span>{option.value.message}</span>
   // }
+
+  const setHistorySelection = debounce((draftId) => {
+    let draft = upwell.metadata.getDraft(draftId)
+    setHistoryHeads(draft.heads)
+  }, 30)
 
   const draftsMeta = drafts.map((d) => d.materialize())
   return (
@@ -413,11 +418,7 @@ export default function DraftView(props: DraftViewProps) {
                 epoch={epoch}
                 goToDraft={goToDraft}
                 drafts={draftsMeta}
-                setHistorySelection={(draftId) => {
-                  let draft = upwell.metadata.getDraft(draftId)
-                  setHistoryHeads(draft.heads)
-                  setEpoch(Date.now())
-                }}
+                setHistorySelection={setHistorySelection}
                 id={id}
                 author={author}
               />
