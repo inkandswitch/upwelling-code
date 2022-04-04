@@ -55,24 +55,33 @@ describe('edits', () => {
         let marks = merged.marks.map(({ type, start, end }) => ({
           type,
           start,
-          end
+          end,
         }))
 
         assert.deepEqual(
           [
             { type: 'insert', start: 0, end: 21 },
-            { type: 'delete', start: 16, end: 16 }
+            { type: 'delete', start: 16, end: 16 },
           ],
           marks
         )
       })
 
       it('retains metadata', () => {
-        let marksValues = merged.marks.map(mark => {
+        let marksValues = merged.marks.map((mark) => {
           return mark.value
         })
 
-        assert.deepEqual([JSON.stringify({ author: author_doc2.id, text: 'Hey Everybody - World' }), JSON.stringify({ author: author_doc2.id, text: 'Hello' })], marksValues)
+        assert.deepEqual(
+          [
+            JSON.stringify({
+              author: author_doc2.id,
+              text: 'Hey Everybody - World',
+            }),
+            JSON.stringify({ author: author_doc2.id, text: 'Hello' }),
+          ],
+          marksValues
+        )
       })
     })
 
@@ -93,14 +102,19 @@ describe('edits', () => {
         })
 
         it('has the correct text', () => {
-          assert.equal(merged123.text, 'NEW LAYER Hey Everybody - World course NEW LAYER\ufffc ')
+          assert.equal(
+            merged123.text,
+            'NEW LAYER Hey Everybody - World course NEW LAYER\ufffc '
+          )
         })
 
         describe('marks from doc2', () => {
           let marks
 
           beforeEach(() => {
-            marks = merged123.marks.filter(m => JSON.parse(m.value).author === author_doc2.id)
+            marks = merged123.marks.filter(
+              (m) => JSON.parse(m.value).author === author_doc2.id
+            )
           })
 
           it('has the correct number of marks', () => {
@@ -111,34 +125,37 @@ describe('edits', () => {
             let mks = marks.map(({ type, start, end }) => ({
               type,
               start,
-              end
+              end,
             }))
 
             assert.deepEqual(
               [
                 { type: 'insert', start: 10, end: 31 },
-                { type: 'delete', start: 26, end: 26 }
+                { type: 'delete', start: 26, end: 26 },
               ],
               mks
             )
           })
 
           it('cover the correct text', () => {
-            marks.forEach(mark => {
+            marks.forEach((mark) => {
               // deletions are zero-length; tested in the 'correctly modifies existing marks' test above
               if (mark.type === 'delete') return
 
               // this is a special case where an insertion mark is now
               // zero-length because the inserted text has been deleted.
               if (mark.start === mark.end) return
-              assert.equal(JSON.parse(mark.value).text, merged123.text.substring(mark.start, mark.end))
+              assert.equal(
+                JSON.parse(mark.value).text,
+                merged123.text.substring(mark.start, mark.end)
+              )
             })
           })
 
           it('insertions are correct (manual check)', () => {
             let insertions = marks
-              .filter(m => m.type === 'insert')
-              .map(m => {
+              .filter((m) => m.type === 'insert')
+              .map((m) => {
                 return merged123.text.substring(m.start, m.end)
               })
 
@@ -147,8 +164,8 @@ describe('edits', () => {
 
           it('deletions are correct (manual check)', () => {
             let deletions = marks
-              .filter(m => m.type === 'delete')
-              .map(m => {
+              .filter((m) => m.type === 'delete')
+              .map((m) => {
                 return JSON.parse(m.value).text
               })
 
@@ -160,7 +177,9 @@ describe('edits', () => {
           let marks
 
           beforeEach(() => {
-            marks = merged123.marks.filter(m => JSON.parse(m.value).author === author_doc3.id)
+            marks = merged123.marks.filter(
+              (m) => JSON.parse(m.value).author === author_doc3.id
+            )
           })
 
           it('has the correct number of new marks', () => {
@@ -171,35 +190,38 @@ describe('edits', () => {
             let mks = marks.map(({ type, start, end }) => ({
               type,
               start,
-              end
+              end,
             }))
 
             assert.deepEqual(
               [
                 { type: 'insert', start: 0, end: 10 },
                 { type: 'insert', start: 38, end: 48 },
-                { type: 'delete', start: 32, end: 32 }
+                { type: 'delete', start: 32, end: 32 },
               ],
               mks
             )
           })
 
           it('cover the correct text', () => {
-            marks.forEach(mark => {
+            marks.forEach((mark) => {
               // deletions are zero-length; tested in the 'correctly modifies existing marks' test above
               if (mark.type === 'delete') return
 
               // this is a special case where an insertion mark is now
               // zero-length because the inserted text has been deleted.
               if (mark.start === mark.end) return
-              assert.equal(JSON.parse(mark.value).text, merged123.text.substring(mark.start, mark.end))
+              assert.equal(
+                JSON.parse(mark.value).text,
+                merged123.text.substring(mark.start, mark.end)
+              )
             })
           })
 
           it('insertions are correct (manual check)', () => {
             let insertions = marks
-              .filter(m => m.type === 'insert')
-              .map(m => {
+              .filter((m) => m.type === 'insert')
+              .map((m) => {
                 return merged123.text.substring(m.start, m.end)
               })
 
@@ -208,8 +230,8 @@ describe('edits', () => {
 
           it('deletions are correct (manual check)', () => {
             let deletions = marks
-              .filter(m => m.type === 'delete')
-              .map(m => {
+              .filter((m) => m.type === 'delete')
+              .map((m) => {
                 return JSON.parse(m.value).text
               })
 

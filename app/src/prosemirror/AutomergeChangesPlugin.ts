@@ -23,7 +23,11 @@ function changeSetToDecorations(changeSet: ChangeSet, draft: Draft) {
 }
 
 function getAllChanges(baseDraft: Draft, draft: Draft, doc: Node) {
-  let { attribution } = Draft.mergeWithEdits(draft.authorId, baseDraft, draft)
+  let { attribution } = Draft.mergeWithEdits(
+    { id: draft.authorId, name: '' },
+    baseDraft,
+    draft
+  )
   let decorations = changeSetToDecorations(attribution[0], draft)
   return DecorationSet.create(doc, decorations)
 }

@@ -36,7 +36,6 @@ export default function DraftView(props: DraftViewProps) {
   let [reviewMode, setReviewMode] = useState<boolean>(false)
 
   let upwell = documents.get(id)
-  const authors = upwell.metadata.getAuthors()
   const isLatest = did === 'stack'
 
   let maybeDraft
@@ -112,7 +111,7 @@ export default function DraftView(props: DraftViewProps) {
           console.log('syncing from onTextChange')
           documents.save(id)
         }
-      }, 1000),
+      }, 60),
     [draft.contributors, id, did]
   )
 
@@ -283,7 +282,7 @@ export default function DraftView(props: DraftViewProps) {
                       message: 'STACK',
                       id: 'stack',
                     }}
-                    authors={authors}
+                    upwell={upwell}
                     icon={Pancakes}
                     iconStyles={css`
                       margin-left: 0;
@@ -298,7 +297,7 @@ export default function DraftView(props: DraftViewProps) {
                     <DetailedOption
                       key={d.id}
                       option={d}
-                      authors={authors}
+                      upwell={upwell}
                       icon={Pancake}
                     />
                   ))}

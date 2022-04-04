@@ -37,6 +37,7 @@ export function ReviewView(props: {
 
         edits.add.forEach((edit) => {
           let text = draft.text.substring(edit.start, edit.end)
+          console.log(edit)
           draft.mark(
             'insert',
             `(${edit.start}..${edit.end})`,
