@@ -112,31 +112,31 @@ export class Documents {
   }
 
   async open(id: string): Promise<Upwell> {
-    return new Promise(async (resolve, reject) => {
-      let upwell = this.upwells.get(id)
-      if (upwell) return resolve(upwell)
-      else {
-        // local-first
-        let localBinary = this.storage.getItem(id)
-        if (localBinary) {
-          let ours = await this.toUpwell(localBinary)
-          this.upwells.set(id, ours)
-          return resolve(ours)
-        } else {
-          // no local binary, get from server
-          try {
-            let remoteBinary = await this.remote.getItem(id)
-            if (remoteBinary) {
-              let theirs = await this.toUpwell(Buffer.from(remoteBinary))
-              this.upwells.set(id, theirs)
-              return resolve(theirs)
-            }
-          } catch (err) {
-            console.error('Could not connect to server')
+    let upwell = this.upwells.get(id)
+    if (upwell) return upwell
+    else {
+      // local-first
+      let localBinary = this.storage.getItem(id)
+      if (localBinary) {
+        let ours = await this.toUpwell(localBinary)
+        this.upwells.set(id, ours)
+        return ours
+      } else {
+        // no local binary, get from server
+        try {
+          let remoteBinary = this.remote.getItem(id)
+          if (remoteBinary) {
+            let theirs = await this.toUpwell(Buffer.from(remoteBinary))
+            this.upwells.set(id, theirs)
+            return theirs
+          } else {
+            throw new Error('No document with id=' + id)
           }
+        } catch (err) {
+          throw new Error('Could not connect to server')
         }
       }
-    })
+    }
   }
 
   async sync(id: string): Promise<Response> {

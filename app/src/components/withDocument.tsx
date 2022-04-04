@@ -13,6 +13,9 @@ let documents = Documents()
 
 let log = Debug('withDocument')
 
+const RETRY_TIMEOUT = 3000
+const MAX_RETRIES = 4
+
 type DocumentProps = {
   id: string
   author: Author
@@ -28,6 +31,7 @@ export default function withDocument(
     let [, setLocation] = useLocation()
     let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
     let [epoch, setEpoch] = useState<number>(Date.now())
+    let [timedOut, setTimedOut] = useState<boolean>(false)
     let { id, author } = props
 
     const sync = useCallback(async () => {
@@ -55,9 +59,11 @@ export default function withDocument(
 
     useEffect(() => {
       let unmounted = false
+      let retries = 0
       let upwell: Upwell | undefined
       async function render() {
         try {
+          log('render function')
           upwell = await documents.open(id)
           if (!unmounted && upwell) {
             log('getting rootDraft in main component')
@@ -69,26 +75,60 @@ export default function withDocument(
           await documents.sync(id)
           upwell = documents.get(id)
         } catch (err) {
-          console.error(err)
           if (!upwell) {
-            log('creating upwell')
-            upwell = await documents.create(props.id, author)
+            log('Retrying in', RETRY_TIMEOUT, retries)
+            if (retries >= MAX_RETRIES) return setTimedOut(true)
+            setTimeout(() => {
+              log('retrying', retries)
+              retries++
+              if (retries <= MAX_RETRIES) render()
+            }, RETRY_TIMEOUT)
           }
         } finally {
-          if (!upwell) throw new Error('could not create upwell')
-          if (!unmounted) setRoot(upwell.rootDraft)
-          documents.connectUpwell(id)
-          sync()
+          if (upwell) {
+            if (!unmounted) setRoot(upwell.rootDraft)
+            documents.connectUpwell(id)
+            sync()
+          }
         }
       }
 
       render()
+      console.log('rendering')
       return () => {
         unmounted = true
         documents.disconnect(id)
       }
     }, [id, author, setLocation, sync])
-    if (!root) return <div></div>
+
+    if (!root) {
+      return (
+        <div
+          css={css`
+            font-family: serif;
+            color: ${timedOut ? 'lightblue' : 'lightblue'};
+            display: flex;
+            flex-direction: row;
+            background-color: black;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            align-self: center;
+            justify-content: center;
+            text-align: center;
+          `}
+        >
+          <div>
+            <h1>{timedOut ? 'timed out. bummer' : 'surfing...'}</h1>
+            {timedOut ? (
+              <img src="/Wavy2.gif" alt="404" />
+            ) : (
+              <img src="/Wavy2.gif" alt="Wave " />
+            )}
+          </div>
+        </div>
+      )
+    }
 
     return (
       <div>
