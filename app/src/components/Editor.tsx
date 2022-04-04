@@ -11,9 +11,9 @@ import {
 
 import { ProseMirror, useProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
-import { baseKeymap } from 'prosemirror-commands'
+import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
-import { ReplaceStep, AddMarkStep, RemoveMarkStep } from 'prosemirror-transform'
+import { ReplaceStep, AddMarkStep, RemoveMarkStep, ReplaceAroundStep } from 'prosemirror-transform'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import {
@@ -92,6 +92,13 @@ export function Editor(props: Props) {
         'Mod-Shift-z': redo,
         'Mod-b': toggleBold,
         'Mod-i': toggleItalic,
+        'Ctrl-Alt-0': setBlockType(schema.nodes.paragraph),
+        'Ctrl-Alt-1': setBlockType(schema.nodes.heading, { level: 1 }),
+        'Ctrl-Alt-2': setBlockType(schema.nodes.heading, { level: 2 }),
+        'Ctrl-Alt-3': setBlockType(schema.nodes.heading, { level: 3 }),
+        'Ctrl-Alt-4': setBlockType(schema.nodes.heading, { level: 4 }),
+        'Ctrl-Alt-5': setBlockType(schema.nodes.heading, { level: 5 }),
+        'Ctrl-Alt-6': setBlockType(schema.nodes.heading, { level: 6 }),
       }),
     ],
   }
@@ -153,7 +160,9 @@ export function Editor(props: Props) {
             if (node.type.name === 'text' && node.text) {
               editableDraft.insertAt(insOffset, node.text)
               insOffset += node.text.length
-            } else if (node.type.name === 'paragraph') {
+            } else if (
+              ['paragraph', 'heading'].indexOf(node.type.name) !== -1
+            ) {
               if (idx !== 0)
                 // @ts-ignore
                 editableDraft.insertBlock(insOffset++, node.type.name)
@@ -192,6 +201,43 @@ export function Editor(props: Props) {
         if (mark.type.name === 'strong' || mark.type.name === 'em') {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, false)
         }
+      } else if (step instanceof ReplaceAroundStep) {
+
+        // This is just a guard to prevent us from handling a ReplaceAroundStep
+        // that isn't simply replacing the container, because implementing that
+        // is complicated and I can't think of an example where this would be
+        // the case!
+        //
+        // e.g. the normal case for p -> h1:
+        //   start == <p>
+        //   end == </p>
+        //   gapStart == the first character of the paragraph
+        //   gapEnd == the last character of the paragraph
+        //
+        // The step contains an empty node that has a `heading` type instead of
+        // `paragraph`
+        //
+        // @ts-ignore: step.structure isn't defined in prosemirror's types
+        if (!step.structure || step.insert !== 1 || step.from !== step.gapFrom - 1 || step.to !== step.gapTo + 1) {
+          console.debug('Unhandled scenario in ReplaceAroundStep (non-structure)', step)
+        }
+
+        let { start: gapStart, end: gapEnd } = prosemirrorToAutomerge({ from: step.gapFrom, to: step.gapTo }, editableDraft, state) 
+
+        let text = editableDraft.text
+        // Double-check that we're doing what we think we are, i.e., replacing a parent node
+        if (text[gapStart - 1] !== '\uFFFC' || text[gapEnd] !== '\uFFFC') {
+          console.debug(`Unhandled scenario in ReplaceAroundStep, expected ${text[gapStart - 1].charCodeAt(0)} and ${text[gapEnd].charCodeAt(0)} == ${'\uFFFC'.charCodeAt(0)}`, step)
+          continue
+        }
+
+        // Get the replacement node and extract its attributes and reset the block!
+        let node = step.slice.content.maybeChild(0)
+        if (!node) continue
+
+        let { type, attrs } = node
+
+        editableDraft.setBlock(gapStart - 1, type.name, attrs)
       }
     }
 

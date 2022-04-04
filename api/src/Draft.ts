@@ -173,11 +173,41 @@ export class Draft {
     else throw new Error('Text field not properly initialized')
   }
 
-  insertBlock(position: number, type: string) {
+  insertBlock(position: number, type: string, attributes: any = {}) {
     let text = this.doc.value(ROOT, 'text')
-    if (text && text[0] === 'text')
-      this.doc.insert_object(text[1], position, { type })
+    let block = { type }
+    // This is a weird hack and I don't really understand why setting
+    // sub-objects doesn't work in automerge
+    Object.keys(attributes).forEach(key => {
+      block[`attribute-${key}`] = attributes[key]
+    })
+    if (text && text[0] === 'text') {
+      let obj = this.doc.insert_object(text[1], position, block)
+    }
     else throw new Error('text not properly initialized')
+  }
+
+  getBlock(position: number) {
+    let text = this.doc.value(ROOT, 'text')
+    if (!text || text[0] !== 'text') throw new Error('text not properly initialized')
+    let blockObj = this.doc.value(text[1], position)
+    if (blockObj && blockObj[0] === 'map') {
+      let block = this.doc.materialize(blockObj[1])
+      block.attributes = {}
+      for (let attr of Object.keys(block)) {
+        if (attr.indexOf('attribute-') === 0) {
+          block.attributes[attr.substring(10)] = block[attr]
+          delete block[attr]
+        }
+      }
+      return block
+    }
+  }
+
+  setBlock(position: number, type: string, attributes: any) {
+    if (!this.getBlock(position)) throw new Error(`unable to modify block, position ${position} is not a block!`)
+    this.deleteAt(position, 1)
+    this.insertBlock(position, type, attributes)
   }
 
   insertComment(
@@ -288,14 +318,8 @@ export class Draft {
       if (end === -1) end = this.text.length
 
       // get the attributes for this block
-      let attrsObj = this.doc.value(text[1], i)
-      let attrs: any = {}
-      if (attrsObj && attrsObj[0] === 'map')
-        attrs = this.doc.materialize(attrsObj[1])
-      else
-        throw new Error(
-          'block properties not initialized, something has gone very wrong'
-        )
+      let attrs = this.getBlock(i)
+      if (!attrs) throw new Error(`unable to retrieve block information at position ${i}`)
       let block = { start, end, ...attrs }
       blocks.push(block)
       i = end

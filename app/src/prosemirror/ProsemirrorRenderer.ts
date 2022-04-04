@@ -36,7 +36,7 @@ export default class ProsemirrorRenderer extends Renderer {
         ])
       })
     } else {
-      if (annotationChildren.length === 0) annotationChildren = schema.text(' ')
+      if (annotationChildren.length === 0) annotationChildren = []
 
       return schema.node(
         annotation.type,

@@ -45,9 +45,15 @@ export const prosemirrorToAutomergeNumber = (
   let blocks = 0
   let offset = 0
   while (idx < state.doc.content.childCount) {
-    // @ts-ignore
-    offset += state.doc.content.content[idx].nodeSize
-    if (offset >= position) break
+    let contentNode = state.doc.content.maybeChild(idx)
+    if (!contentNode) continue
+    let nodeSize = contentNode.nodeSize
+    offset += nodeSize
+
+    // handle boundary case of empty nodes
+    // there is probably a more elegant way to do this.
+    if (offset >= position && nodeSize > 2) break
+    if (offset > position) break
     idx++
     blocks++
   }
