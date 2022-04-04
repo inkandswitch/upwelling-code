@@ -43,6 +43,7 @@ export default function withDocument(
         await documents.sync(id)
         log('synced')
         setSyncState(SYNC_STATE.SYNCED)
+        documents.rtcUpwell?.updatePeers()
       } catch (err) {
         log('failed to sync', err)
         setSyncState(SYNC_STATE.OFFLINE)
@@ -72,12 +73,15 @@ export default function withDocument(
             log('getting rootDraft in main component')
             setRoot(upwell.rootDraft)
           }
-        } catch (err) {}
+        } catch (err) {
+          console.log(err)
+        }
 
         try {
           await documents.sync(id)
           upwell = documents.get(id)
         } catch (err) {
+          console.log(err)
           if (!upwell) {
             log('Retrying in', RETRY_TIMEOUT, retries)
             if (retries >= MAX_RETRIES) return setTimedOut(true)
@@ -97,7 +101,6 @@ export default function withDocument(
       }
 
       render()
-      console.log('rendering')
       return () => {
         unmounted = true
         documents.disconnect(id)

@@ -148,6 +148,7 @@ export class Documents {
     let remoteBinary = await this.remote.getItem(id)
     if (!inMemory && remoteBinary) {
       let buf = Buffer.from(remoteBinary)
+      this.upwells.set(id, await this.toUpwell(buf))
       await this.storage.setItem(id, buf)
       return this.remote.setItem(id, buf)
     } else if (!remoteBinary && inMemory) {
