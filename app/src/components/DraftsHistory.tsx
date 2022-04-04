@@ -78,14 +78,14 @@ export default function DraftsHistory({
             message: 'STACK',
             id: 'stack',
           }}
-          authors={authors}
+          upwell={upwell}
           icon={Pancakes}
         />
         {history.map((d) => (
           <DetailedOption
             key={d.id}
             option={d}
-            authors={authors}
+            upwell={upwell}
             icon={OffsetPancakes}
           />
         ))}

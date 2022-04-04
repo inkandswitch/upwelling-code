@@ -190,7 +190,6 @@ export default function ListDocuments({
   isBottom = false,
 }: Props) {
   let upwell = documents.get(id)
-  let authors = upwell.metadata.getAuthors()
   return (
     <div
       css={css`
@@ -215,9 +214,9 @@ export default function ListDocuments({
                 e.stopPropagation()
                 onDraftClick(draft)
               }}
-              title={`by ${authors[draft.authorId]}, ${relativeDate(
-                new Date(draft.time)
-              )}`}
+              title={`by ${upwell.getAuthorName(
+                draft.authorId
+              )}, ${relativeDate(new Date(draft.time))}`}
               css={css`
                 display: flex;
                 flex-direction: row;

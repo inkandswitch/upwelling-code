@@ -10,7 +10,7 @@ import PopperUnstyled from '@mui/base/PopperUnstyled'
 import { styled } from '@mui/system'
 //@ts-ignore
 import relativeDate from 'relative-date'
-import { DraftMetadata, Author } from 'api'
+import { DraftMetadata, Upwell } from 'api'
 import { InfoText } from './Text'
 
 const blue = {
@@ -193,14 +193,14 @@ export function HistorySelect<TValue extends {}>(
 
 type DetailedOptionProps = {
   option: DraftMetadata
-  authors: { [key: string]: Author }
+  upwell: Upwell
   icon?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>
   iconStyles?: SerializedStyles
 }
 
 export function DetailedOption({
   option,
-  authors,
+  upwell,
   icon: Icon,
   iconStyles,
 }: DetailedOptionProps) {
@@ -237,7 +237,7 @@ export function DetailedOption({
                 flex: 1;
               `}
             >
-              {authors[option.authorId].name} created
+              {upwell.getAuthorName(option.authorId)} created
             </InfoText>
             <InfoText>{relativeDate(new Date(option.time))}</InfoText>
           </div>
