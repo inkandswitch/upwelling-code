@@ -21,7 +21,8 @@ export function Button(props: ButtonType) {
         background: black;
         color: white;
         &:hover {
-          background: gray;
+          background: lightblue;
+          color: black;
         }
         &:disabled {
           opacity: 70%;

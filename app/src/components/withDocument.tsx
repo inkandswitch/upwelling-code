@@ -8,6 +8,7 @@ import Documents from '../Documents'
 import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
 import { debounce } from 'lodash'
+import NoDocument from './NoDocument'
 
 let documents = Documents()
 
@@ -103,22 +104,12 @@ export default function withDocument(
 
     if (!root) {
       return (
-        <div
-          css={css`
-            font-family: serif;
-            color: ${timedOut ? 'lightblue' : 'lightblue'};
-            display: flex;
-            flex-direction: row;
-            background-color: black;
-            align-items: center;
-            width: 100%;
-            height: 100vh;
-            align-self: center;
-            justify-content: center;
-            text-align: center;
-          `}
-        >
-          <div>
+        <NoDocument>
+          <div
+            css={css`
+              color: lightblue;
+            `}
+          >
             <h1>{timedOut ? 'timed out. bummer' : 'surfing...'}</h1>
             {timedOut ? (
               <img src="/Wavy2.gif" alt="404" />
@@ -126,7 +117,7 @@ export default function withDocument(
               <img src="/Wavy2.gif" alt="Wave " />
             )}
           </div>
-        </div>
+        </NoDocument>
       )
     }
 
