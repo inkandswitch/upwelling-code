@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React from 'react'
+import { ErrorBoundary } from 'react-error-boundary'
 import { Author } from 'api'
 import { ReviewView } from './Review'
 import { Editor } from './Editor'
@@ -21,10 +22,22 @@ type Props = {
   reviewMode: boolean
 }
 
+// @ts-ignore
+function ErrorFallback({error, resetErrorBoundary}) {
+  return (
+    <div role="alert">
+      <p>Something went wrong:</p>
+      <pre>{error.message}</pre>
+      <button onClick={resetErrorBoundary}>Try again</button>
+    </div>
+  )
+}
+
 export function EditReviewView(props: Props) {
-  const { id, did, heads, visible, onChange, reviewMode, author } = props
+  const { id, heads, visible, onChange, reviewMode, author } = props
   //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
+  let { did } = props
 
   // visible.length === 0 or visible.length > 1
   let reviewView = (
@@ -35,16 +48,30 @@ export function EditReviewView(props: Props) {
     ></ReviewView>
   )
   let component = reviewView
+
+  let backTheBackUp = () => {
+    let draft = upwell.get(did)
+    let changes = draft.doc.getChanges([])
+    console.log('OH HAI I HAVE THIS TO WORK WITH', changes )
+    let oldIsNewAgain = upwell.createDraft(`Recovery from ${draft.title}`)
+    oldIsNewAgain.doc.applyChanges(changes.slice(0, changes.length - 1))
+    did = oldIsNewAgain.id
+  }
+
   if (visible.length === 1) {
     let textArea = (
-      <Editor
-        upwell={upwell}
-        author={author}
-        onChange={onChange}
-        heads={heads}
-        editableDraftId={visible[0]}
-        showEdits={reviewMode}
-      ></Editor>
+      <ErrorBoundary
+        FallbackComponent={ErrorFallback}
+          onReset={backTheBackUp}>
+        <Editor
+          upwell={upwell}
+          author={author}
+          onChange={onChange}
+          heads={heads}
+          editableDraftId={visible[0]}
+          showEdits={reviewMode}
+        ></Editor>
+      </ErrorBoundary>
     )
     component = (
       //<React.Fragment>{reviewMode ? reviewView : textArea}</React.Fragment>
