@@ -13,19 +13,15 @@ let documents = new Documents(
   SUBSCRIPTION_PEER
 )
 
-app.ws('/:id/:did', async (req, res) => {
-  let upwell = await documents.open(req.params.id)
-  if (!upwell) {
-    try {
-      await documents.sync(id)
-      upwell = documents.get(id)
-      documents.connect(id)
-      documents.connectDraft(id, req.params.did)
-    } catch (err) {
-      console.error(err)
-      console.error('No document found')
-      res.end()
-    }
+app.ws('/:id/connect', async (req, res) => {
+  try {
+    upwell = documents.get(id)
+    documents.connect(id)
+    documents.connectDraft(id, req.params.did)
+  } catch (err) {
+    console.error(err)
+    console.error('No document found')
+    res.end()
   }
 })
 
