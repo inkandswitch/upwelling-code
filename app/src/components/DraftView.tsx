@@ -149,6 +149,7 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(did)
     draftInstance.title = e.target.value
     documents.save(id)
+    setEpoch(Date.now())
   }
 
   // const handleFileNameInputBlur = (
