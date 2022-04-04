@@ -34,7 +34,6 @@ export default function DraftsHistory({
   author,
 }: Props) {
   const upwell = documents.get(id)
-  const authors = upwell.metadata.getAuthors()
   let [history, setHistory] = useState<DraftMetadata[]>([])
   let [, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize] = useState<number>(HISTORY_FETCH_SIZE)
