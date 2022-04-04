@@ -99,6 +99,9 @@ export default function DraftView(props: DraftViewProps) {
         setDraft(instance.materialize())
       }
       debouncedSync()
+      if (!local) {
+        setEpoch(Date.now())
+      }
     })
     return () => {
       documents.unsubscribe(id)

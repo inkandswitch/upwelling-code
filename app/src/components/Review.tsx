@@ -35,30 +35,30 @@ export function ReviewView(props: {
       for (let i = 0; i < attribution.length; i++) {
         let edits = attribution[i]
 
-        edits.add.forEach(edit => {
+        edits.add.forEach((edit) => {
           let text = draft.text.substring(edit.start, edit.end)
+          console.log(edit)
           draft.mark(
             'insert',
             `(${edit.start}..${edit.end})`,
             JSON.stringify({
               author: edit.actor,
-              text
+              text,
             })
           )
         })
 
-        edits.del.forEach(edit => {
+        edits.del.forEach((edit) => {
           draft.mark(
             'delete',
             `(${edit.pos}..${edit.pos})`,
             JSON.stringify({
               author: edit.actor,
-              text: edit.val
+              text: edit.val,
             })
           )
         })
       }
-
 
       let atjsonDraft = UpwellSource.fromRaw(draft)
       setState({ atjsonDraft })
