@@ -65,7 +65,10 @@ export default function DraftView(props: DraftViewProps) {
     documents.subscribe(id, (local: boolean) => {
       let upwell = documents.get(id)
       if (!local && did === upwell.rootDraft.id && did !== 'stack') {
-        return (window.location.href = 'stack')
+        // someone merged my draft while i was looking at it
+        documents.sync(id).then(() => {
+          window.location.href = `/${id}/stack`
+        })
       }
       if (!local && did === 'stack' && upwell.metadata.main !== draft.id) {
         setHasPendingChanges(true)
