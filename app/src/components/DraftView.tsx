@@ -133,7 +133,7 @@ export default function DraftView(props: DraftViewProps) {
           console.log('syncing from onTextChange')
           documents.save(id)
         }
-      }, 1000),
+      }, 60),
     [draft.contributors, id, did]
   )
 
