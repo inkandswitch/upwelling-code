@@ -32,6 +32,10 @@ export class Documents {
     this.author = author
   }
 
+  set authorName(name: string) {
+    localStorage.setItem('authorName', name)
+  }
+
   async create(id: string, author: Author): Promise<Upwell> {
     let upwell = Upwell.create({ id, author })
     this.author = author

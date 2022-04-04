@@ -5,10 +5,12 @@ import { Upwell, Draft, Author } from 'api'
 import Debug from 'debug'
 import { useLocation } from 'wouter'
 import Documents from '../Documents'
+import deterministicColor from '../color'
 import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
 import { debounce } from 'lodash'
 import NoDocument from './NoDocument'
+import Input from './Input'
 
 let documents = Documents()
 
@@ -125,19 +127,57 @@ export default function withDocument(
       <div>
         <div
           css={css`
-            padding: 0px 10px;
-            justify-content: space-between;
+            background: #f9f9fa;
+            justify-content: flex-end;
             width: 100%;
-            background-color: #eeeee;
-            color: white;
             display: flex;
-            div {
-              padding: 5px;
-            }
+            margin: auto;
           `}
         >
-          <SyncIndicator state={sync_state}></SyncIndicator>
-          <div>{documents.author.name}</div>
+          <div
+            css={css`
+              padding: 10px;
+            `}
+          >
+            You are <SyncIndicator state={sync_state}></SyncIndicator>,{' '}
+            <Input
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+              onChange={(e) => {
+                e.stopPropagation()
+              }}
+              onBlur={(e) => {
+                e.stopPropagation()
+                let upwell = documents.get(id)
+                documents.authorName = e.target.value
+
+                let newAuthor = {
+                  ...documents.author,
+                  name: e.target.value,
+                }
+                upwell.author = newAuthor
+                upwell.metadata.addAuthor(newAuthor)
+                documents.save(id)
+              }}
+              defaultValue={documents.author.name}
+            />
+            <div
+              css={css`
+                background-color: white;
+              `}
+            >
+              <div
+                css={css`
+                  height: 5px;
+                  content: '';
+                  background: ${deterministicColor(
+                    documents.author.id
+                  )?.toString()};
+                `}
+              ></div>
+            </div>
+          </div>
         </div>
         <WrappedComponent
           sync={debouncedSync}
