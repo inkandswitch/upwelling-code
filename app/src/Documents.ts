@@ -143,19 +143,20 @@ export class Documents {
     }
   }
 
-  async sync(id: string): Promise<Response> {
+  async sync(id: string): Promise<any> {
     let inMemory = this.upwells.get(id)
     let remoteBinary = await this.remote.getItem(id)
-    if (!inMemory) {
-      throw new Error('open or create the upwell first before syncing!')
-    }
-    if (!remoteBinary) {
+    if (!inMemory && remoteBinary) {
+      let buf = Buffer.from(remoteBinary)
+      await this.storage.setItem(id, buf)
+      return this.remote.setItem(id, buf)
+    } else if (!remoteBinary && inMemory) {
       let newFile = await inMemory.toFile()
       await this.storage.setItem(id, newFile)
       return this.remote.setItem(id, newFile)
-    } else {
-      // do sync
+    } else if (inMemory && remoteBinary) {
       let buf = Buffer.from(remoteBinary)
+      // do sync
       let theirs = await this.toUpwell(buf)
       // update our local one
       inMemory.merge(theirs)

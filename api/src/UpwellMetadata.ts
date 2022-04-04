@@ -56,7 +56,7 @@ export class UpwellMetadata {
 
   addAuthor(author: Author) {
     let maybe = this.doc.materialize('/authors/' + author.id)
-    let shouldUpdate = !maybe || (maybe && maybe[1].name !== author.name)
+    let shouldUpdate = !maybe || (maybe && maybe.name !== author.name)
     if (shouldUpdate) {
       this.doc.set_object('/authors', author.id, author)
     }

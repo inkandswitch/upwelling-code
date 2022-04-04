@@ -224,8 +224,8 @@ export function Editor(props: Props) {
         // The step contains an empty node that has a `heading` type instead of
         // `paragraph`
         //
-        // @ts-ignore: step.structure isn't defined in prosemirror's types
         if (
+          //@ts-ignore: step.structure isn't defined in prosemirror's types
           !step.structure ||
           step.insert !== 1 ||
           step.from !== step.gapFrom - 1 ||
