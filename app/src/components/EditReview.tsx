@@ -23,7 +23,7 @@ type Props = {
 }
 
 // @ts-ignore
-function ErrorFallback({error, resetErrorBoundary}) {
+function ErrorFallback({ error, resetErrorBoundary }) {
   return (
     <div role="alert">
       <p>Something went wrong:</p>
@@ -52,17 +52,16 @@ export function EditReviewView(props: Props) {
   let backTheBackUp = () => {
     let draft = upwell.get(did)
     let changes = draft.doc.getChanges([])
-    console.log('OH HAI I HAVE THIS TO WORK WITH', changes )
+    console.log('OH HAI I HAVE THIS TO WORK WITH', changes)
     let oldIsNewAgain = upwell.createDraft(`Recovery from ${draft.title}`)
     oldIsNewAgain.doc.applyChanges(changes.slice(0, changes.length - 1))
-    did = oldIsNewAgain.id
+    documents.save(id)
+    window.location.href = `/${id}/${oldIsNewAgain.id}`
   }
 
   if (visible.length === 1) {
     let textArea = (
-      <ErrorBoundary
-        FallbackComponent={ErrorFallback}
-          onReset={backTheBackUp}>
+      <ErrorBoundary FallbackComponent={ErrorFallback} onReset={backTheBackUp}>
         <Editor
           upwell={upwell}
           author={author}
