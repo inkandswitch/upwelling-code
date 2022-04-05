@@ -20,7 +20,10 @@ import {
   RemoveMarkStep,
   ReplaceAroundStep,
 } from 'prosemirror-transform'
-import { Transaction as ProsemirrorTransaction } from 'prosemirror-state'
+import {
+  EditorState,
+  Transaction as ProsemirrorTransaction,
+} from 'prosemirror-state'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import {
@@ -39,16 +42,16 @@ import {
   automergeChangesKey,
   automergeChangesPlugin,
 } from '../prosemirror/AutomergeChangesPlugin'
+import { debounce } from 'lodash'
 
 const documents = Documents()
 const log = Debug('Editor')
 
 type Props = {
-  upwell: Upwell
+  upwellId: string
   editableDraftId: string
   heads?: string[]
   author: Author
-  onChange: any
   showEdits: boolean
 }
 
@@ -81,57 +84,103 @@ export const textCSS = css`
 let prevHeads: any
 
 export function Editor(props: Props) {
+  let { upwellId, heads, editableDraftId, author, showEdits } = props
 
-  let { upwell, heads, editableDraftId, onChange, author, showEdits } = props
+  const [state, setState] = React.useState<EditorState | null>(null)
 
-  let editableDraft = upwell.get(editableDraftId)
+  let upwell = documents.get(upwellId)
 
-  let atjsonDraft = UpwellSource.fromRaw(editableDraft)
-  let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
-  let editorConfig = {
-    schema,
-    doc: pmDoc,
-    plugins: [
-      contextMenu([commentButton(author)]),
-      remoteCursorPlugin(),
-      automergeChangesPlugin(upwell, editableDraft, author.id),
-      history(),
-      keymap({
-        ...baseKeymap,
-        'Mod-z': undo,
-        'Mod-y': redo,
-        'Mod-Shift-z': redo,
-        'Mod-b': toggleBold,
-        'Mod-i': toggleItalic,
-        'Ctrl-Alt-0': setBlockType(schema.nodes.paragraph),
-        'Ctrl-Alt-1': setBlockType(schema.nodes.heading, { level: 1 }),
-        'Ctrl-Alt-2': setBlockType(schema.nodes.heading, { level: 2 }),
-        'Ctrl-Alt-3': setBlockType(schema.nodes.heading, { level: 3 }),
-        'Ctrl-Alt-4': setBlockType(schema.nodes.heading, { level: 4 }),
-        'Ctrl-Alt-5': setBlockType(schema.nodes.heading, { level: 5 }),
-        'Ctrl-Alt-6': setBlockType(schema.nodes.heading, { level: 6 }),
-      }),
-    ],
+  let debouncedOnTextChange = React.useMemo(
+    () =>
+      debounce(() => {
+        documents.save(upwellId)
+        console.log('syncing from onTextChange')
+      }, 500),
+    [upwellId]
+  )
+
+  let onChange = () => {
+    documents.rtcDraft?.updatePeers()
+    debouncedOnTextChange()
   }
 
-  const [state, setState] = useProseMirror(editorConfig)
+  function useTraceUpdate(propss: any) {
+    const prev = useRef(propss)
+    useEffect(() => {
+      const changedProps = Object.entries(propss).reduce((ps: any, [k, v]) => {
+        if (prev.current[k] !== v) {
+          ps[k] = [prev.current[k], v]
+        }
+        return ps
+      }, {})
+      if (Object.keys(changedProps).length > 0) {
+        console.log('Changed props:', changedProps)
+      }
+      prev.current = props
+    })
+  }
+
+  // Usage
+  useTraceUpdate(props)
+
+  useEffect(() => {
+    let upwell = documents.get(upwellId)
+    let editableDraft = upwell.get(editableDraftId)
+    let atjsonDraft = UpwellSource.fromRaw(editableDraft)
+    let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
+    let editorConfig = {
+      schema,
+      doc: pmDoc,
+      plugins: [
+        contextMenu([commentButton(author)]),
+        remoteCursorPlugin(),
+        automergeChangesPlugin(upwell, editableDraft, author.id),
+        history(),
+        keymap({
+          ...baseKeymap,
+          'Mod-z': undo,
+          'Mod-y': redo,
+          'Mod-Shift-z': redo,
+          'Mod-b': toggleBold,
+          'Mod-i': toggleItalic,
+          'Ctrl-Alt-0': setBlockType(schema.nodes.paragraph),
+          'Ctrl-Alt-1': setBlockType(schema.nodes.heading, { level: 1 }),
+          'Ctrl-Alt-2': setBlockType(schema.nodes.heading, { level: 2 }),
+          'Ctrl-Alt-3': setBlockType(schema.nodes.heading, { level: 3 }),
+          'Ctrl-Alt-4': setBlockType(schema.nodes.heading, { level: 4 }),
+          'Ctrl-Alt-5': setBlockType(schema.nodes.heading, { level: 5 }),
+          'Ctrl-Alt-6': setBlockType(schema.nodes.heading, { level: 6 }),
+        }),
+      ],
+    }
+
+    setState(EditorState.create(editorConfig))
+  }, [editableDraftId, upwellId, author])
+
+  let editableDraft = upwell.get(editableDraftId)
   log('got heads', heads)
 
   const viewRef = useRef(null)
 
   useEffect(() => {
-    let transaction = state.tr.setMeta(automergeChangesKey, {showEdits})
+    console.log('showedits?')
+    if (!state) return
+    let transaction = state.tr.setMeta(automergeChangesKey, { showEdits })
     setState(state.apply(transaction))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showEdits])
 
   useEffect(() => {
-    let transaction = state.tr.setMeta(automergeChangesKey, {heads})
+    if (!state) return
+    console.log('heads?')
+    let transaction = state.tr.setMeta(automergeChangesKey, { heads })
     setState(state.apply(transaction))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heads])
 
   useEffect(() => {
+    if (!state) return
+    // @ts-ignore
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
       documents.rtcDraft.transactions.subscribe((edits: AutomergeEdit) => {
         let newHeads = editableDraft.doc.getHeads()
@@ -181,6 +230,7 @@ export function Editor(props: Props) {
   })
 
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
+    if (!state) return
     let beforeHeads = editableDraft.doc.getHeads()
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
@@ -329,12 +379,13 @@ export function Editor(props: Props) {
       transaction.setMeta(automergeChangesKey, { changeSet })
     }
 
-    onChange(editableDraft)
+    onChange()
     let newState = state.apply(transaction)
     setState(newState)
   }
 
   let color = deterministicColor(editableDraft.authorId)
+  if (!state) return <div>loading</div>
   return (
     <ProseMirror
       editable={() => props.editableDraftId !== upwell.rootDraft.id}
