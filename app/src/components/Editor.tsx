@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import React, { useEffect, useRef } from 'react'
-import { Transaction as AutomergeEdit, Upwell, Author } from 'api'
+import { Transaction as AutomergeEdit, Author } from 'api'
 import deterministicColor from '../color'
 
 import { schema } from '../prosemirror/UpwellSchema'
@@ -9,7 +9,7 @@ import {
   prosemirrorToAutomerge,
 } from '../prosemirror/utils/PositionMapper'
 
-import { ProseMirror, useProseMirror } from 'use-prosemirror'
+import { ProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
