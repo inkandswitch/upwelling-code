@@ -145,14 +145,16 @@ export function Editor(props: Props) {
           let obj = editableDraft.doc.value('_root', 'text')
           let changeSet
           if (obj && obj[0] === 'text')
-            changeSet = editableDraft.doc.attribute2(obj[1], prevHeads, [newHeads])
+            changeSet = editableDraft.doc.attribute2(obj[1], prevHeads, [
+              newHeads,
+            ])
           if (changeSet) {
-          if (transaction) {
-            transaction.setMeta(automergeChangesKey, {changeSet})
-          } else {
-            transaction = state.tr.setMeta(automergeChangesKey, {changeSet})
+            if (transaction) {
+              transaction.setMeta(automergeChangesKey, { changeSet })
+            } else {
+              transaction = state.tr.setMeta(automergeChangesKey, { changeSet })
+            }
           }
-        }
         }
         prevHeads = newHeads
         if (transaction) {
@@ -320,9 +322,11 @@ export function Editor(props: Props) {
     if (amConfig?.showChanges) {
       let obj = editableDraft.doc.value('_root', 'text')
       if (obj && obj[0] === 'text')
-        changeSet = editableDraft.doc.attribute2(obj[1], beforeHeads, [afterHeads])
-      
-      transaction.setMeta(automergeChangesKey, {changeSet})
+        changeSet = editableDraft.doc.attribute2(obj[1], beforeHeads, [
+          afterHeads,
+        ])
+
+      transaction.setMeta(automergeChangesKey, { changeSet })
     }
 
     onChange(editableDraft)
