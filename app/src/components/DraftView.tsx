@@ -1,13 +1,11 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useEffect, useCallback, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
 import { DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
-import { SYNC_STATE } from '../types'
-import { SyncIndicator } from './SyncIndicator'
 import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
@@ -19,6 +17,7 @@ import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { getYourDrafts } from '../util'
+import InputModal from './InputModal'
 
 const log = debug('DraftView')
 
@@ -26,18 +25,20 @@ let documents = Documents()
 
 type DraftViewProps = {
   did: string
+  epoch: number
   id: string
   root: Draft
   author: Author
+  sync: () => void
 }
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author, did } = props
-  let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
+  let { id, author, did, epoch, sync } = props
   let [reviewMode, setReviewMode] = useState<boolean>(false)
-  let [epoch, setEpoch] = useState<number>(Date.now())
+
   let upwell = documents.get(id)
   const isLatest = did === 'stack'
+
   let maybeDraft
   try {
     maybeDraft = upwell.get(did)
@@ -52,41 +53,23 @@ export default function DraftView(props: DraftViewProps) {
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     did !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
-  const sync = useCallback(async () => {
-    setSyncState(SYNC_STATE.LOADING)
-    let upwell = documents.get(id)
-    try {
-      await documents.sync(id)
-      log('synced')
-      setSyncState(SYNC_STATE.SYNCED)
-    } catch (err) {
-      log('failed to sync', err)
-      setSyncState(SYNC_STATE.OFFLINE)
-    } finally {
-      setDrafts(upwell.drafts())
-      setDraft(upwell.get(did).materialize())
-      log('rendering')
-    }
-  }, [id, did])
-
-  const debouncedSync = React.useMemo(
-    () =>
-      debounce(() => {
-        sync()
-      }, 500),
-    [sync]
-  )
 
   useEffect(() => {
-    sync()
-  }, [id, sync])
+    let upwell = documents.get(id)
+    setDrafts(upwell.drafts())
+    setDraft(upwell.get(did).materialize())
+    log('rendering')
+  }, [id, did, epoch])
 
   // every time the upwell id changes
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       let upwell = documents.get(id)
       if (!local && did === upwell.rootDraft.id && did !== 'stack') {
-        return (window.location.href = 'stack')
+        // someone merged my draft while i was looking at it
+        documents.sync(id).then(() => {
+          window.location.href = `/${id}/stack`
+        })
       }
       if (!local && did === 'stack' && upwell.metadata.main !== draft.id) {
         setHasPendingChanges(true)
@@ -97,15 +80,12 @@ export default function DraftView(props: DraftViewProps) {
         let instance = upwell.get(did)
         setDraft(instance.materialize())
       }
-      debouncedSync()
-      if (!local) {
-        setEpoch(Date.now())
-      }
+      sync()
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, did, debouncedSync])
+  }, [id, draft.parent_id, draft.id, did, sync])
 
   // every time the draft id changes
   useEffect(() => {
@@ -140,7 +120,6 @@ export default function DraftView(props: DraftViewProps) {
   )
 
   let onTextChange = () => {
-    setSyncState(SYNC_STATE.LOADING)
     documents.rtcDraft?.updatePeers()
     debouncedOnTextChange()
   }
@@ -151,16 +130,7 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(did)
     draftInstance.title = e.target.value
     documents.save(id)
-    setEpoch(Date.now())
   }
-
-  // const handleFileNameInputBlur = (
-  //   e: React.FocusEvent<HTMLInputElement, Element>
-  // ) => {
-  //   let draftInstance = upwell.get(did)
-  //   draftInstance.message = e.target.value
-  //   documents.save(id)
-  // }
 
   const handleShareClick = (draft: DraftMetadata) => {
     if (
@@ -183,9 +153,10 @@ export default function DraftView(props: DraftViewProps) {
     goToDraft('stack')
   }
 
-  const createDraft = debounce(() => {
+  const createDraft = debounce((draftName: string) => {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft()
+    newDraft.message = draftName
 
     documents.save(id)
     goToDraft(newDraft.id)
@@ -233,7 +204,6 @@ export default function DraftView(props: DraftViewProps) {
         justify-content: space-between;
       `}
     >
-      <SyncIndicator state={sync_state}></SyncIndicator>
       <div id="spacer-placeholder" />
       <div
         id="folio"
@@ -331,7 +301,7 @@ export default function DraftView(props: DraftViewProps) {
                 </Select>
               </FormControl>
               {isLatest || upwell.isArchived(draft.id) ? (
-                <Button onClick={createDraft}>Create Draft</Button>
+                <InputModal onCreateDraft={createDraft} />
               ) : (
                 <>
                   <Button
@@ -354,23 +324,6 @@ export default function DraftView(props: DraftViewProps) {
                   )}
                 </>
               )}
-              {/** Edit draft name */}
-              {/* {!isLatest && (
-                <Input
-                  value={draft.message}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setDraft({ ...draft, message: e.target.value })
-                  }}
-                  onBlur={(e) => {
-                    //@ts-ignore
-                    handleFileNameInputBlur(e)
-                  }}
-                />
-              )} */}
             </div>
           </div>
           <div

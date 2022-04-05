@@ -11,7 +11,7 @@ import { UpwellMetadata } from './UpwellMetadata'
 
 export type AuthorId = string
 export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: 'Anonymous' }
-export const SPECIAL_ROOT_DOCUMENT = 'First draft'
+export const SPECIAL_ROOT_DOCUMENT = 'Empty'
 
 export type Author = {
   id: AuthorId
@@ -243,7 +243,7 @@ export class Upwell {
     upwell._add(draft)
     upwell.rootDraft = draft
     draft.parent_id = draft.id
-    upwell.createDraft() // always create an initial draft
+    upwell.createDraft('First draft') // always create an initial draft
     return upwell
   }
 

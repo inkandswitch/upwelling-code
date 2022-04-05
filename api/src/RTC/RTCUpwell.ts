@@ -1,12 +1,12 @@
-import RTC, { WebsocketSyncMessage } from "./RTC";
-import { Author, Upwell } from "..";
+import RTC, { WebsocketSyncMessage } from './RTC'
+import { Author, Upwell } from '..'
 
-import debug from "debug";
+import debug from 'debug'
 
 let log = debug('RTCUpwell')
 
 export class RealTimeUpwell extends RTC<WebsocketSyncMessage> {
-  upwell: Upwell;
+  upwell: Upwell
 
   constructor(upwell: Upwell, author: Author) {
     super(upwell.id, upwell.metadata.doc, author)
