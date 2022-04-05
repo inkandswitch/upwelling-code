@@ -9,14 +9,13 @@ import { ReplaceStep } from 'prosemirror-transform'
 
 export const automergeChangesKey = new PluginKey('automergeChanges')
 
-function changeSetToDecorations(changeSet: ChangeSet, draft: Draft) {
+function changeSetToDecorations(changeSet: ChangeSet, draft: Draft, border: boolean = false) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     return Decoration.inline(from, to, {
-      style: `background: ${deterministicColor(
-        change.actor.split('0000')[0],
-        0.15
-      )}`,
+      style:
+        `background: ${deterministicColor(change.actor.split('0000')[0], 0.15)}
+      ${ (border) ? '; border: 1px solid black' : '' }`,
     })
   })
 }
@@ -61,11 +60,21 @@ export const automergeChangesPlugin: (
           if (heads) {
             // fixme recompute changes
             prev.heads = automergeChanges.heads
-            console.log(heads, initialDraft.doc.getHeads(), baseDraft.doc.getHeads())
-            let obj = initialDraft.doc.value('_root', 'text')
-            if (obj && obj[0] === 'text') {
-              let attr = baseDraft.doc.attribute2(obj[1], baseDraft.doc.getHeads(), [heads, initialDraft.doc.getHeads()])
-              console.log(attr)
+            let obj = initialDraft.doc.value('_root', 'text', heads)
+            let latestObj = initialDraft.doc.value('_root', 'text', baseDraft.doc.getHeads())
+
+            if (obj && obj[0] === 'text' && latestObj && latestObj[0] === 'text') {
+              console.log({
+                heads: { heads, text: initialDraft.doc.text(obj[1], heads) },
+                initial: { heads: initialDraft.doc.getHeads(), text: initialDraft.text },
+                base: { heads: baseDraft.doc.getHeads(), text: baseDraft.text }})
+              let history = initialDraft.doc.attribute2(obj[1], heads, [baseDraft.doc.getHeads()])
+              let newHistory = initialDraft.doc.attribute2(latestObj[1], baseDraft.doc.getHeads(), [initialDraft.doc.getHeads()])
+              let before = changeSetToDecorations(history[0], initialDraft, true)
+              let after = changeSetToDecorations(newHistory[0], initialDraft)
+              prev.decorations = DecorationSet.create(tr.doc, before).add(tr.doc, after)
+
+              console.log({history, newHistory})
               // FIXME this isn't working for some reason. attribute2 is a bit finnicky.
             }
           }
