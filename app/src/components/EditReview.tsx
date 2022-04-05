@@ -16,7 +16,6 @@ type Props = {
   id: string
   did: string
   visible: string[]
-  onChange: any
   heads: string[]
   author: Author
   reviewMode: boolean
@@ -34,7 +33,7 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, heads, visible, onChange, reviewMode, author } = props
+  const { id, heads, visible, reviewMode, author } = props
   //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
   let { did } = props
@@ -63,9 +62,8 @@ export function EditReviewView(props: Props) {
     let textArea = (
       <ErrorBoundary FallbackComponent={ErrorFallback} onReset={backTheBackUp}>
         <Editor
-          upwell={upwell}
+          upwellId={upwell.id}
           author={author}
-          onChange={onChange}
           heads={heads}
           editableDraftId={visible[0]}
           showEdits={reviewMode}

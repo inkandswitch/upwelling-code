@@ -101,29 +101,6 @@ export default function DraftView(props: DraftViewProps) {
     }
   }, [id, did])
 
-  let debouncedOnTextChange = React.useMemo(
-    () =>
-      debounce(() => {
-        let upwell = documents.get(id)
-        if (upwell.rootDraft.id === did) {
-        } else {
-          if (draft.contributors.indexOf(documents.author.id) === -1) {
-            let draftInstance = upwell.get(did)
-            draftInstance.addContributor(documents.author.id)
-            setDraft(draftInstance.materialize())
-          }
-          console.log('syncing from onTextChange')
-          documents.save(id)
-        }
-      }, 60),
-    [draft.contributors, id, did]
-  )
-
-  let onTextChange = () => {
-    documents.rtcDraft?.updatePeers()
-    debouncedOnTextChange()
-  }
-
   const handleTitleInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
@@ -389,7 +366,6 @@ export default function DraftView(props: DraftViewProps) {
           author={author}
           reviewMode={reviewMode}
           heads={heads}
-          onChange={onTextChange}
         />
       </div>
       <div
