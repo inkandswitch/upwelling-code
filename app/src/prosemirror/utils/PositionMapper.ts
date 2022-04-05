@@ -52,7 +52,6 @@ export const prosemirrorToAutomergeNumber = (
 
     // handle boundary case of empty nodes
     // there is probably a more elegant way to do this.
-    if (offset >= position && nodeSize > 2) break
     if (offset > position) break
     idx++
     blocks++
