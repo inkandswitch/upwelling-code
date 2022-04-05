@@ -49,7 +49,15 @@ export class Comment extends InlineAnnotation<{}> {
 }
 
 export default class UpwellSource extends Document {
-  static schema = [Comment, Deletion, Emphasis, Heading, Insertion, Paragraph, Strong]
+  static schema = [
+    Comment,
+    Deletion,
+    Emphasis,
+    Heading,
+    Insertion,
+    Paragraph,
+    Strong,
+  ]
 
   // This converts an upwell/automerge draft to an atjson document.
   static fromRaw(draft: Draft) {
