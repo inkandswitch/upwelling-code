@@ -245,13 +245,23 @@ export function Editor(props: Props) {
 
         let text = editableDraft.text
         // Double-check that we're doing what we think we are, i.e., replacing a parent node
-        if (text[gapStart - 1] !== '\uFFFC' || text[gapEnd] !== '\uFFFC') {
-          console.debug(
-            `Unhandled scenario in ReplaceAroundStep, expected ${text[
+        if (text[gapStart - 1] !== '\uFFFC') {
+          console.error(
+            `Unhandled scenario in ReplaceAroundStep, expected character at ${gapStart} (${text[
               gapStart - 1
-            ].charCodeAt(0)} and ${text[gapEnd].charCodeAt(
+            ].charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)}`,
+            step
+          )
+          continue
+        }
+
+        if (text[gapEnd] !== '\uFFFC' && gapEnd !== text.length) {
+          console.error(
+            `Unhandled scenario in ReplaceAroundStep, expected character at ${gapEnd} (${text[
+              gapEnd
+            ]?.charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(
               0
-            )} == ${'\uFFFC'.charCodeAt(0)}`,
+            )} or End of Document (${text.length})`,
             step
           )
           continue
