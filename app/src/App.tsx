@@ -4,11 +4,21 @@ import Documents from './Documents'
 import DraftView from './components/DraftView'
 import withDocument from './components/withDocument'
 import NoDocument from './components/NoDocument'
-require('setimmediate')
+import { useLocation } from 'wouter'
+import { Button } from './components/Button'
+import { nanoid } from 'nanoid'
 
 let documents = Documents()
 
+require('setimmediate')
+
 export default function App() {
+  let [, setLocation] = useLocation()
+  async function newUpwell() {
+    let id = nanoid()
+    let doc = await documents.create(id, documents.author)
+    setLocation('/' + doc.id + '/' + doc.drafts()[0].id)
+  }
   return (
     <>
       <Route path="/:id/:did">
@@ -24,7 +34,11 @@ export default function App() {
       </Route>
       <Route path="/">
         {() => {
-          return <NoDocument />
+          return (
+            <NoDocument>
+              <Button onClick={newUpwell}>New Document</Button>
+            </NoDocument>
+          )
         }}
       </Route>
 

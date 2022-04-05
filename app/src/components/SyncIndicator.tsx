@@ -15,7 +15,7 @@ export function SyncIndicator(props: { state: SYNC_STATE }) {
       indicator = <span>offline</span>
       break
     default:
-      indicator = <span>saving...</span>
+      indicator = <span>saving</span>
       break
   }
   return (
