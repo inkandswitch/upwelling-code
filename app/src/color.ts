@@ -7,7 +7,7 @@ const pjw = (str: string) => {
     h = (h << 4) + str.charCodeAt(i)
     const g = h & 0xf0000000
     if (g !== 0) {
-      h ^= g >>> 24
+      h ^= g >>> 18
       h ^= g
     }
   }
@@ -15,8 +15,8 @@ const pjw = (str: string) => {
 }
 
 // returns a css color string
-function deterministicColor(str: string, alpha: number = 0.47): HCLColor {
+function deterministicColor(str: string, alpha: number = 0.8): HCLColor {
   const hue = pjw(str)
-  return lch(80, 132, hue, alpha)
+  return lch(40, 132, hue, alpha).brighter()
 }
 export default deterministicColor

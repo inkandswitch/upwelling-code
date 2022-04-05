@@ -13,7 +13,13 @@ import { ProseMirror, useProseMirror } from 'use-prosemirror'
 import { keymap } from 'prosemirror-keymap'
 import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
-import { ReplaceStep, AddMarkStep, RemoveMarkStep, ReplaceAroundStep } from 'prosemirror-transform'
+import Debug from 'debug'
+import {
+  ReplaceStep,
+  AddMarkStep,
+  RemoveMarkStep,
+  ReplaceAroundStep,
+} from 'prosemirror-transform'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import {
@@ -33,7 +39,8 @@ import {
   automergeChangesPlugin,
 } from '../prosemirror/AutomergeChangesPlugin'
 
-let documents = Documents()
+const documents = Documents()
+const log = Debug('Editor')
 
 type Props = {
   upwell: Upwell
@@ -71,7 +78,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author, showEdits } = props
+  let { upwell, heads, editableDraftId, onChange, author, showEdits } = props
 
   let editableDraft = upwell.get(editableDraftId)
 
@@ -104,6 +111,7 @@ export function Editor(props: Props) {
   }
 
   const [state, setState] = useProseMirror(editorConfig)
+  log('got heads', heads)
 
   const viewRef = useRef(null)
 
@@ -202,7 +210,6 @@ export function Editor(props: Props) {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, false)
         }
       } else if (step instanceof ReplaceAroundStep) {
-
         // This is just a guard to prevent us from handling a ReplaceAroundStep
         // that isn't simply replacing the container, because implementing that
         // is complicated and I can't think of an example where this would be
@@ -217,22 +224,46 @@ export function Editor(props: Props) {
         // The step contains an empty node that has a `heading` type instead of
         // `paragraph`
         //
-        // @ts-ignore: step.structure isn't defined in prosemirror's types
-        if (!step.structure || step.insert !== 1 || step.from !== step.gapFrom - 1 || step.to !== step.gapTo + 1) {
-          console.debug('Unhandled scenario in ReplaceAroundStep (non-structure)', step)
+        if (
+          //@ts-ignore: step.structure isn't defined in prosemirror's types
+          !step.structure ||
+          step.insert !== 1 ||
+          step.from !== step.gapFrom - 1 ||
+          step.to !== step.gapTo + 1
+        ) {
+          console.debug(
+            'Unhandled scenario in ReplaceAroundStep (non-structure)',
+            step
+          )
         }
 
-        let { start: gapStart, end: gapEnd } = prosemirrorToAutomerge({ from: step.gapFrom, to: step.gapTo }, editableDraft, state) 
+        let { start: gapStart, end: gapEnd } = prosemirrorToAutomerge(
+          { from: step.gapFrom, to: step.gapTo },
+          editableDraft,
+          state
+        )
 
         let text = editableDraft.text
         // Double-check that we're doing what we think we are, i.e., replacing a parent node
         if (text[gapStart - 1] !== '\uFFFC') {
-          console.error(`Unhandled scenario in ReplaceAroundStep, expected character at ${gapStart} (${text[gapStart - 1].charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)}`, step)
+          console.error(
+            `Unhandled scenario in ReplaceAroundStep, expected character at ${gapStart} (${text[
+              gapStart - 1
+            ].charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)}`,
+            step
+          )
           continue
         }
 
         if (text[gapEnd] !== '\uFFFC' && gapEnd !== text.length) {
-          console.error(`Unhandled scenario in ReplaceAroundStep, expected character at ${gapEnd} (${text[gapEnd]?.charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)} or End of Document (${text.length})`, step)
+          console.error(
+            `Unhandled scenario in ReplaceAroundStep, expected character at ${gapEnd} (${text[
+              gapEnd
+            ]?.charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(
+              0
+            )} or End of Document (${text.length})`,
+            step
+          )
           continue
         }
 

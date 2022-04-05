@@ -1,7 +1,7 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
 import { Draft, CommentState } from 'api'
-import deterministicColor from '../color';
+import deterministicColor from '../color'
 
 export class Insertion extends InlineAnnotation<{
   author?: string
@@ -85,7 +85,6 @@ export default class UpwellSource extends Document {
         type: `-upwell-${m.type}`,
         attributes: attrs,
       })
-
     })
 
     // next convert blocks to annotations
