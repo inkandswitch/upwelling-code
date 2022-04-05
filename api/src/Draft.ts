@@ -309,6 +309,10 @@ export class Draft {
       throw new Error('text not properly initialized')
 
     let i = this.text.indexOf('\uFFFC')
+
+    // If we have an empty document, insert a paragraph to get started.
+    if (i === -1) this.insertBlock(0, 'paragraph')
+
     while (i !== this.text.length) {
       // don't include the block replacement character, since it's just a marker
       // that the paragraph follows
@@ -414,10 +418,7 @@ export class Draft {
     doc.set(ROOT, 'title', '')
     doc.set_object(ROOT, 'comments', {})
     doc.set_object(ROOT, 'contributors', {})
-    // for prosemirror, we can't have an empty document, so fill some space
-    let text = doc.set_object(ROOT, 'text', ' ')
-    let initialParagraph = doc.insert_object(text, 0, { type: 'paragraph' })
-    doc.set(initialParagraph, 'type', 'paragraph')
+    let text = doc.set_object(ROOT, 'text', '')
     let draft = new Draft(id, doc)
     draft.addContributor(authorId)
     return draft
