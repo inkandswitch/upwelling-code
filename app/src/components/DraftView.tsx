@@ -17,6 +17,7 @@ import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { getYourDrafts } from '../util'
+import InputModal from './InputModal'
 
 const log = debug('DraftView')
 
@@ -131,14 +132,6 @@ export default function DraftView(props: DraftViewProps) {
     documents.save(id)
   }
 
-  // const handleFileNameInputBlur = (
-  //   e: React.FocusEvent<HTMLInputElement, Element>
-  // ) => {
-  //   let draftInstance = upwell.get(did)
-  //   draftInstance.message = e.target.value
-  //   documents.save(id)
-  // }
-
   const handleShareClick = (draft: DraftMetadata) => {
     if (
       // eslint-disable-next-line no-restricted-globals
@@ -160,9 +153,10 @@ export default function DraftView(props: DraftViewProps) {
     goToDraft('stack')
   }
 
-  const createDraft = debounce(() => {
+  const createDraft = debounce((draftName: string) => {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft()
+    newDraft.message = draftName
 
     documents.save(id)
     goToDraft(newDraft.id)
@@ -307,7 +301,7 @@ export default function DraftView(props: DraftViewProps) {
                 </Select>
               </FormControl>
               {isLatest || upwell.isArchived(draft.id) ? (
-                <Button onClick={createDraft}>Create Draft</Button>
+                <InputModal onCreateDraft={createDraft} />
               ) : (
                 <>
                   <Button
@@ -330,23 +324,6 @@ export default function DraftView(props: DraftViewProps) {
                   )}
                 </>
               )}
-              {/** Edit draft name */}
-              {/* {!isLatest && (
-                <Input
-                  value={draft.message}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    setDraft({ ...draft, message: e.target.value })
-                  }}
-                  onBlur={(e) => {
-                    //@ts-ignore
-                    handleFileNameInputBlur(e)
-                  }}
-                />
-              )} */}
             </div>
           </div>
           <div
