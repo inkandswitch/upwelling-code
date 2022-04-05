@@ -8,7 +8,6 @@ import { ChangeSet } from 'automerge-wasm-pack'
 import { ReplaceStep } from 'prosemirror-transform'
 
 export const automergeChangesKey = new PluginKey('automergeChanges')
-export const showEditsKey = new PluginKey('showEdits')
 
 function changeSetToDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
@@ -32,8 +31,6 @@ function getAllChanges(baseDraft: Draft, draft: Draft, doc: Node) {
   return DecorationSet.create(doc, decorations)
 }
 
-let showEdits = false
-
 export const automergeChangesPlugin: (
   upwell: Upwell,
   initialDraft: Draft,
@@ -46,70 +43,63 @@ export const automergeChangesPlugin: (
 
     state: {
       init(_, state) {
-        return getAllChanges(baseDraft, initialDraft, state.doc)
+        return {
+          heads: null,
+          showEdits: false,
+          decorations: getAllChanges(baseDraft, initialDraft, state.doc)
+        }
       },
 
-      apply(tr, changes, oldState, newState) {
-        let showEditsNow = tr.getMeta(showEditsKey)
-        if (showEditsNow === true) {
-          showEdits = showEditsNow
-          return getAllChanges(baseDraft, initialDraft, tr.doc)
-        } else if (showEditsNow === false) {
-          showEdits = showEditsNow
-          return DecorationSet.create(tr.doc, [])
-        }
+      apply(tr, prev, oldState, newState) {
 
-        const automergeChanges = tr.getMeta(automergeChangesKey)
+        let automergeChanges = tr.getMeta(automergeChangesKey)
 
-        if (!automergeChanges && changes) {
-          // Local change
-          let decorations: DecorationSet = changes.map(tr.mapping, tr.doc)
+        // Handle config changes
+        if (automergeChanges) {
+          let { heads, showEdits } = automergeChanges
 
-          if (showEdits === false) return decorations
-
-          let newDecorations: Decoration[] = []
-
-          for (let step of tr.steps) {
-            if (step instanceof ReplaceStep) {
-              step.slice.content.forEach((node) => {
-                if (node.type.name === 'text' && node.text) {
-                  newDecorations.push(
-                    Decoration.inline(
-                      //@ts-ignore
-                      step.from, //@ts-ignore
-                      step.from + node.text.length,
-                      {
-                        style: `background: ${deterministicColor(
-                          authorId,
-                          0.15
-                        )}`,
-                      }
-                    )
-                  )
-                }
-              })
+          if (heads) {
+            // fixme recompute changes
+            prev.heads = automergeChanges.heads
+            console.log(heads, initialDraft.doc.getHeads(), baseDraft.doc.getHeads())
+            let obj = initialDraft.doc.value('_root', 'text')
+            if (obj && obj[0] === 'text') {
+              let attr = baseDraft.doc.attribute2(obj[1], baseDraft.doc.getHeads(), [heads, initialDraft.doc.getHeads()])
+              console.log(attr)
+              // FIXME this isn't working for some reason. attribute2 is a bit finnicky.
             }
           }
 
-          return decorations.add(tr.doc, newDecorations)
+          if (showEdits === true) {
+            prev.showEdits = true
+            prev.decorations = getAllChanges(baseDraft, initialDraft, newState.doc)
+          } else if (automergeChanges.showEdits === false) {
+            prev.showEdits = false
+          }
         }
 
-        let { draft } = automergeChanges
+        // just a little optimization - don't do work we don't have to.
+        if (!prev.showEdits) return prev
 
-        let { attribution } = Draft.mergeWithEdits(
-          draft.authorId,
-          baseDraft,
-          draft
-        )
-
-        let decorations = changeSetToDecorations(attribution[0], draft)
-        return DecorationSet.create(tr.doc, decorations)
+        if (automergeChanges?.changeSet) {
+          let newDecos = changeSetToDecorations(automergeChanges.changeSet[0], initialDraft)
+          let decorations: DecorationSet = prev.decorations
+          prev.decorations = decorations.map(tr.mapping, tr.doc).add(tr.doc, newDecos)
+        } else if (tr.steps.length > 0) {
+          prev.decorations = getAllChanges(baseDraft, initialDraft, newState.doc)
+        }
+        return prev
       },
     },
 
     props: {
       decorations(state) {
-        return automergeChangesKey.getState(state)
+        let amState = automergeChangesKey.getState(state)
+        if (amState.showEdits) {
+          return amState.decorations
+        } else {
+          return DecorationSet.empty
+        }
       },
     },
   })

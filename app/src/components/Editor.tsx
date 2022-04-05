@@ -14,6 +14,7 @@ import { keymap } from 'prosemirror-keymap'
 import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import { ReplaceStep, AddMarkStep, RemoveMarkStep, ReplaceAroundStep } from 'prosemirror-transform'
+import { Transaction as ProsemirrorTransaction } from 'prosemirror-state'
 
 import { contextMenu } from '../prosemirror/ContextMenuPlugin'
 import {
@@ -29,7 +30,7 @@ import Documents from '../Documents'
 import { commentButton } from '../prosemirror/context-menu-items/CommentButton'
 import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemirror/utils/TransformHelper'
 import {
-  showEditsKey,
+  automergeChangesKey,
   automergeChangesPlugin,
 } from '../prosemirror/AutomergeChangesPlugin'
 
@@ -70,8 +71,10 @@ export const textCSS = css`
   }
 `
 
+let prevHeads: any
+
 export function Editor(props: Props) {
-  let { upwell, editableDraftId, onChange, author, showEdits } = props
+  let { upwell, editableDraftId, onChange, author, showEdits, heads } = props
 
   let editableDraft = upwell.get(editableDraftId)
 
@@ -108,20 +111,41 @@ export function Editor(props: Props) {
   const viewRef = useRef(null)
 
   useEffect(() => {
-    let transaction = state.tr.setMeta(showEditsKey, showEdits)
-    let newState = state.apply(transaction)
-    setState(newState)
+    let transaction = state.tr.setMeta(automergeChangesKey, {showEdits})
+    setState(state.apply(transaction))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showEdits])
 
   useEffect(() => {
+    let transaction = state.tr.setMeta(automergeChangesKey, {heads})
+    setState(state.apply(transaction))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heads])
+
+  useEffect(() => {
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
       documents.rtcDraft.transactions.subscribe((edits: AutomergeEdit) => {
+        let newHeads = editableDraft.doc.getHeads()
         let transaction = convertAutomergeTransactionToProsemirrorTransaction(
           editableDraft,
           state,
           edits
         )
+
+        if (prevHeads && prevHeads !== newHeads) {
+          let obj = editableDraft.doc.value('_root', 'text')
+          let changeSet
+          if (obj && obj[0] === 'text')
+            changeSet = editableDraft.doc.attribute2(obj[1], prevHeads, [newHeads])
+          if (changeSet) {
+          if (transaction) {
+            transaction.setMeta(automergeChangesKey, {changeSet})
+          } else {
+            transaction = state.tr.setMeta(automergeChangesKey, {changeSet})
+          }
+        }
+        }
+        prevHeads = newHeads
         if (transaction) {
           let newState = state.apply(transaction)
           setState(newState)
@@ -145,7 +169,8 @@ export function Editor(props: Props) {
     }
   })
 
-  let dispatchHandler = (transaction: any) => {
+  let dispatchHandler = (transaction: ProsemirrorTransaction) => {
+    let beforeHeads = editableDraft.doc.getHeads()
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
@@ -249,13 +274,24 @@ export function Editor(props: Props) {
     documents.rtcDraft?.sendCursorMessage(
       prosemirrorToAutomerge(
         {
-          from: transaction.curSelection.ranges[0].$from.pos,
-          to: transaction.curSelection.ranges[0].$to.pos,
+          from: transaction.selection.ranges[0].$from.pos,
+          to: transaction.selection.ranges[0].$to.pos,
         },
         editableDraft,
         state
       )
     )
+
+    let afterHeads = editableDraft.doc.getHeads()
+    let changeSet
+    let amConfig = automergeChangesKey.getState(state)
+    if (amConfig?.showChanges) {
+      let obj = editableDraft.doc.value('_root', 'text')
+      if (obj && obj[0] === 'text')
+        changeSet = editableDraft.doc.attribute2(obj[1], beforeHeads, [afterHeads])
+      
+      transaction.setMeta(automergeChangesKey, {changeSet})
+    }
 
     onChange(editableDraft)
     let newState = state.apply(transaction)
