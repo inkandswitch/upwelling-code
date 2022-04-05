@@ -356,6 +356,8 @@ export class Draft {
   }
 
   addContributor(authorId: AuthorId) {
+    let exists = this.doc.value('/contributors', authorId)
+    if (exists && exists[0] === 'boolean' && exists[1] === true) return
     this.doc.set('/contributors', authorId, true)
   }
 

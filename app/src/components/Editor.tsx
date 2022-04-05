@@ -232,6 +232,7 @@ export function Editor(props: Props) {
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
     let beforeHeads = editableDraft.doc.getHeads()
+    editableDraft.addContributor(documents.author.id)
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
