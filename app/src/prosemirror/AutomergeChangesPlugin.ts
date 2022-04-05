@@ -8,19 +8,48 @@ import { ChangeSet } from 'automerge-wasm-pack'
 
 export const automergeChangesKey = new PluginKey('automergeChanges')
 
-function changeSetToDecorations(
-  changeSet: ChangeSet,
-  draft: Draft,
-  border: boolean = false
-) {
+function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     return Decoration.inline(from, to, {
       style: `background: ${deterministicColor(
         change.actor.split('0000')[0],
         0.15
-      )}
-      ${border ? '; border: 1px solid black' : ''}`,
+      )}`,
+    })
+  })
+}
+
+function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
+  return changeSet.add.map((change) => {
+    let { from, to } = automergeToProsemirror(change, draft)
+    return Decoration.widget(from, (view, getPos) => {
+      let sidebarThing = document.createElement('div')
+      sidebarThing.style.position = 'absolute'
+      let fromCoords = view.coordsAtPos(from)
+      let toCoords = view.coordsAtPos(to)
+      console.log(fromCoords, toCoords)
+      sidebarThing.style.top = `${fromCoords.top}px`
+      sidebarThing.style.height = `${toCoords.bottom - fromCoords.top}px`
+      sidebarThing.style.left = `${
+        view.dom.clientLeft +
+        parseFloat(
+          window
+            .getComputedStyle(view.dom, null)
+            .getPropertyValue('padding-left')
+        ) -
+        5
+      }px`
+      sidebarThing.style.width = '3px'
+      sidebarThing.style.borderRadius = '3px'
+      sidebarThing.style.background = deterministicColor(
+        change.actor.split('0000')[0]
+      ).toString()
+      console.log(sidebarThing)
+      console.log(view, getPos())
+      console.log(view.coordsAtPos(from))
+      console.log(view.coordsAtPos(to))
+      return sidebarThing
     })
   })
 }
@@ -31,7 +60,7 @@ function getAllChanges(baseDraft: Draft, draft: Draft, doc: Node) {
     baseDraft,
     draft
   )
-  let decorations = changeSetToDecorations(attribution[0], draft)
+  let decorations = changeSetToInlineDecorations(attribution[0], draft)
   return DecorationSet.create(doc, decorations)
 }
 
@@ -93,16 +122,21 @@ export const automergeChangesPlugin: (
                 baseDraft.doc.getHeads(),
                 [initialDraft.doc.getHeads()]
               )
-              let before = changeSetToDecorations(
+              let before = changeSetToInlineDecorations(
                 history[0],
-                initialDraft,
-                true
+                initialDraft
               )
-              let after = changeSetToDecorations(newHistory[0], initialDraft)
-              prev.decorations = DecorationSet.create(tr.doc, before).add(
-                tr.doc,
-                after
+              let beforeMargins = changeSetToMarginDecorations(
+                history[0],
+                initialDraft
               )
+              let after = changeSetToInlineDecorations(
+                newHistory[0],
+                initialDraft
+              )
+              prev.decorations = DecorationSet.create(tr.doc, before)
+                .add(tr.doc, after)
+                .add(tr.doc, beforeMargins)
 
               console.log({ history, newHistory })
               // FIXME this isn't working for some reason. attribute2 is a bit finnicky.
@@ -125,7 +159,7 @@ export const automergeChangesPlugin: (
         if (!prev.showEdits) return prev
 
         if (automergeChanges?.changeSet) {
-          let newDecos = changeSetToDecorations(
+          let newDecos = changeSetToInlineDecorations(
             automergeChanges.changeSet[0],
             initialDraft
           )
