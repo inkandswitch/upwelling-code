@@ -15,6 +15,7 @@ import debug from 'debug'
 import { debounce } from 'lodash'
 import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
+import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 
@@ -156,7 +157,7 @@ export default function DraftView(props: DraftViewProps) {
 
   // Hack because the params are always undefined?
   function renderValue() {
-    return draft.message
+    return draft.id === upwell.rootDraft.id ? '(not in a draft)' : draft.message
   }
   // borked?
   // function renderValue(option: SelectOption<DraftMetadata> | null) {
@@ -220,6 +221,7 @@ export default function DraftView(props: DraftViewProps) {
                 column-gap: 12px;
               `}
             >
+              <Pancakes onClick={() => goToDraft('stack')} />
               <Input
                 value={draft.title}
                 placeholder={'Untitled Document'}
