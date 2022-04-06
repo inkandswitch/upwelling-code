@@ -79,8 +79,8 @@ export class Draft {
     else return ''
   }
 
-  private _getValue(prop: string) {
-    let value = this.doc.value(ROOT, prop, this._heads)
+  _getValue(prop: string, heads?: string[]) {
+    let value = this.doc.value(ROOT, prop, heads || this._heads)
     if (value && value[0]) return value[1]
   }
 

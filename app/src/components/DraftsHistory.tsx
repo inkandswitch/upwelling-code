@@ -70,16 +70,6 @@ export default function DraftsHistory({
         }}
         renderValue={renderValue}
       >
-        <DetailedOption
-          key={upwell.rootDraft.id}
-          option={{
-            ...upwell.rootDraft.materialize(),
-            message: 'STACK',
-            id: 'stack',
-          }}
-          upwell={upwell}
-          icon={Pancakes}
-        />
         {history.map((d) => (
           <DetailedOption
             key={d.id}

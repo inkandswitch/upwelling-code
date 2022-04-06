@@ -14,7 +14,6 @@ import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
 import Select, { DetailedOption } from './Select'
-import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
@@ -34,7 +33,7 @@ type DraftViewProps = {
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, epoch, sync } = props
-  let [reviewMode, setReviewMode] = useState<boolean>(false)
+  let [reviewMode, setReviewMode] = useState<boolean>(true)
 
   let upwell = documents.get(id)
   const isLatest = did === 'stack'
@@ -127,17 +126,19 @@ export default function DraftView(props: DraftViewProps) {
   let handleMergeClick = () => {
     let upwell = documents.get(id)
     upwell.rootDraft = upwell.get(draft.id)
-    goToDraft('stack')
+    let drafts = upwell.drafts()
+    if (!drafts.length) {
+      goToDraft('stack')
+    } else {
+      goToDraft(drafts[0].id)
+    }
   }
 
-  const createDraft = debounce((draftName: string) => {
+  const createDraft = async (draftName: string) => {
     let upwell = documents.get(id)
-    let newDraft = upwell.createDraft()
-    newDraft.message = draftName
-
-    documents.save(id)
+    let newDraft = upwell.createDraft(draftName)
     goToDraft(newDraft.id)
-  }, 30)
+  }
 
   function goToDraft(did: string) {
     documents
@@ -152,7 +153,7 @@ export default function DraftView(props: DraftViewProps) {
 
   // Hack because the params are always undefined?
   function renderValue() {
-    return isLatest ? 'STACK' : draft.message
+    return draft.message
   }
   // borked?
   // function renderValue(option: SelectOption<DraftMetadata> | null) {
@@ -198,7 +199,7 @@ export default function DraftView(props: DraftViewProps) {
             display: flex;
             flex-direction: column;
             row-gap: 10px;
-            padding: 30px 0;
+            padding: 10px 0px;
           `}
         >
           <div
@@ -237,70 +238,7 @@ export default function DraftView(props: DraftViewProps) {
                   font-weight: 600;
                 `}
               />
-              <FormControl>
-                <Select
-                  value={draftsMeta.find((d) => d.id === draft.id)}
-                  onChange={(value: DraftMetadata | null) => {
-                    if (value === null) {
-                      console.log('draft is null')
-                      return
-                    }
-                    goToDraft(value.id)
-                  }}
-                  renderValue={renderValue}
-                >
-                  <DetailedOption
-                    key={upwell.rootDraft.id}
-                    option={{
-                      ...upwell.rootDraft.materialize(),
-                      message: 'STACK',
-                      id: 'stack',
-                    }}
-                    upwell={upwell}
-                    icon={Pancakes}
-                    iconStyles={css`
-                      margin-left: 0;
-                      margin-right: 5px;
-                    `}
-                  />
-                  {getYourDrafts(
-                    draftsMeta,
-                    upwell.rootDraft.id,
-                    author.id
-                  ).map((d) => (
-                    <DetailedOption
-                      key={d.id}
-                      option={d}
-                      upwell={upwell}
-                      icon={Pancake}
-                    />
-                  ))}
-                </Select>
-              </FormControl>
-              {isLatest || upwell.isArchived(draft.id) ? (
-                <InputModal onCreateDraft={createDraft} />
-              ) : (
-                <>
-                  <Button
-                    disabled={hasPendingChanges}
-                    onClick={handleMergeClick}
-                  >
-                    Merge
-                  </Button>
-                  {draft.shared ? (
-                    '(Public Draft)'
-                  ) : (
-                    <Button
-                      onClick={(e: any) => {
-                        e.preventDefault()
-                        handleShareClick(draft)
-                      }}
-                    >
-                      Share
-                    </Button>
-                  )}
-                </>
-              )}
+              <InputModal onCreateDraft={createDraft} />
             </div>
           </div>
           <div
@@ -312,23 +250,70 @@ export default function DraftView(props: DraftViewProps) {
               align-items: center;
             `}
           >
-            {hasPendingChanges ? (
-              <Button
-                css={css`
-                  background: white;
-                  color: #da1e28;
-                  border: 1px solid #da1e28;
-                  &:hover {
-                    background: #ffdede;
-                  }
-                `}
-                onClick={handleUpdateClick}
-              >
-                Pending changes
-              </Button>
-            ) : (
-              <div></div>
-            )}
+            <div
+              css={css`
+                display: flex;
+                align-items: baseline;
+                column-gap: 30px;
+                justify-content: space-between;
+                align-items: center;
+              `}
+            >
+              {drafts.length > 0 && (
+                <FormControl>
+                  <Select
+                    value={draftsMeta.find((d) => d.id === draft.id)}
+                    onChange={(value: DraftMetadata | null) => {
+                      if (value === null) {
+                        console.log('draft is null')
+                        return
+                      }
+                      goToDraft(value.id)
+                    }}
+                    renderValue={renderValue}
+                  >
+                    {getYourDrafts(
+                      draftsMeta,
+                      upwell.rootDraft.id,
+                      author.id
+                    ).map((d) => (
+                      <DetailedOption
+                        key={d.id}
+                        option={d}
+                        upwell={upwell}
+                        icon={Pancake}
+                      />
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              {hasPendingChanges && (
+                <Button
+                  css={css`
+                    background: white;
+                    color: #da1e28;
+                    border: 1px solid #da1e28;
+                    &:hover {
+                      background: #ffdede;
+                    }
+                  `}
+                  onClick={handleUpdateClick}
+                >
+                  Pending changes
+                </Button>
+              )}
+
+              {!isLatest && (
+                <>
+                  <Button
+                    disabled={hasPendingChanges}
+                    onClick={handleMergeClick}
+                  >
+                    Merge
+                  </Button>
+                </>
+              )}
+            </div>
             <div
               css={css`
                 gap: 20px;
@@ -339,12 +324,17 @@ export default function DraftView(props: DraftViewProps) {
             >
               <Contributors upwell={upwell} contributors={draft.contributors} />
               <span>
-                show changes{' '}
                 <Switch
                   inputProps={{ 'aria-label': 'show changes' }}
                   checked={reviewMode}
                   onClick={() => setReviewMode(!reviewMode)}
                 />
+                {!reviewMode
+                  ? 'show changes '
+                  : !arrayEquals(draft.heads, heads)
+                  ? 'showing changes since ' +
+                    upwell.rootDraft._getValue('message', heads)
+                  : 'showing changes'}
               </span>
               <DraftsHistory
                 did={did}
@@ -379,5 +369,14 @@ export default function DraftView(props: DraftViewProps) {
         <CommentSidebar draft={draft} id={id} />
       </div>
     </div>
+  )
+}
+
+function arrayEquals(a: Array<any>, b: Array<any>) {
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((val, index) => val === b[index])
   )
 }

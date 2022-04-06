@@ -130,10 +130,9 @@ export default function withDocument(
       <div>
         <div
           css={css`
-            background: #f9f9fa;
-            justify-content: flex-end;
-            width: 100%;
-            display: flex;
+            top: 0;
+            right: 0;
+            position: fixed;
             margin: auto;
           `}
         >

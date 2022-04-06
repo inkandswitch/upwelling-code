@@ -244,7 +244,6 @@ export function DetailedOption({
             >
               {upwell.getAuthorName(option.authorId)} created
             </InfoText>
-            &nbsp;
             <InfoText
               css={css`
                 flex: 0;
