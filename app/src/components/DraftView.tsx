@@ -108,6 +108,7 @@ export default function DraftView(props: DraftViewProps) {
     documents.save(id)
   }
 
+  /*
   const handleShareClick = (draft: DraftMetadata) => {
     if (
       // eslint-disable-next-line no-restricted-globals
@@ -118,6 +119,7 @@ export default function DraftView(props: DraftViewProps) {
       documents.draftChanged(id, draft.id)
     }
   }
+  */
 
   let handleUpdateClick = () => {
     window.location.reload()
@@ -137,6 +139,7 @@ export default function DraftView(props: DraftViewProps) {
   const createDraft = async (draftName: string) => {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft(draftName)
+    upwell.share(newDraft.id)
     goToDraft(newDraft.id)
   }
 

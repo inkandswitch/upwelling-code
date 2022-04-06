@@ -7,7 +7,6 @@ import Documents from '../Documents'
 import { DetailedOption, HistorySelect } from './Select'
 import { AuthorColorsType } from './ClickableDraftList'
 import { ReactComponent as OffsetPancakes } from '../components/icons/OffsetPancakes.svg'
-import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 
 let documents = Documents()
 
