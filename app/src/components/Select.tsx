@@ -239,6 +239,7 @@ export function DetailedOption({
             >
               {upwell.getAuthorName(option.authorId)} created
             </InfoText>
+            &nbsp;
             <InfoText>{relativeDate(new Date(option.time))}</InfoText>
           </div>
         </div>
