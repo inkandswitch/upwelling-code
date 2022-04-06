@@ -4,8 +4,8 @@ import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
-import { Button } from './Button'
 import { useState } from 'react'
+import { Button } from './Button'
 
 type InputModalProps = {
   onCreateDraft: Function
@@ -28,24 +28,36 @@ export default function InputModal({ onCreateDraft }: InputModalProps) {
 
   return (
     <div>
-      <Button onClick={handleClickOpen}>New Draft</Button>
+      <Button variant="outlined" onClick={handleClickOpen}>
+        New Draft
+      </Button>
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>New draft</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="draft-name-input"
-            label="Draft name"
-            type="text"
-            fullWidth
-            onChange={(e) => setText(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleCreateDraft}>Create</Button>
-        </DialogActions>
+        <form>
+          <DialogContent>
+            <TextField
+              autoFocus
+              id="draft-name-input"
+              label="Draft name"
+              type="text"
+              fullWidth
+              variant="standard"
+              onChange={(e) => setText(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button variant="outlined" color="error" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={handleCreateDraft}
+              type="submit"
+            >
+              Create
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
     </div>
   )
