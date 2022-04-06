@@ -79,7 +79,7 @@ const StyledButton = styled('button')(
   border-radius: 0.2em;
   padding: 4px 10px 3px;
   text-align: left;
-  line-height: 1.5;
+  line-height: 28px;
   color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
 
   &:hover {
@@ -141,8 +141,11 @@ export const Option = styled(OptionUnstyled)(
   }
 
   &.${optionUnstyledClasses.highlighted} {
-    background-color: ${theme.palette.mode === 'dark' ? grey[800] : grey[100]};
-    color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
+    /* TODO Setting the highlighted row isn't working (all options are being highlighted?) so disable styling for now*/
+    /* background-color: ${
+      theme.palette.mode === 'dark' ? grey[800] : grey[100]
+    };
+    color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]}; */ 
   }
 
   &.${optionUnstyledClasses.highlighted}.${optionUnstyledClasses.selected} {
@@ -235,12 +238,22 @@ export function DetailedOption({
             <InfoText
               css={css`
                 flex: 1;
+                white-space: nowrap;
+                margin-right: 4px;
               `}
             >
               {upwell.getAuthorName(option.authorId)} created
             </InfoText>
             &nbsp;
-            <InfoText>{relativeDate(new Date(option.time))}</InfoText>
+            <InfoText
+              css={css`
+                flex: 0;
+                white-space: nowrap;
+                text-align: right;
+              `}
+            >
+              {relativeDate(new Date(option.time))}
+            </InfoText>
           </div>
         </div>
       </div>

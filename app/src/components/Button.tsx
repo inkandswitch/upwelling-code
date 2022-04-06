@@ -1,10 +1,25 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 
+import { styled } from '@mui/system'
+import { Button as MButton, ButtonProps } from '@mui/material'
+
+const ThemedButton = styled(MButton)<ButtonProps>(({ theme }) => ({
+  // color: theme.palette.getContrastText(purple[500]),
+  // backgroundColor: purple[500],
+  // '&:hover': {
+  //   backgroundColor: purple[700],
+  // },
+}))
+
+export function Button(props: any) {
+  return <ThemedButton variant="outlined" {...props} />
+}
+
 type ButtonType = React.ClassAttributes<HTMLButtonElement> &
   React.ButtonHTMLAttributes<HTMLButtonElement>
 
-export function Button(props: ButtonType) {
+function PlainButton(props: ButtonType) {
   return (
     <button
       css={css`
@@ -45,7 +60,7 @@ export function IconButton({
   ...props
 }: IconButtonProps) {
   return (
-    <Button
+    <PlainButton
       css={css`
         position: relative;
         min-height: 24px;
@@ -70,6 +85,6 @@ export function IconButton({
         `}
       />
       {children}
-    </Button>
+    </PlainButton>
   )
 }

@@ -212,7 +212,7 @@ export default function DraftView(props: DraftViewProps) {
             <div
               css={css`
                 display: flex;
-                align-items: baseline;
+                align-items: center;
                 column-gap: 12px;
               `}
             >
@@ -291,7 +291,7 @@ export default function DraftView(props: DraftViewProps) {
                     '(Public Draft)'
                   ) : (
                     <Button
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.preventDefault()
                         handleShareClick(draft)
                       }}
