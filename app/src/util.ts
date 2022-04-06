@@ -17,6 +17,7 @@ export function getYourDrafts(
     if (l.authorId !== yourId && !l.shared) {
       return false
     }
+
     return true
   })
 }

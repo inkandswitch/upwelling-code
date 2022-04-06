@@ -312,7 +312,7 @@ export default function DraftView(props: DraftViewProps) {
                     disabled={hasPendingChanges}
                     onClick={handleMergeClick}
                   >
-                    Merge
+                    Add to Stack
                   </Button>
                 </>
               )}
@@ -334,7 +334,7 @@ export default function DraftView(props: DraftViewProps) {
                 />
                 {!reviewMode
                   ? 'show changes '
-                  : !arrayEquals(draft.heads, heads)
+                  : !arrayEquals(heads, upwell.rootDraft.doc.getHeads())
                   ? 'showing changes since ' +
                     upwell.rootDraft._getValue('message', heads)
                   : 'showing changes'}

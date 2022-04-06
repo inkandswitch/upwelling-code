@@ -69,14 +69,16 @@ export default function DraftsHistory({
         }}
         renderValue={renderValue}
       >
-        {history.map((d) => (
-          <DetailedOption
-            key={d.id}
-            option={d}
-            upwell={upwell}
-            icon={OffsetPancakes}
-          />
-        ))}
+        {history
+          .filter((d) => d.message !== 'Empty')
+          .map((d) => (
+            <DetailedOption
+              key={d.id}
+              option={d}
+              upwell={upwell}
+              icon={OffsetPancakes}
+            />
+          ))}
       </HistorySelect>
     </FormControl>
   )
