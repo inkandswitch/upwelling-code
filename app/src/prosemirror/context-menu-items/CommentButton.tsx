@@ -7,11 +7,11 @@ import { schema } from '../UpwellSchema'
 import deterministicColor from '../../color'
 import { Author } from 'api'
 import TextField from '@mui/material/TextField'
-import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import { useState } from 'react'
 import Button from '@mui/material/Button'
+import Popover from '@mui/material/Popover'
 
 type CommentModalProps = {
   view: EditorView
@@ -51,9 +51,18 @@ function CommentModal({
     handleClose()
   }
 
+  let coords = view.coordsAtPos(from)
+  let editorClientRect = view.dom.getBoundingClientRect()
+  let rightMargin = editorClientRect.right - editorClientRect.width / 10
+
   return (
-    <Dialog open={open} onClose={handleClose}>
-      <form>
+    <Popover
+      open={open}
+      onClose={handleClose}
+      anchorReference="anchorPosition"
+      anchorPosition={{ left: rightMargin, top: coords.top }}
+    >
+      <form id="comment-area">
         <DialogContent>
           <TextField
             autoFocus
@@ -78,7 +87,7 @@ function CommentModal({
           </Button>
         </DialogActions>
       </form>
-    </Dialog>
+    </Popover>
   )
 }
 
@@ -113,7 +122,7 @@ export const commentButton = (author: Author) => {
       const el2 = document.createElement('div')
       contextMenu.style.display = 'none'
 
-      ReactDOM.render(
+      return ReactDOM.render(
         <CommentModal
           view={view}
           contextMenu={contextMenu}
