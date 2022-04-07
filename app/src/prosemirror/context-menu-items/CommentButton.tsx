@@ -1,4 +1,7 @@
+/** @jsxImportSource @emotion/react */
+import { css } from '@emotion/react/macro'
 import * as React from 'react'
+import ReactDOM from 'react-dom'
 import { EditorView } from 'prosemirror-view'
 import { schema } from '../UpwellSchema'
 import deterministicColor from '../../color'
@@ -7,95 +10,120 @@ import TextField from '@mui/material/TextField'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
-import DialogTitle from '@mui/material/DialogTitle'
 import { useState } from 'react'
 import Button from '@mui/material/Button'
 
 type CommentModalProps = {
-  onSubmitComment: Function
+  view: EditorView
+  contextMenu: HTMLDivElement
+  to: any
+  from: any
+  author: Author
+  onClose: Function
 }
-function CommentModal({ onSubmitComment }: CommentModalProps) {
-  const [open, setOpen] = React.useState(false)
-  const [text, setText] = useState('')
-
-  const handleClickOpen = () => {
-    setOpen(true)
-  }
+function CommentModal({
+  author,
+  view,
+  contextMenu,
+  to,
+  from,
+  onClose,
+}: CommentModalProps) {
+  const [comment, setComment] = useState('')
+  const [open, setOpen] = React.useState(true)
 
   const handleClose = () => {
+    onClose()
     setOpen(false)
   }
 
-  const handleSubmitComment = () => {
-    onSubmitComment(text)
+  const handleSubmitComment = (e: any) => {
+    e.preventDefault()
+    let commentMark = schema.mark('comment', {
+      id: 'new-comment',
+      author,
+      authorColor: deterministicColor(author.id),
+      message: comment,
+    })
+    let tr = view.state.tr.addMark(from, to, commentMark)
+    view.dispatch(tr)
+
     handleClose()
   }
 
   return (
-    <div>
-      <Button variant="outlined" onClick={handleClickOpen}>
-        New Draft
-      </Button>
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>New draft</DialogTitle>
-        <form>
-          <DialogContent>
-            <TextField
-              autoFocus
-              id="comment-input"
-              label="Comment"
-              type="textarea"
-              fullWidth
-              variant="standard"
-              onChange={(e) => setText(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button variant="outlined" color="error" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={handleSubmitComment}
-              type="submit"
-            >
-              Create
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </div>
+    <Dialog open={open} onClose={handleClose}>
+      <form>
+        <DialogContent>
+          <TextField
+            autoFocus
+            id="comment-input"
+            label="Comment"
+            type="textarea"
+            fullWidth
+            variant="standard"
+            onChange={(e) => setComment(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" color="error" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleSubmitComment}
+            type="submit"
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }
 
+const button = (
+  <Button
+    css={css`
+      background: white;
+      display: block;
+    `}
+    variant="contained"
+  >
+    💬
+  </Button>
+)
+
 export const commentButton = (author: Author) => {
+  const el = document.createElement('div')
+
   return {
     view: () => {
-      // let commentButton = document.createElement('button')
-      // commentButton.innerText = '💬'
-      // return commentButton
-
-      return <Button variant="outlined">💬</Button>
+      ReactDOM.render(button, el)
+      return el
     },
 
     handleClick: (
-      e: any,
+      e: React.ChangeEvent<HTMLInputElement>,
       view: EditorView,
-      contextMenu: HTMLDivElement
-      // buttonEl: HTMLButtonElement
+      contextMenu: HTMLDivElement,
+      buttonEl: HTMLButtonElement
     ) => {
       let { from, to } = view.state.selection
-      let message = prompt('what is your comment')
-      let commentMark = schema.mark('comment', {
-        id: 'new-comment',
-        author: author,
-        authorColor: deterministicColor(author.id),
-        message,
-      })
-      let tr = view.state.tr.addMark(from, to, commentMark)
-      view.dispatch(tr)
-
+      const el2 = document.createElement('div')
       contextMenu.style.display = 'none'
+
+      ReactDOM.render(
+        <CommentModal
+          view={view}
+          contextMenu={contextMenu}
+          to={to}
+          from={from}
+          author={author}
+          onClose={() => {}}
+        />,
+        el2
+      )
     },
   }
 }
