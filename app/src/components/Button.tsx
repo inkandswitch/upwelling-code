@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 
-import { styled } from '@mui/system'
+import { PropsFor, styled } from '@mui/system'
 import { Button as MButton, ButtonProps } from '@mui/material'
 
 const ThemedButton = styled(MButton)<ButtonProps>(({ theme }) => ({
@@ -12,7 +12,7 @@ const ThemedButton = styled(MButton)<ButtonProps>(({ theme }) => ({
   // },
 }))
 
-export function Button(props: any) {
+export function Button(props: PropsFor<typeof ThemedButton>) {
   return <ThemedButton variant="outlined" {...props} />
 }
 
