@@ -311,7 +311,10 @@ export class Draft {
     let i = this.text.indexOf('\uFFFC')
 
     // If we have an empty document, insert a paragraph to get started.
-    if (i === -1) this.insertBlock(0, 'paragraph')
+    if (i === -1) {
+      this.insertBlock(0, 'paragraph')
+      i = this.text.indexOf('\uFFFC')
+    }
 
     while (i !== this.text.length) {
       // don't include the block replacement character, since it's just a marker
