@@ -304,9 +304,6 @@ export class Draft {
   // nasty hoop-jumping here.
   get blocks() {
     let blocks: any[] = []
-    let text = this.doc.value(ROOT, 'text')
-    if (!text || text[0] !== 'text')
-      throw new Error('text not properly initialized')
 
     let i = this.text.indexOf('\uFFFC')
 
