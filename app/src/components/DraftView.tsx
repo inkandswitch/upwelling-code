@@ -14,13 +14,14 @@ import Contributors from './Contributors'
 import debug from 'debug'
 import { debounce } from 'lodash'
 import Select, { DetailedOption } from './Select'
-import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
+import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 
 const log = debug('DraftView')
 
+const blue = '#0083A3'
 let documents = Documents()
 
 type DraftViewProps = {
@@ -32,9 +33,18 @@ type DraftViewProps = {
   sync: () => void
 }
 
+const pancakeCSS = `
+  width: 45px;
+  cursor: pointer;
+  height: 45px;
+  :hover path {
+    fill: lightblue;
+  }
+`
+
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, epoch, sync } = props
-  let [reviewMode, setReviewMode] = useState<boolean>(false)
+  let [reviewMode, setReviewMode] = useState<boolean>(true)
 
   let upwell = documents.get(id)
   const isLatest = did === 'stack'
@@ -109,6 +119,7 @@ export default function DraftView(props: DraftViewProps) {
     documents.save(id)
   }
 
+  /*
   const handleShareClick = (draft: DraftMetadata) => {
     if (
       // eslint-disable-next-line no-restricted-globals
@@ -119,6 +130,7 @@ export default function DraftView(props: DraftViewProps) {
       documents.draftChanged(id, draft.id)
     }
   }
+  */
 
   let handleUpdateClick = () => {
     window.location.reload()
@@ -127,17 +139,20 @@ export default function DraftView(props: DraftViewProps) {
   let handleMergeClick = () => {
     let upwell = documents.get(id)
     upwell.rootDraft = upwell.get(draft.id)
-    goToDraft('stack')
+    let drafts = upwell.drafts()
+    if (!drafts.length) {
+      goToDraft('stack')
+    } else {
+      goToDraft(drafts[0].id)
+    }
   }
 
-  const createDraft = debounce((draftName: string) => {
+  const createDraft = async (draftName: string) => {
     let upwell = documents.get(id)
-    let newDraft = upwell.createDraft()
-    newDraft.message = draftName
-
-    documents.save(id)
+    let newDraft = upwell.createDraft(draftName)
+    upwell.share(newDraft.id)
     goToDraft(newDraft.id)
-  }, 30)
+  }
 
   function goToDraft(did: string) {
     documents
@@ -152,7 +167,7 @@ export default function DraftView(props: DraftViewProps) {
 
   // Hack because the params are always undefined?
   function renderValue() {
-    return isLatest ? 'STACK' : draft.message
+    return draft.id === upwell.rootDraft.id ? '(not in a draft)' : draft.message
   }
   // borked?
   // function renderValue(option: SelectOption<DraftMetadata> | null) {
@@ -163,12 +178,18 @@ export default function DraftView(props: DraftViewProps) {
   //   return <span>{option.value.message}</span>
   // }
 
-  const setHistorySelection = debounce((draftId) => {
-    let draft = upwell.metadata.getDraft(draftId)
-    setHistoryHeads(draft.heads)
+  const setHistorySelection = debounce((d: DraftMetadata) => {
+    console.log(d.id, upwell.rootDraft.id)
+    if (d.id === upwell.rootDraft.id) {
+      setHistoryHeads([])
+    } else {
+      let draft = upwell.metadata.getDraft(d.id)
+      setHistoryHeads(draft.heads)
+    }
   }, 30)
 
   const draftsMeta = drafts.map((d) => d.materialize())
+
   return (
     <div
       id="draft-view"
@@ -198,9 +219,89 @@ export default function DraftView(props: DraftViewProps) {
             display: flex;
             flex-direction: column;
             row-gap: 10px;
-            padding: 30px 0;
+            padding: 10px 0px;
           `}
         >
+          <div
+            css={css`
+              display: flex;
+              align-items: baseline;
+              column-gap: 30px;
+              justify-content: space-between;
+              align-items: center;
+            `}
+          >
+            <div
+              css={css`
+                display: flex;
+                align-items: baseline;
+                column-gap: 30px;
+                justify-content: space-between;
+                align-items: center;
+              `}
+            >
+              <Pancake
+                css={css`
+                  ${pancakeCSS}
+                  path {
+                    fill: ${did === 'stack' ? '' : blue};
+                  }
+                `}
+              ></Pancake>
+              <FormControl>
+                <Select
+                  value={draftsMeta.find((d) => d.id === draft.id)}
+                  onChange={(value: DraftMetadata | null) => {
+                    if (value === null) {
+                      console.log('draft is null')
+                      return
+                    }
+                    goToDraft(value.id)
+                  }}
+                  renderValue={renderValue}
+                >
+                  {getYourDrafts(
+                    draftsMeta,
+                    upwell.rootDraft.id,
+                    author.id
+                  ).map((d) => (
+                    <DetailedOption
+                      key={d.id}
+                      option={d}
+                      upwell={upwell}
+                      icon={Pancake}
+                    />
+                  ))}
+                </Select>
+              </FormControl>
+              {hasPendingChanges && (
+                <Button
+                  css={css`
+                    background: white;
+                    color: #da1e28;
+                    border: 1px solid #da1e28;
+                    &:hover {
+                      background: #ffdede;
+                    }
+                  `}
+                  onClick={handleUpdateClick}
+                >
+                  Pending changes
+                </Button>
+              )}
+
+              {!isLatest && (
+                <>
+                  <Button
+                    disabled={hasPendingChanges}
+                    onClick={handleMergeClick}
+                  >
+                    Merge
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
           <div
             css={css`
               display: flex;
@@ -213,9 +314,17 @@ export default function DraftView(props: DraftViewProps) {
               css={css`
                 display: flex;
                 align-items: center;
-                column-gap: 12px;
               `}
             >
+              <Pancakes
+                css={css`
+                  ${pancakeCSS}
+                  path {
+                    fill: ${did === 'stack' ? blue : ''};
+                  }
+                `}
+                onClick={() => goToDraft('stack')}
+              />
               <Input
                 value={draft.title}
                 placeholder={'Untitled Document'}
@@ -237,114 +346,25 @@ export default function DraftView(props: DraftViewProps) {
                   font-weight: 600;
                 `}
               />
-              <FormControl>
-                <Select
-                  value={draftsMeta.find((d) => d.id === draft.id)}
-                  onChange={(value: DraftMetadata | null) => {
-                    if (value === null) {
-                      console.log('draft is null')
-                      return
-                    }
-                    goToDraft(value.id)
-                  }}
-                  renderValue={renderValue}
-                >
-                  <DetailedOption
-                    key={upwell.rootDraft.id}
-                    option={{
-                      ...upwell.rootDraft.materialize(),
-                      message: 'STACK',
-                      id: 'stack',
-                    }}
-                    upwell={upwell}
-                    icon={Pancakes}
-                    iconStyles={css`
-                      margin-left: 0;
-                      margin-right: 5px;
-                    `}
-                  />
-                  {getYourDrafts(
-                    draftsMeta,
-                    upwell.rootDraft.id,
-                    author.id
-                  ).map((d) => (
-                    <DetailedOption
-                      key={d.id}
-                      option={d}
-                      upwell={upwell}
-                      icon={Pancake}
-                    />
-                  ))}
-                </Select>
-              </FormControl>
-              {isLatest || upwell.isArchived(draft.id) ? (
-                <InputModal onCreateDraft={createDraft} />
-              ) : (
-                <>
-                  <Button
-                    disabled={hasPendingChanges}
-                    onClick={handleMergeClick}
-                  >
-                    Merge
-                  </Button>
-                  {draft.shared ? (
-                    '(Public Draft)'
-                  ) : (
-                    <Button
-                      onClick={(e: any) => {
-                        e.preventDefault()
-                        handleShareClick(draft)
-                      }}
-                    >
-                      Share
-                    </Button>
-                  )}
-                </>
-              )}
+              <InputModal onCreateDraft={createDraft} />
             </div>
-          </div>
-          <div
-            css={css`
-              display: flex;
-              align-items: baseline;
-              column-gap: 30px;
-              justify-content: space-between;
-              align-items: center;
-            `}
-          >
-            {hasPendingChanges ? (
-              <Button
-                css={css`
-                  background: white;
-                  color: #da1e28;
-                  border: 1px solid #da1e28;
-                  &:hover {
-                    background: #ffdede;
-                  }
-                `}
-                onClick={handleUpdateClick}
-              >
-                Pending changes
-              </Button>
-            ) : (
-              <div></div>
-            )}
             <div
               css={css`
-                gap: 20px;
                 display: flex;
-                flex-direction: row;
                 align-items: center;
               `}
             >
               <Contributors upwell={upwell} contributors={draft.contributors} />
               <span>
-                show changes{' '}
                 <Switch
                   inputProps={{ 'aria-label': 'show changes' }}
                   checked={reviewMode}
                   onClick={() => setReviewMode(!reviewMode)}
                 />
+                {!reviewMode || (reviewMode && !heads.length)
+                  ? 'show changes '
+                  : 'showing changes from ' +
+                    upwell.rootDraft._getValue('message', heads)}
               </span>
               <DraftsHistory
                 did={did}

@@ -389,7 +389,6 @@ export function Editor(props: Props) {
   if (!state) return <div>loading</div>
   return (
     <ProseMirror
-      editable={() => props.editableDraftId !== upwell.rootDraft.id}
       state={state}
       ref={viewRef}
       dispatchTransaction={dispatchHandler}
