@@ -83,14 +83,9 @@ export class UpwellMetadata {
     throw new Error('History value not a string')
   }
 
-  set main(id: string) {
-    let draftMetadata = this.getDraft(id)
-    if (!draftMetadata)
-      throw new Error(
-        'Cant set this draft to main without having added draft to metadata first'
-      )
+  addToHistory(id: string) {
     let len = this.doc.length('/history')
-    this.archive(id)
     this.doc.insert('/history', len, id)
+    this.archive(id)
   }
 }

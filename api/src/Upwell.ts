@@ -11,7 +11,6 @@ import { UpwellMetadata } from './UpwellMetadata'
 
 export type AuthorId = string
 export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: 'Anonymous' }
-export const SPECIAL_ROOT_DOCUMENT = 'Empty'
 
 export type Author = {
   id: AuthorId
@@ -43,6 +42,7 @@ export class Upwell {
   _archivedLayers: Map<string, Uint8Array> = new Map()
   metadata: UpwellMetadata
   author: Author
+  static SPECIAL_ROOT_DOCUMENT = 'STACK'
 
   constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata
@@ -64,8 +64,9 @@ export class Upwell {
   }
 
   set rootDraft(draft: Draft) {
-    this.archive(draft.id)
-    this.metadata.main = draft.id
+    this.rootDraft.merge(draft)
+    this.metadata.addToHistory(draft.id)
+
     for (let draft of this.drafts()) {
       this.updateToRoot(draft)
     }
@@ -237,12 +238,12 @@ export class Upwell {
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
-    let draft = Draft.create(SPECIAL_ROOT_DOCUMENT, author.id)
+    let root = Draft.create(Upwell.SPECIAL_ROOT_DOCUMENT, author.id)
     let metadata = UpwellMetadata.create(id)
     let upwell = new Upwell(metadata, author)
-    upwell._add(draft)
-    upwell.rootDraft = draft
-    draft.parent_id = draft.id
+    upwell._add(root)
+    metadata.addToHistory(root.id)
+    root.parent_id = root.id
     upwell.createDraft('First draft') // always create an initial draft
     return upwell
   }

@@ -178,9 +178,14 @@ export default function DraftView(props: DraftViewProps) {
   //   return <span>{option.value.message}</span>
   // }
 
-  const setHistorySelection = debounce((draftId) => {
-    let draft = upwell.metadata.getDraft(draftId)
-    setHistoryHeads(draft.heads)
+  const setHistorySelection = debounce((d: DraftMetadata) => {
+    console.log(d.id, upwell.rootDraft.id)
+    if (d.id === upwell.rootDraft.id) {
+      setHistoryHeads([])
+    } else {
+      let draft = upwell.metadata.getDraft(d.id)
+      setHistoryHeads(draft.heads)
+    }
   }, 30)
 
   const draftsMeta = drafts.map((d) => d.materialize())
@@ -356,12 +361,10 @@ export default function DraftView(props: DraftViewProps) {
                   checked={reviewMode}
                   onClick={() => setReviewMode(!reviewMode)}
                 />
-                {!reviewMode
+                {!reviewMode || (reviewMode && !heads.length)
                   ? 'show changes '
-                  : !arrayEquals(heads, upwell.rootDraft.doc.getHeads())
-                  ? 'showing changes from ' +
-                    upwell.rootDraft._getValue('message', heads)
-                  : 'showing changes'}
+                  : 'showing changes from ' +
+                    upwell.rootDraft._getValue('message', heads)}
               </span>
               <DraftsHistory
                 did={did}

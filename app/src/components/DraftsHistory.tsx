@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { useEffect } from 'react'
 import FormControl from '@mui/material/FormControl'
-import { DraftMetadata, Author } from 'api'
+import { DraftMetadata, Author, Upwell } from 'api'
 import { useState } from 'react'
 import Documents from '../Documents'
 import { DetailedOption, HistorySelect } from './Select'
@@ -19,7 +19,7 @@ type Props = {
   id: string
   did: string
   goToDraft: Function
-  setHistorySelection: (id: string) => void
+  setHistorySelection: (draft: DraftMetadata) => void
   colors?: AuthorColorsType
   author: Author
 }
@@ -37,6 +37,7 @@ export default function DraftsHistory({
   let [history, setHistory] = useState<DraftMetadata[]>([])
   let [, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize] = useState<number>(HISTORY_FETCH_SIZE)
+  console.log(history)
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -66,7 +67,7 @@ export default function DraftsHistory({
             console.log('draft is null')
             return
           }
-          setHistorySelection(value.id)
+          setHistorySelection(value)
         }}
         renderValue={renderValue}
       >
@@ -80,7 +81,7 @@ export default function DraftsHistory({
           icon={Pancakes}
         />
         {history
-          .filter((d) => d.message !== 'Empty')
+          .filter((d) => d.message !== Upwell.SPECIAL_ROOT_DOCUMENT)
           .map((d) => (
             <DetailedOption
               key={d.id}
@@ -88,7 +89,8 @@ export default function DraftsHistory({
               upwell={upwell}
               icon={OffsetPancakes}
             />
-          ))}
+          ))
+          .pop()}
       </HistorySelect>
     </FormControl>
   )
