@@ -89,8 +89,7 @@ export default function DraftsHistory({
               upwell={upwell}
               icon={OffsetPancakes}
             />
-          ))
-          .pop()}
+          ))}
       </HistorySelect>
     </FormControl>
   )

@@ -57,9 +57,7 @@ export default function DraftView(props: DraftViewProps) {
   }
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
-  let [heads, setHistoryHeads] = useState<string[]>(
-    upwell.rootDraft.materialize().heads
-  )
+  let [heads, setHistoryHeads] = useState<string[]>([])
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     did !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
@@ -136,10 +134,11 @@ export default function DraftView(props: DraftViewProps) {
     window.location.reload()
   }
 
-  let handleMergeClick = () => {
+  let handleMergeClick = async () => {
     let upwell = documents.get(id)
     upwell.rootDraft = upwell.get(draft.id)
     let drafts = upwell.drafts()
+    await documents.save(id)
     if (!drafts.length) {
       goToDraft('stack')
     } else {
