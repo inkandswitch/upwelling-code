@@ -5,19 +5,18 @@
     <link rel="icon" href="%PUBLIC_URL%/wave.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="Upwell"
-    />
+    <meta name="description" content="Upwell" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
 
-    <meta content='yes' name='apple-mobile-web-app-capable'/>
-    <meta content='yes' name='mobile-web-app-capable'/>
+    <meta content="yes" name="apple-mobile-web-app-capable" />
+    <meta content="yes" name="mobile-web-app-capable" />
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
@@ -43,5 +42,21 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script type="text/javascript">
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js').then(
+            (registration) => {
+              console.log(
+                `ServiceWorker registration successful with scope: ${registration.scope}`
+              )
+            },
+            (error) => {
+              console.log(`ServiceWorker registration failed: ${error}`)
+            }
+          )
+        })
+      }
+    </script>
   </body>
 </html>
