@@ -15,6 +15,7 @@ export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: 'Anonymous' }
 export type Author = {
   id: AuthorId
   name: string
+  date?: number
 }
 
 export type UpwellOptions = {
@@ -77,6 +78,10 @@ export class Upwell {
     return Array.from(this._draftLayers.values()).filter((draft) => {
       return !this.isArchived(draft.id)
     })
+  }
+
+  getAuthorColor(authorId): string {
+    return this.metadata.getAuthorColor(authorId)
   }
 
   getAuthorName(authorId: AuthorId): string | undefined {

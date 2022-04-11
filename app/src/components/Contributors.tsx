@@ -1,7 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { Upwell } from 'api'
 import { css } from '@emotion/react/macro'
-import deterministicColor from '../color'
 
 type Props = {
   upwell: Upwell
@@ -16,7 +15,7 @@ export default function Contributors(props: Props) {
         column-gap: 6px;
       `}
     >
-      {props.contributors.map((id, index) => {
+      {props.contributors.map((id) => {
         let name = props.upwell.getAuthorName(id)
         return (
           <div
@@ -31,7 +30,7 @@ export default function Contributors(props: Props) {
           >
             <div
               css={css`
-                background: ${deterministicColor(index)};
+                background: ${props.upwell.getAuthorColor(id)};
                 font-size: 18px;
                 line-height: 18px;
                 height: 1.5rem;

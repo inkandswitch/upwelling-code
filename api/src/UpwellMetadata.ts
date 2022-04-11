@@ -1,5 +1,6 @@
 import * as Automerge from 'automerge-wasm-pack'
 import { Draft, Author, AuthorId, DraftMetadata } from '.'
+import colors from './colors'
 
 const ROOT = '_root'
 
@@ -20,7 +21,7 @@ export class UpwellMetadata {
     doc.set(ROOT, 'id', id)
     doc.set_object(ROOT, 'drafts', {})
     doc.set_object(ROOT, 'history', [])
-    doc.set_object(ROOT, 'authors', {})
+    doc.set_object(ROOT, 'authors', [])
     let meta = new UpwellMetadata(doc)
     return meta
   }
@@ -55,10 +56,11 @@ export class UpwellMetadata {
   }
 
   addAuthor(author: Author) {
-    let maybe = this.doc.materialize('/authors/' + author.id)
-    let shouldUpdate = !maybe || (maybe && maybe.name !== author.name)
-    if (shouldUpdate) {
-      this.doc.set_object('/authors', author.id, author)
+    let maybe = this.doc.materialize('/authors')
+    if (maybe.findIndex((a) => a.id === author.id)) {
+      author.date = Date.now()
+      let len = this.doc.length('/authors')
+      this.doc.insert_object('/authors', len, author)
     }
   }
 
@@ -67,7 +69,13 @@ export class UpwellMetadata {
   }
 
   getAuthor(authorId: AuthorId): Author | undefined {
-    return this.doc.materialize('/authors/' + authorId)
+    return this.doc.materialize('/authors').find((a) => a.id === authorId)
+  }
+
+  getAuthorColor(authorId: AuthorId): string {
+    let authors = this.getAuthors()
+    let index = authors.findIndex((author) => author === authorId)
+    return colors[Math.max(index % colors.length, 0)]
   }
 
   get id(): string {

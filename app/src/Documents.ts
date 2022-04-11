@@ -20,6 +20,7 @@ console.log(STORAGE_URL)
 // TODO: refactor to not store the whole upwell as a file but instead individual draft ids
 
 export class Documents {
+  upwell: Upwell = null
   upwells = new Map<string, Upwell>()
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)
@@ -117,13 +118,16 @@ export class Documents {
 
   async open(id: string): Promise<Upwell> {
     let upwell = this.upwells.get(id)
-    if (upwell) return upwell
-    else {
+    if (upwell) {
+      this.upwell = upwell
+      return upwell
+    } else {
       // local-first
       let localBinary = this.storage.getItem(id)
       if (localBinary) {
         let ours = await this.toUpwell(localBinary)
         this.upwells.set(id, ours)
+        this.upwell = ours
         return ours
       } else {
         // no local binary, get from server
@@ -132,6 +136,7 @@ export class Documents {
           if (remoteBinary) {
             let theirs = await this.toUpwell(Buffer.from(remoteBinary))
             this.upwells.set(id, theirs)
+            this.upwell = theirs
             return theirs
           } else {
             throw new Error('No document with id=' + id)
@@ -148,7 +153,9 @@ export class Documents {
     let remoteBinary = await this.remote.getItem(id)
     if (!inMemory && remoteBinary) {
       let buf = Buffer.from(remoteBinary)
-      this.upwells.set(id, await this.toUpwell(buf))
+      let upwell = await this.toUpwell(buf)
+      this.upwells.set(id, upwell)
+      this.upwell = upwell
       await this.storage.setItem(id, buf)
       return this.remote.setItem(id, buf)
     } else if (!remoteBinary && inMemory) {

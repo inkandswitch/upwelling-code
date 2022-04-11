@@ -1,7 +1,9 @@
 import { EditorView } from 'prosemirror-view'
 import { schema } from '../UpwellSchema'
-import deterministicColor from '../../color'
 import { Author } from 'api'
+import Documents from '../../Documents'
+
+let documents = Documents()
 
 export const undoButton = (author: Author) => {
   return {
@@ -21,7 +23,7 @@ export const undoButton = (author: Author) => {
       let commentMark = schema.mark('undo', {
         id: 'new-undo',
         author: author,
-        authorColor: deterministicColor(author.id),
+        authorColor: documents.upwell.getAuthorColor(author.id),
       })
       let tr = view.state.tr.addMark(from, to, commentMark)
       view.dispatch(tr)

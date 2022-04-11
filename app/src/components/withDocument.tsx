@@ -4,13 +4,12 @@ import React, { useCallback, useState, useEffect } from 'react'
 import { Upwell, Draft, Author } from 'api'
 import Debug from 'debug'
 import { useLocation } from 'wouter'
-import Documents from '../Documents'
-import deterministicColor from '../color'
 import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
 import { debounce } from 'lodash'
 import NoDocument from './NoDocument'
 import Input from './Input'
+import Documents from '../Documents'
 
 let documents = Documents()
 
@@ -173,9 +172,9 @@ export default function withDocument(
                 css={css`
                   height: 5px;
                   content: '';
-                  background: ${deterministicColor(
+                  background: ${documents.upwell.getAuthorColor(
                     documents.author.id
-                  )?.toString()};
+                  )};
                 `}
               ></div>
             </div>

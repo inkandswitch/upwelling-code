@@ -2,7 +2,6 @@
 import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
 import { DraftMetadata, Comment, CommentState } from 'api'
-import deterministicColor from '../color'
 import Documents from '../Documents'
 
 let documents = Documents()
@@ -46,9 +45,7 @@ export function CommentView(props: CommentViewProps) {
       <div
         css={css`
           font-size: small;
-          color: ${deterministicColor(
-            draft.contributors.findIndex((author) => author === comment.author)
-          )};
+          color: ${upwell.getAuthorColor(comment.author)};
         `}
       >
         {authorName}
