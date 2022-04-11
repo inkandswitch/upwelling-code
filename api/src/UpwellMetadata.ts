@@ -47,6 +47,7 @@ export class UpwellMetadata {
       id: draft.id,
       heads: draftMetadata.heads,
       archived: false,
+      shared: draft.shared,
     })
   }
 
@@ -77,15 +78,17 @@ export class UpwellMetadata {
   }
 
   get main(): string {
-    let len = this.doc.length('/history')
-    let value = this.doc.value('/history', len - 1)
-    if (value && value[0] == 'str') return value[1]
-    throw new Error('History value not a string')
+    let value = this.doc.value(ROOT, 'main')
+    if (!value) throw new Error('no main doc')
+    return value[1] as string
+  }
+
+  set main(id: string) {
+    this.doc.set(ROOT, 'main', id)
   }
 
   addToHistory(id: string) {
     let len = this.doc.length('/history')
     this.doc.insert('/history', len, id)
-    this.archive(id)
   }
 }

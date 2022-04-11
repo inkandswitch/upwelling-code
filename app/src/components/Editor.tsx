@@ -49,6 +49,7 @@ const log = Debug('Editor')
 
 type Props = {
   upwellId: string
+  editable: boolean
   editableDraftId: string
   heads?: string[]
   author: Author
@@ -84,7 +85,7 @@ export const textCSS = css`
 let prevHeads: any
 
 export function Editor(props: Props) {
-  let { upwellId, heads, editableDraftId, author, showEdits } = props
+  let { upwellId, heads, editable, editableDraftId, author, showEdits } = props
 
   const [state, setState] = React.useState<EditorState | null>(null)
 
@@ -163,7 +164,6 @@ export function Editor(props: Props) {
   const viewRef = useRef(null)
 
   useEffect(() => {
-    console.log('showedits?')
     if (!state) return
     let transaction = state.tr.setMeta(automergeChangesKey, { showEdits })
     setState(state.apply(transaction))
@@ -172,7 +172,6 @@ export function Editor(props: Props) {
 
   useEffect(() => {
     if (!state) return
-    console.log('heads?')
     let transaction = state.tr.setMeta(automergeChangesKey, { heads })
     setState(state.apply(transaction))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,6 +232,7 @@ export function Editor(props: Props) {
     if (!state) return
     let beforeHeads = editableDraft.doc.getHeads()
     editableDraft.addContributor(documents.author.id)
+    editableDraft.edited_at = Date.now()
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
@@ -392,6 +392,9 @@ export function Editor(props: Props) {
       state={state}
       ref={viewRef}
       dispatchTransaction={dispatchHandler}
+      editable={(state) => {
+        return editable
+      }}
       css={css`
         ${textCSS}
         caret-color: ${color?.copy({ opacity: 1 }).toString() || 'auto'};

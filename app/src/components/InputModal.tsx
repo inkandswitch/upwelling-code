@@ -8,57 +8,57 @@ import { useState } from 'react'
 import { Button } from './Button'
 
 type InputModalProps = {
-  onCreateDraft: Function
+  onCreateDraft?: Function
+  open: boolean
+  onClose: Function
 }
-export default function InputModal({ onCreateDraft }: InputModalProps) {
-  const [open, setOpen] = React.useState(false)
+export default function InputModal({
+  onCreateDraft,
+  open,
+  onClose,
+}: InputModalProps) {
   const [text, setText] = useState('')
 
-  const handleClickOpen = () => {
-    setOpen(true)
-  }
-
   const handleClose = () => {
-    setOpen(false)
+    onClose()
   }
-  const handleCreateDraft = () => {
-    onCreateDraft(text)
-    setOpen(false)
+  const handleCreateDraft = (e: any) => {
+    e.preventDefault()
+    console.log(text.length)
+    if (!onCreateDraft) {
+      throw new Error('Pass onCreateDraft to modal. Could not find function')
+    }
+    if (text.length) {
+      console.log('calling it')
+      onCreateDraft(text)
+      onClose()
+    }
   }
 
   return (
-    <div>
-      <Button variant="outlined" onClick={handleClickOpen}>
-        New Draft
-      </Button>
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>New draft</DialogTitle>
-        <form>
-          <DialogContent>
-            <TextField
-              autoFocus
-              id="draft-name-input"
-              label="Draft name"
-              type="text"
-              fullWidth
-              variant="standard"
-              onChange={(e) => setText(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button variant="outlined" color="error" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={handleCreateDraft}
-              type="submit"
-            >
-              Create
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-    </div>
+    <Dialog open={open} onClose={handleClose}>
+      <DialogTitle>New draft</DialogTitle>
+      <form>
+        <DialogContent>
+          <TextField
+            autoFocus
+            id="draft-name-input"
+            label="Draft name"
+            type="text"
+            fullWidth
+            variant="standard"
+            onChange={(e) => setText(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" color="error" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button variant="outlined" onClick={handleCreateDraft} type="submit">
+            OK
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   )
 }

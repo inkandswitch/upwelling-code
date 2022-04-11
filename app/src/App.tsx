@@ -17,7 +17,7 @@ export default function App() {
   async function newUpwell() {
     let id = nanoid()
     let doc = await documents.create(id, documents.author)
-    setLocation('/' + doc.id + '/' + doc.drafts()[0].id)
+    setLocation('/' + doc.id + '/stack')
   }
   return (
     <>

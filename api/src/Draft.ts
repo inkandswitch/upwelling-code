@@ -38,6 +38,8 @@ export type DraftMetadata = {
   marks: any
   comments: any
   shared: boolean
+  edited_at: number
+  merged_at: number
   parent_id: string
   authorId: AuthorId
   message: string
@@ -97,12 +99,28 @@ export class Draft {
     this.doc.set(ROOT, 'shared', value)
   }
 
-  get time(): number {
+  get created_at(): number {
     return this._getValue('time') as number
   }
 
-  set time(value: number) {
+  set created_at(value: number) {
     this.doc.set(ROOT, 'time', value)
+  }
+
+  get edited_at(): number {
+    return this._getValue('edited_at') as number
+  }
+
+  set edited_at(value: number) {
+    this.doc.set(ROOT, 'edited_at', value)
+  }
+
+  get merged_at(): number {
+    return this._getValue('merged_at') as number
+  }
+
+  set merged_at(value: number) {
+    this.doc.set(ROOT, 'merged_at', value)
   }
 
   get message(): string {
@@ -158,7 +176,9 @@ export class Draft {
       text: this.text,
       contributors: this.contributors,
       message: this.message,
-      time: this.time,
+      time: this.created_at,
+      edited_at: this.edited_at,
+      merged_at: this.merged_at,
       shared: this.shared,
       marks: this.marks,
       comments: this.comments.objects(),
@@ -348,6 +368,8 @@ export class Draft {
     doc.set(ROOT, 'author', authorId)
     doc.set(ROOT, 'shared', false)
     doc.set(ROOT, 'time', Date.now())
+    doc.set(ROOT, 'merged_at', false)
+    doc.set(ROOT, 'edited_at', Date.now())
     doc.set(ROOT, 'archived', false)
     doc.set(ROOT, 'parent_id', this.id)
     let draft = new Draft(id, doc)

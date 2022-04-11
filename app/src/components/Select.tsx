@@ -71,6 +71,13 @@ const HistoryButton = styled('button')(
 const StyledButton = styled('button')(
   ({ theme }) => `
   font-family: inherit;
+
+
+  &:disabled {
+    opacity: 70%;
+    cursor: not-allowed;
+    filter: grayscale(40%) brightness(90%);
+  }
   font-size: inherit;
   box-sizing: border-box;
   min-width: 280px;
@@ -156,7 +163,6 @@ export const Option = styled(OptionUnstyled)(
   &.${optionUnstyledClasses.disabled} {
     color: ${theme.palette.mode === 'dark' ? grey[700] : grey[400]};
   }
-
   &:hover:not(.${optionUnstyledClasses.disabled}) {
     background-color: ${theme.palette.mode === 'dark' ? grey[800] : grey[100]};
     color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
@@ -237,21 +243,12 @@ export function DetailedOption({
           >
             <InfoText
               css={css`
-                flex: 1;
-                white-space: nowrap;
-                margin-right: 4px;
-              `}
-            >
-              {upwell.getAuthorName(option.authorId)} created
-            </InfoText>
-            <InfoText
-              css={css`
                 flex: 0;
                 white-space: nowrap;
                 text-align: right;
               `}
             >
-              {relativeDate(new Date(option.time))}
+              {relativeDate(new Date(option.edited_at))}
             </InfoText>
           </div>
         </div>

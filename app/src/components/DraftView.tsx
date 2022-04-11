@@ -3,7 +3,7 @@ import { css } from '@emotion/react/macro'
 import React, { useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
-import { DraftMetadata, Draft, Author } from 'api'
+import { DraftMetadata, Draft, Author, Upwell } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
 import { Button } from './Button'
@@ -17,6 +17,7 @@ import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { getYourDrafts } from '../util'
+import { Option } from './Select'
 import InputModal from './InputModal'
 
 const log = debug('DraftView')
@@ -45,47 +46,55 @@ const pancakeCSS = `
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, epoch, sync } = props
   let [reviewMode, setReviewMode] = useState<boolean>(true)
-
+  let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
   let upwell = documents.get(id)
-  const isLatest = did === 'stack'
+  let [stackSelected, setStackSelected] = useState<boolean>(
+    did === 'stack' || did === upwell.rootDraft.id
+  )
 
   let maybeDraft
   try {
-    maybeDraft = upwell.get(did)
+    if (
+      !upwell.isArchived(did) &&
+      did !== 'stack' &&
+      did !== upwell.rootDraft.id
+    ) {
+      maybeDraft = upwell.get(did)
+    } else {
+      maybeDraft = upwell.getSpecialEditableStackDocument()
+    }
   } catch (err) {
-    maybeDraft = upwell.rootDraft
+    maybeDraft = upwell.getSpecialEditableStackDocument()
   }
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [heads, setHistoryHeads] = useState<string[]>([])
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
-    did !== 'stack' && upwell.rootDraft.id !== draft.parent_id
+    draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
 
   useEffect(() => {
     let upwell = documents.get(id)
     setDrafts(upwell.drafts())
-    setDraft(upwell.get(did).materialize())
+    setDraft(upwell.get(draft.id).materialize())
     log('rendering')
-  }, [id, did, epoch])
+  }, [id, draft.id, epoch])
 
   // every time the upwell id changes
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       let upwell = documents.get(id)
-      if (!local && did === upwell.rootDraft.id && did !== 'stack') {
-        // someone merged my draft while i was looking at it
+      if (!local && upwell.isArchived(draft.id)) {
+        // someone merged or archived my draft while i was looking at it
         documents.sync(id).then(() => {
           window.location.href = `/${id}/stack`
         })
       }
-      if (!local && did === 'stack' && upwell.metadata.main !== draft.id) {
-        setHasPendingChanges(true)
-      } else if (did !== 'stack' && upwell.rootDraft.id !== draft.parent_id) {
+      if (!local && upwell.metadata.main !== draft.parent_id) {
         setHasPendingChanges(true)
       }
+      let instance = upwell.get(draft.id)
       if (local) {
-        let instance = upwell.get(did)
         setDraft(instance.materialize())
       }
       sync()
@@ -93,63 +102,62 @@ export default function DraftView(props: DraftViewProps) {
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, did, sync])
+  }, [id, draft.parent_id, draft.id, sync])
 
   // every time the draft id changes
   useEffect(() => {
-    let emitter = documents.connectDraft(id, did)
+    let emitter = documents.connectDraft(id, draft.id)
     emitter.on('data', () => {
       log('updating draft metadata')
       let upwell = documents.get(id)
-      let instance = upwell.get(did)
+      let instance = upwell.get(draft.id)
       setDraft(instance.materialize())
     })
     return () => {
-      documents.disconnect(did)
+      documents.disconnect(draft.id)
     }
-  }, [id, did])
+  }, [id, draft.id])
 
   const handleTitleInputBlur = (
     e: React.FocusEvent<HTMLInputElement, Element>
   ) => {
-    let draftInstance = upwell.get(did)
+    let draftInstance = upwell.get(draft.id)
     draftInstance.title = e.target.value
     documents.save(id)
   }
 
-  /*
-  const handleShareClick = (draft: DraftMetadata) => {
-    if (
-      // eslint-disable-next-line no-restricted-globals
-      confirm("Do you want to share your draft? it can't be unshared.")
-    ) {
-      let upwell = documents.get(id)
-      upwell.share(draft.id)
-      documents.draftChanged(id, draft.id)
-    }
+  const handleShareClick = () => {
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.shared = !draftInstance.shared
+    documents.draftChanged(id, draft.id)
   }
-  */
 
   let handleUpdateClick = () => {
     window.location.reload()
   }
 
+  const onMerge = async (draftName: string) => {
+    let upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.message = draftName
+    upwell.rootDraft = draftInstance
+    goToDraft('stack')
+  }
+
   let handleMergeClick = async () => {
     let upwell = documents.get(id)
-    upwell.rootDraft = upwell.get(draft.id)
-    let drafts = upwell.drafts()
-    await documents.save(id)
-    if (!drafts.length) {
-      goToDraft('stack')
+    let draftInstance = upwell.get(draft.id)
+    if (draftInstance.message === upwell.SPECIAL_UNNAMED_DOCUMENT) {
+      setModalOpen('merge')
     } else {
-      goToDraft(drafts[0].id)
+      upwell.rootDraft = draftInstance
+      goToDraft('stack')
     }
   }
 
   const createDraft = async (draftName: string) => {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft(draftName)
-    upwell.share(newDraft.id)
     goToDraft(newDraft.id)
   }
 
@@ -165,17 +173,15 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   // Hack because the params are always undefined?
-  function renderValue() {
-    return draft.id === upwell.rootDraft.id ? '(not in a draft)' : draft.message
+  function renderDraftMessage(draftMeta: DraftMetadata) {
+    let draftInstance = upwell.get(draftMeta.id)
+    let changes = upwell.getChangesFromRoot(draftInstance)
+    return draftInstance.message === upwell.SPECIAL_UNNAMED_DOCUMENT
+      ? changes === 0
+        ? '(no changes)'
+        : `${changes} changes`
+      : draftInstance.message
   }
-  // borked?
-  // function renderValue(option: SelectOption<DraftMetadata> | null) {
-  //   console.log('renderValue', option)
-  //   if (option === null || option === undefined) {
-  //     return <span>Select a draft...</span>
-  //   }
-  //   return <span>{option.value.message}</span>
-  // }
 
   const setHistorySelection = debounce((d: DraftMetadata) => {
     console.log(d.id, upwell.rootDraft.id)
@@ -201,6 +207,11 @@ export default function DraftView(props: DraftViewProps) {
         justify-content: space-between;
       `}
     >
+      <InputModal
+        open={modalOpen !== undefined}
+        onCreateDraft={modalOpen === 'merge' ? onMerge : createDraft}
+        onClose={() => setModalOpen(undefined)}
+      />
       <div id="spacer-placeholder" />
       <div
         id="folio"
@@ -240,37 +251,49 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Pancake
+                onClick={() => setStackSelected(false)}
                 css={css`
                   ${pancakeCSS}
                   path {
-                    fill: ${did === 'stack' ? '' : blue};
+                    fill: ${stackSelected ? '' : blue};
                   }
                 `}
               ></Pancake>
               <FormControl>
                 <Select
+                  disabled={stackSelected}
                   value={draftsMeta.find((d) => d.id === draft.id)}
                   onChange={(value: DraftMetadata | null) => {
                     if (value === null) {
                       console.log('draft is null')
                       return
                     }
+                    if (value.id === 'new-draft') {
+                      setModalOpen('new-draft')
+                      return
+                    }
                     goToDraft(value.id)
                   }}
-                  renderValue={renderValue}
+                  renderValue={() => renderDraftMessage(draft)}
                 >
-                  {getYourDrafts(
-                    draftsMeta,
-                    upwell.rootDraft.id,
-                    author.id
-                  ).map((d) => (
-                    <DetailedOption
-                      key={d.id}
-                      option={d}
-                      upwell={upwell}
-                      icon={Pancake}
-                    />
-                  ))}
+                  {getYourDrafts(draftsMeta, upwell.rootDraft.id, author.id)
+                    .filter((d) => d.id !== upwell.rootDraft.id)
+                    .map((d) => {
+                      return (
+                        <DetailedOption
+                          key={d.id}
+                          option={{
+                            ...d,
+                            message: renderDraftMessage(d),
+                          }}
+                          upwell={upwell}
+                          icon={Pancake}
+                        />
+                      )
+                    })}
+                  <Option key={'new-draft'} value={{ id: 'new-draft' }}>
+                    + New Draft
+                  </Option>
                 </Select>
               </FormControl>
               {hasPendingChanges && (
@@ -289,16 +312,20 @@ export default function DraftView(props: DraftViewProps) {
                 </Button>
               )}
 
-              {!isLatest && (
-                <>
-                  <Button
-                    disabled={hasPendingChanges}
-                    onClick={handleMergeClick}
-                  >
-                    Merge
-                  </Button>
-                </>
-              )}
+              <>
+                <Button
+                  disabled={hasPendingChanges || stackSelected}
+                  onClick={handleMergeClick}
+                >
+                  Merge
+                </Button>
+                <Button
+                  disabled={hasPendingChanges || stackSelected}
+                  onClick={handleShareClick}
+                >
+                  {draft.shared ? 'Unshare' : 'Share'}
+                </Button>
+              </>
             </div>
           </div>
           <div
@@ -316,16 +343,16 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Pancakes
+                onClick={() => setStackSelected(true)}
                 css={css`
                   ${pancakeCSS}
                   path {
-                    fill: ${did === 'stack' ? blue : ''};
+                    fill: ${stackSelected ? blue : ''};
                   }
                 `}
-                onClick={() => goToDraft('stack')}
               />
               <Input
-                value={draft.title}
+                value={stackSelected ? upwell.rootDraft.title : draft.title}
                 placeholder={'Untitled Document'}
                 onClick={(e) => {
                   e.stopPropagation()
@@ -333,9 +360,9 @@ export default function DraftView(props: DraftViewProps) {
                 onChange={(e) => {
                   e.stopPropagation()
                   setDraft({ ...draft, title: e.target.value })
-                  let draftInstance = upwell.get(did)
+                  let draftInstance = upwell.get(draft.id)
                   draftInstance.title = e.target.value
-                  documents.draftChanged(id, did)
+                  documents.draftChanged(id, draft.id)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)
@@ -345,7 +372,6 @@ export default function DraftView(props: DraftViewProps) {
                   font-weight: 600;
                 `}
               />
-              <InputModal onCreateDraft={createDraft} />
             </div>
             <div
               css={css`
@@ -366,7 +392,7 @@ export default function DraftView(props: DraftViewProps) {
                     upwell.rootDraft._getValue('message', heads)}
               </span>
               <DraftsHistory
-                did={did}
+                did={draft.id}
                 epoch={epoch}
                 goToDraft={goToDraft}
                 drafts={draftsMeta}
@@ -378,14 +404,17 @@ export default function DraftView(props: DraftViewProps) {
           </div>
         </div>
 
-        <EditReviewView
-          did={draft.id}
-          visible={[draft.id]}
-          id={id}
-          author={author}
-          reviewMode={reviewMode}
-          heads={heads}
-        />
+        <div onClick={() => setStackSelected(false)}>
+          <EditReviewView
+            did={draft.id}
+            visible={[stackSelected ? upwell.rootDraft.id : draft.id]}
+            id={id}
+            author={author}
+            reviewMode={reviewMode}
+            editable={!stackSelected}
+            heads={heads}
+          />
+        </div>
       </div>
       <div
         id="comments"

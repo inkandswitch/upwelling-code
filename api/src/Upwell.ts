@@ -54,6 +54,10 @@ export class Upwell {
     return this.metadata.id
   }
 
+  get SPECIAL_UNNAMED_DOCUMENT() {
+    return 'CHANGE_CAPTURE_DOC_' + this.author.id
+  }
+
   get rootDraft() {
     let rootId = this.metadata.main
     return this.get(rootId)
@@ -64,8 +68,14 @@ export class Upwell {
   }
 
   set rootDraft(draft: Draft) {
+    if (draft.id === this.rootDraft.id) {
+      throw new Error('This draft is already root')
+    }
+    draft.merged_at = Date.now()
     this.rootDraft.merge(draft)
+    this._add(draft)
     this.metadata.addToHistory(draft.id)
+    this.metadata.archive(draft.id)
 
     for (let draft of this.drafts()) {
       this.updateToRoot(draft)
@@ -90,17 +100,10 @@ export class Upwell {
     this.metadata.addDraft(draft)
   }
 
-  createDraft(message?: string) {
-    if (!message) message = getRandomDessert() as string
+  createDraft(message: string) {
     let newDraft = this.rootDraft.fork(message, this.author)
     this._add(newDraft)
     return newDraft
-  }
-
-  share(id: string): void {
-    let draft = this.get(id)
-    draft.shared = true
-    this._add(draft)
   }
 
   updateToRoot(draft: Draft) {
@@ -109,7 +112,6 @@ export class Upwell {
     draft.merge(root)
     draft.message = message
     draft.parent_id = root.id
-    this._add(draft)
   }
 
   isArchived(id: string): boolean {
@@ -117,7 +119,7 @@ export class Upwell {
   }
 
   archive(id: string): void {
-    if (this.isArchived(id)) return console.log('skipping', id)
+    if (this.isArchived(id)) return
     let draft = this._draftLayers.get(id)
     if (!draft) throw new Error('Draft with doesnt exist with id=' + id)
     this.metadata.archive(draft.id)
@@ -127,6 +129,18 @@ export class Upwell {
     if (buf?.constructor.name === 'Uint8Array')
       return Draft.load(id, buf as Uint8Array, this.author.id)
     else return buf as Draft
+  }
+
+  getSpecialEditableStackDocument() {
+    let maybeDraft = this.drafts().find(
+      (d) =>
+        d.message === this.SPECIAL_UNNAMED_DOCUMENT &&
+        d.id !== this.rootDraft.id
+    )
+    if (!maybeDraft) {
+      return this.createDraft(this.SPECIAL_UNNAMED_DOCUMENT)
+    }
+    return maybeDraft
   }
 
   get(id: string): Draft {
@@ -235,6 +249,11 @@ export class Upwell {
     return pack
   }
 
+  getChangesFromRoot(draft: Draft): number {
+    let changes = draft.doc.getChanges(this.rootDraft.doc.getHeads())
+    return Math.max(changes.length - 2, 0) // 2 initial are trash
+  }
+
   static create(options?: UpwellOptions): Upwell {
     let id = options?.id || nanoid()
     let author = options?.author || UNKNOWN_AUTHOR
@@ -242,9 +261,10 @@ export class Upwell {
     let metadata = UpwellMetadata.create(id)
     let upwell = new Upwell(metadata, author)
     upwell._add(root)
+    metadata.main = root.id
     metadata.addToHistory(root.id)
+    metadata.archive(root.id)
     root.parent_id = root.id
-    upwell.createDraft('First draft') // always create an initial draft
     return upwell
   }
 

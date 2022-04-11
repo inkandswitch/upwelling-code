@@ -37,7 +37,6 @@ export default function DraftsHistory({
   let [history, setHistory] = useState<DraftMetadata[]>([])
   let [, setNoMoreHistory] = useState<boolean>(false)
   let [fetchSize] = useState<number>(HISTORY_FETCH_SIZE)
-  console.log(history)
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -82,14 +81,16 @@ export default function DraftsHistory({
         />
         {history
           .filter((d) => d.message !== Upwell.SPECIAL_ROOT_DOCUMENT)
-          .map((d) => (
-            <DetailedOption
-              key={d.id}
-              option={d}
-              upwell={upwell}
-              icon={OffsetPancakes}
-            />
-          ))}
+          .map((d) => {
+            return (
+              <DetailedOption
+                key={d.id}
+                option={d}
+                upwell={upwell}
+                icon={OffsetPancakes}
+              />
+            )
+          })}
       </HistorySelect>
     </FormControl>
   )
