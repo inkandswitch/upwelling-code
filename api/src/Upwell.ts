@@ -72,8 +72,8 @@ export class Upwell {
       throw new Error('This draft is already root')
     }
     draft.merged_at = Date.now()
-    this.rootDraft.merge(draft)
     this._add(draft)
+    this.rootDraft.merge(draft)
     this.metadata.addToHistory(draft.id)
     this.metadata.archive(draft.id)
 
