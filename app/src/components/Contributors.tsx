@@ -16,7 +16,7 @@ export default function Contributors(props: Props) {
         column-gap: 6px;
       `}
     >
-      {props.contributors.map((id) => {
+      {props.contributors.map((id, index) => {
         let name = props.upwell.getAuthorName(id)
         return (
           <div
@@ -31,7 +31,7 @@ export default function Contributors(props: Props) {
           >
             <div
               css={css`
-                background: ${deterministicColor(id)?.toString()};
+                background: ${deterministicColor(index)};
                 font-size: 18px;
                 line-height: 18px;
                 height: 1.5rem;

@@ -46,7 +46,9 @@ export function CommentView(props: CommentViewProps) {
       <div
         css={css`
           font-size: small;
-          color: ${deterministicColor(comment.author).toString()};
+          color: ${deterministicColor(
+            draft.contributors.findIndex((author) => author === comment.author)
+          )};
         `}
       >
         {authorName}
