@@ -403,18 +403,16 @@ export default function DraftView(props: DraftViewProps) {
             </div>
           </div>
         </div>
-
-        <div onClick={() => setStackSelected(false)}>
-          <EditReviewView
-            did={draft.id}
-            visible={[stackSelected ? upwell.rootDraft.id : draft.id]}
-            id={id}
-            author={author}
-            reviewMode={reviewMode}
-            editable={!stackSelected}
-            heads={heads}
-          />
-        </div>
+        <EditReviewView
+          did={draft.id}
+          visible={[stackSelected ? upwell.rootDraft.id : draft.id]}
+          id={id}
+          author={author}
+          reviewMode={reviewMode}
+          editable={!stackSelected}
+          heads={heads}
+          onClick={() => setStackSelected(false)}
+        />
       </div>
       <div
         id="comments"
@@ -422,6 +420,8 @@ export default function DraftView(props: DraftViewProps) {
           flex: 0 1 auto;
           background: rgba(0, 0, 0, 0.2);
           color: white;
+          overflow: auto;
+          padding-top: 36px;
         `}
       >
         <CommentSidebar draft={draft} id={id} />
