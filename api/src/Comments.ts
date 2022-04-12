@@ -17,7 +17,7 @@ export type Comment = {
 }
 
 export class Comments extends Collection<Comment> {
-  archive(comment: Comment) {
+  resolve(comment: Comment) {
     this.doc.set(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
   }
 
