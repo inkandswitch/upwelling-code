@@ -99,6 +99,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
 
 
   send(msg: T) {
+    if (this.ws.CLOSED || this.ws.CLOSING) return
     try {
       this.ws.send(JSON.stringify(msg));
     } catch (err) {
