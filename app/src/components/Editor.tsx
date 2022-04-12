@@ -1,7 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import React, { useEffect, useRef } from 'react'
 import { Transaction as AutomergeEdit, Author } from 'api'
-import deterministicColor from '../color'
 
 import { schema } from '../prosemirror/UpwellSchema'
 import {
@@ -127,7 +126,7 @@ export function Editor(props: Props) {
   useEffect(() => {
     let upwell = documents.get(upwellId)
     let editableDraft = upwell.get(editableDraftId)
-    let atjsonDraft = UpwellSource.fromRaw(editableDraft)
+    let atjsonDraft = UpwellSource.fromRaw(editableDraft, upwell)
     let pmDoc = ProsemirrorRenderer.render(atjsonDraft)
     let editorConfig = {
       schema,
@@ -231,10 +230,10 @@ export function Editor(props: Props) {
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
     let beforeHeads = editableDraft.doc.getHeads()
-    editableDraft.addContributor(documents.author.id)
-    editableDraft.edited_at = Date.now()
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
 
         if (end !== start) {
@@ -267,6 +266,8 @@ export function Editor(props: Props) {
           })
         }
       } else if (step instanceof AddMarkStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
         let mark = step.mark
 
@@ -282,6 +283,8 @@ export function Editor(props: Props) {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }
       } else if (step instanceof RemoveMarkStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         // TK not implemented because automerge doesn't support removing marks yet
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
         let mark = step.mark
@@ -289,6 +292,8 @@ export function Editor(props: Props) {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, false)
         }
       } else if (step instanceof ReplaceAroundStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         // This is just a guard to prevent us from handling a ReplaceAroundStep
         // that isn't simply replacing the container, because implementing that
         // is complicated and I can't think of an example where this would be
@@ -385,7 +390,7 @@ export function Editor(props: Props) {
     setState(newState)
   }
 
-  let color = deterministicColor(editableDraft.authorId)
+  let color = upwell.getAuthorColor(editableDraft.authorId)
   if (!state) return <div>loading</div>
   return (
     <ProseMirror
@@ -397,7 +402,7 @@ export function Editor(props: Props) {
       }}
       css={css`
         ${textCSS}
-        caret-color: ${color?.copy({ opacity: 1 }).toString() || 'auto'};
+        caret-color: ${color || 'auto'};
       `}
     />
   )

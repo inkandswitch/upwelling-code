@@ -8,7 +8,6 @@ import relativeDate from 'relative-date'
 import { TextareaInput } from './Input'
 import { EmojiButton } from './EmojiButton'
 import Documents from '../Documents'
-import deterministicColor from '../color'
 let documents = Documents()
 
 const tabStyles = css`
@@ -223,9 +222,9 @@ export default function ListDocuments({
                 justify-content: flex-start;
                 align-items: flex-start;
                 ${editableDraft === draft.id ? editableTabStyle : ''}
-                box-shadow: 18px 24px 0px -18px ${deterministicColor(
+                box-shadow: 18px 24px 0px -18px ${upwell.getAuthorColor(
                   draft.authorId
-                ).toString() || 'none'} inset;
+                ) || 'none'} inset;
               `}
             >
               {/* <span css={{ color: "lightgray" }}>{draft.id.slice(0, 2)}</span> */}

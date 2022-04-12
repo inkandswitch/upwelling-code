@@ -2,9 +2,11 @@ import { Decoration, DecorationSet } from 'prosemirror-view'
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Node } from 'prosemirror-model'
 import { Draft, Upwell } from 'api'
-import deterministicColor from '../color'
 import { automergeToProsemirror } from './utils/PositionMapper'
 import { ChangeSet } from 'automerge-wasm-pack'
+import Documents from '../Documents'
+
+let documents = Documents()
 
 export const automergeChangesKey = new PluginKey('automergeChanges')
 
@@ -12,9 +14,8 @@ function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     return Decoration.inline(from, to, {
-      style: `background: ${deterministicColor(
-        change.actor.split('0000')[0],
-        0.15
+      style: `background: ${documents.upwell.getAuthorColor(
+        change.actor.split('0000')[0]
       )}`,
     })
   })
@@ -42,9 +43,9 @@ function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
       }px`
       sidebarThing.style.width = '3px'
       sidebarThing.style.borderRadius = '3px'
-      sidebarThing.style.background = deterministicColor(
+      sidebarThing.style.background = documents.upwell.getAuthorColor(
         change.actor.split('0000')[0]
-      ).toString()
+      )
       console.log(sidebarThing)
       console.log(view, getPos())
       console.log(view.coordsAtPos(from))

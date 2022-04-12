@@ -1,6 +1,8 @@
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import { Plugin, PluginKey } from 'prosemirror-state'
-import deterministicColor from '../color'
+import Documents from '../Documents'
+
+let documents = Documents()
 
 export const remoteCursorKey = new PluginKey('remoteCursor')
 
@@ -26,15 +28,15 @@ export const remoteCursorPlugin: () => Plugin = () => {
             let { from, to } = cursor
             if (from === to) {
               let cursorElement = window.document.createElement('span')
-              cursorElement.style.borderRight = `2px solid ${deterministicColor(
+              cursorElement.style.borderRight = `2px solid ${documents.upwell.getAuthorColor(
                 author
-              ).toString()}`
+              )}`
               cursorElement.style.boxSizing = 'content-box'
               cursorElement.style.marginLeft = '-2px'
               return Decoration.widget(from, cursorElement)
             } else {
               return Decoration.inline(from, to, {
-                style: `background: ${deterministicColor(author)}`,
+                style: `background: ${documents.upwell.getAuthorColor(author)}`,
               })
             }
           })

@@ -1,7 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { Upwell } from 'api'
 import { css } from '@emotion/react/macro'
-import deterministicColor from '../color'
 
 type Props = {
   upwell: Upwell
@@ -31,7 +30,7 @@ export default function Contributors(props: Props) {
           >
             <div
               css={css`
-                background: ${deterministicColor(id)?.toString()};
+                background: ${props.upwell.getAuthorColor(id)};
                 font-size: 18px;
                 line-height: 18px;
                 height: 1.5rem;
