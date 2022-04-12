@@ -27,7 +27,6 @@ let documents = Documents()
 
 type DraftViewProps = {
   did: string
-  epoch: number
   id: string
   root: Draft
   author: Author
@@ -42,8 +41,9 @@ const pancakeCSS = `
 `
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author, did, epoch, sync } = props
+  let { id, author, did, sync } = props
   let [reviewMode, setReviewMode] = useState<boolean>(true)
+  let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
   let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
   let upwell = documents.get(id)
@@ -68,16 +68,12 @@ export default function DraftView(props: DraftViewProps) {
     draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
 
-  let [storedChangesCount, setStoredChangesCount] = useState<number>(
-    upwell.getChangesFromRoot(maybeDraft)
-  )
-
   useEffect(() => {
     let upwell = documents.get(id)
     setDrafts(upwell.drafts())
     setDraft(upwell.get(draft.id).materialize())
     log('rendering')
-  }, [id, draft.id, epoch])
+  }, [id, draft.id])
 
   useEffect(() => {
     let part = stackSelected ? 'stack' : draft.id
@@ -101,13 +97,17 @@ export default function DraftView(props: DraftViewProps) {
       if (local) {
         setDraft(instance.materialize())
       }
-      setStoredChangesCount(upwell.getChangesFromRoot(instance))
-      sync()
+      upwell.getChangesFromRoot(instance)
+      if (!mounted) {
+        setMounted(true)
+      } else {
+        sync()
+      }
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, sync])
+  }, [id, draft.parent_id, draft.id, sync, mounted])
 
   // every time the draft id changes
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function DraftView(props: DraftViewProps) {
       setDraft(instance.materialize())
     })
     return () => {
-      documents.disconnect(draft.id)
+      documents.disconnect()
     }
   }, [id, draft.id])
 
@@ -228,9 +228,6 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <InputModal
-        defaultValue={
-          modalOpen === 'merge' ? `${storedChangesCount} changes` : ''
-        }
         open={modalOpen !== undefined}
         onCreateDraft={modalOpen === 'merge' ? onMerge : createDraft}
         onClose={() => setModalOpen(undefined)}
@@ -274,11 +271,7 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Pancake
-                onClick={() => {
-                  drafts.length > 1 && goToDraft(drafts[1].id)
-                }}
                 css={css`
-                  ${pancakeCSS}
                   path {
                     fill: ${stackSelected ? '' : blue};
                   }
@@ -286,7 +279,6 @@ export default function DraftView(props: DraftViewProps) {
               ></Pancake>
               <FormControl>
                 <Select
-                  value={draftsMeta.find((d) => d.id === draft.id)}
                   onChange={(value: DraftMetadata | null) => {
                     if (value === null) {
                       console.log('draft is null')
@@ -417,7 +409,6 @@ export default function DraftView(props: DraftViewProps) {
               </span>
               <DraftsHistory
                 did={draft.id}
-                epoch={epoch}
                 goToDraft={goToDraft}
                 drafts={draftsMeta}
                 setHistorySelection={setHistorySelection}

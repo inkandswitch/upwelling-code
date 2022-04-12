@@ -257,9 +257,12 @@ export class Upwell {
   }
 
   getChangesFromRoot(draft: Draft): number {
+    let start = Date.now()
     let changes = draft.doc.getChanges(this.rootDraft.doc.getHeads()).length
     changes = Math.max(changes - 2, 0)
     this.changes.set(draft.id, changes)
+    let end = Date.now() - start
+    debug('(getChangesFromRoot): execution time %dms', end)
     return changes // 2 initial are trash
   }
 

@@ -11,15 +11,13 @@ type InputModalProps = {
   onCreateDraft?: Function
   open: boolean
   onClose: Function
-  defaultValue: string
 }
 export default function InputModal({
   onCreateDraft,
   open,
-  defaultValue,
   onClose,
 }: InputModalProps) {
-  const [text, setText] = useState(defaultValue || '')
+  const [text, setText] = useState('')
 
   const handleClose = () => {
     onClose()
@@ -44,7 +42,6 @@ export default function InputModal({
             autoFocus
             id="draft-name-input"
             label="Draft name"
-            defaultValue={defaultValue}
             type="text"
             fullWidth
             variant="standard"

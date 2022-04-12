@@ -140,7 +140,6 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
         console.error("Original error", err);
         return;
       }
-      log('got syncMessage from peerId=', value.peerId)
       switch (value.method) {
         case "OPEN":
           this.emit('peer', value)

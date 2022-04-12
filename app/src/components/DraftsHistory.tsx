@@ -15,7 +15,6 @@ const HISTORY_FETCH_SIZE = 5
 
 type Props = {
   drafts: DraftMetadata[]
-  epoch: number
   id: string
   did: string
   goToDraft: Function
@@ -23,12 +22,7 @@ type Props = {
   colors?: AuthorColorsType
   author: Author
 }
-export default function DraftsHistory({
-  epoch,
-  id,
-  did,
-  setHistorySelection,
-}: Props) {
+export default function DraftsHistory({ id, did, setHistorySelection }: Props) {
   const upwell = documents.get(id)
   let [history, setHistory] = useState<DraftMetadata[]>([])
   let [, setNoMoreHistory] = useState<boolean>(false)
@@ -43,7 +37,7 @@ export default function DraftsHistory({
     }
     setNoMoreHistory(upwell.history.length <= fetchSize)
     setHistory(moreHistory)
-  }, [id, fetchSize, epoch])
+  }, [id, fetchSize])
 
   // function onGetMoreClick() {
   //   setFetchSize(fetchSize + HISTORY_FETCH_SIZE)

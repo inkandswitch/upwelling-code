@@ -57,12 +57,12 @@ export class Documents {
     }
   }
 
-  disconnect(id: string) {
+  disconnect(id?: string) {
     if (this.rtcUpwell && this.rtcUpwell.id === id) {
       this.rtcUpwell.destroy()
       log('disconnecting')
       this.rtcUpwell = undefined
-    } else if (this.rtcDraft && this.rtcDraft.id === id) {
+    } else if (this.rtcDraft) {
       this.rtcDraft.destroy()
       log('disconnecting')
       this.rtcDraft = undefined
@@ -149,6 +149,7 @@ export class Documents {
   }
 
   async sync(id: string): Promise<any> {
+    log('sync called')
     let inMemory = this.upwells.get(id)
     let remoteBinary = await this.remote.getItem(id)
     if (!inMemory && remoteBinary) {
@@ -199,4 +200,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-function noop() {}
+function noop() { }

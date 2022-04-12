@@ -32,7 +32,6 @@ export default function withDocument(
     let [root, setRoot] = useState<Draft>()
     let [, setLocation] = useLocation()
     let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
-    let [epoch, setEpoch] = useState<number>(Date.now())
     let [timedOut, setTimedOut] = useState<boolean>(false)
     let { id, author } = props
 
@@ -48,7 +47,6 @@ export default function withDocument(
         setSyncState(SYNC_STATE.OFFLINE)
       } finally {
         log('rendering')
-        setEpoch(Date.now())
       }
     }, [id])
 
@@ -77,7 +75,6 @@ export default function withDocument(
         }
 
         try {
-          await documents.sync(id)
           upwell = documents.get(id)
         } catch (err) {
           console.log(err)
@@ -109,17 +106,9 @@ export default function withDocument(
     if (!root) {
       return (
         <NoDocument>
-          <div
-            css={css`
-              color: lightblue;
-            `}
-          >
+          <div css={css``}>
             <h1>{timedOut ? 'timed out. bummer' : 'surfing...'}</h1>
-            {timedOut ? (
-              <img src="/Wavy2.gif" alt="404" />
-            ) : (
-              <img src="/Wavy2.gif" alt="Wave " />
-            )}
+            {timedOut ? '404' : '...'}
           </div>
         </NoDocument>
       )
@@ -181,12 +170,7 @@ export default function withDocument(
             </div>
           </div>
         </div>
-        <WrappedComponent
-          sync={debouncedSync}
-          root={root}
-          epoch={epoch}
-          {...props}
-        />
+        <WrappedComponent sync={debouncedSync} root={root} {...props} />
       </div>
     )
   }

@@ -10,7 +10,7 @@ export default function NoDocument(props: any) {
           font-family: serif;
           display: flex;
           flex-direction: column;
-          background-color: black;
+          background: #f9f9fa;
           align-items: center;
           width: 100%;
           height: 100vh;
