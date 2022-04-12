@@ -37,7 +37,7 @@ export default function InputModal({
 
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>New draft</DialogTitle>
+      <DialogTitle>Name your changes</DialogTitle>
       <form>
         <DialogContent>
           <TextField

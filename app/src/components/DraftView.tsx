@@ -227,7 +227,9 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <InputModal
-        defaultValue={`${storedChangesCount} changes`}
+        defaultValue={
+          modalOpen === 'merge' ? `${storedChangesCount} changes` : ''
+        }
         open={modalOpen !== undefined}
         onCreateDraft={modalOpen === 'merge' ? onMerge : createDraft}
         onClose={() => setModalOpen(undefined)}
