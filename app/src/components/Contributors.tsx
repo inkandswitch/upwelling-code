@@ -22,13 +22,12 @@ export default function Contributors(props: Props) {
           <div
             css={css`
               overflow: hidden;
-              background: white; /* icon background needs a white backdrop to match others because of semi-transparency */
+
+              /* icon background needs a white backdrop to match others because of semi-transparency */
+              background: white;
 
               border-radius: 50%;
               border: 2px solid ${props.upwell.getAuthorColor(id)};
-              background: ${getAuthorHighlight(
-                props.upwell.getAuthorColor(id)
-              )};
               height: 1.7rem;
               width: 1.7rem;
               line-height: 1.7rem;
@@ -39,6 +38,11 @@ export default function Contributors(props: Props) {
             <div
               css={css`
                 text-align: center;
+
+                /* second background, see parent element for comment */
+                background: ${getAuthorHighlight(
+                  props.upwell.getAuthorColor(id)
+                )};
               `}
             >
               <span
