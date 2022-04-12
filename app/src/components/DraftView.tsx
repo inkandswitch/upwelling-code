@@ -34,9 +34,7 @@ type DraftViewProps = {
 }
 
 const pancakeCSS = `
-  width: 45px;
   cursor: pointer;
-  height: 45px;
   :hover path {
     fill: lightblue;
   }
