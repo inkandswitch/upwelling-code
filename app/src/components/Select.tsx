@@ -177,12 +177,14 @@ const StyledPopper = styled(PopperUnstyled)`
 export default function Select<TValue extends {}>(
   props: SelectUnstyledProps<TValue>
 ) {
-  const components: SelectUnstyledProps<TValue>['components'] = {
-    Root: StyledButton,
-    Listbox: StyledListbox,
-    Popper: StyledPopper,
-    ...props.components,
-  }
+  const components: SelectUnstyledProps<TValue>['components'] = Object.assign(
+    {
+      Root: StyledButton,
+      Listbox: StyledListbox,
+      Popper: StyledPopper,
+    },
+    props.components
+  )
 
   return <SelectUnstyled {...props} components={components} />
 }
@@ -190,12 +192,14 @@ export default function Select<TValue extends {}>(
 export function HistorySelect<TValue extends {}>(
   props: SelectUnstyledProps<TValue>
 ) {
-  const components: SelectUnstyledProps<TValue>['components'] = {
-    Root: HistoryButton,
-    Listbox: StyledListbox,
-    Popper: StyledPopper,
-    ...props.components,
-  }
+  const components: SelectUnstyledProps<TValue>['components'] = Object.assign(
+    {
+      Root: HistoryButton,
+      Listbox: StyledListbox,
+      Popper: StyledPopper,
+    },
+    props.components
+  )
 
   return <SelectUnstyled {...props} components={components} />
 }
