@@ -131,9 +131,10 @@ export default function withDocument(
         <div
           css={css`
             top: 0;
-            left: 0;
+            right: 0;
             position: fixed;
             margin: auto;
+            background: #f9f9fa;
           `}
         >
           <div

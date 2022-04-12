@@ -19,6 +19,7 @@ type Props = {
   heads: string[]
   author: Author
   reviewMode: boolean
+  onClick: React.MouseEventHandler<HTMLDivElement>
 }
 
 // @ts-ignore
@@ -33,7 +34,7 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, editable, heads, visible, reviewMode, author } = props
+  const { id, editable, heads, visible, reviewMode, author, onClick } = props
   //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
   let { did } = props
@@ -76,6 +77,7 @@ export function EditReviewView(props: Props) {
         flex: 1 1 auto;
         overflow: auto;
       `}
+      onClick={onClick}
     >
       {component}
     </div>
