@@ -68,6 +68,10 @@ export default function DraftView(props: DraftViewProps) {
     draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
 
+  let [storedChangesCount, setStoredChangesCount] = useState<number>(
+    upwell.getChangesFromRoot(maybeDraft)
+  )
+
   useEffect(() => {
     let upwell = documents.get(id)
     setDrafts(upwell.drafts())
@@ -97,6 +101,7 @@ export default function DraftView(props: DraftViewProps) {
       if (local) {
         setDraft(instance.materialize())
       }
+      setStoredChangesCount(upwell.getChangesFromRoot(instance))
       sync()
     })
     return () => {
@@ -187,9 +192,9 @@ export default function DraftView(props: DraftViewProps) {
   function renderDraftMessage(draftMeta: DraftMetadata) {
     if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
-    let changes = 0
-    if (draftMeta.id !== upwell.rootDraft.id) {
-      changes = upwell.getChangesFromRoot(draftInstance)
+    let changes = storedChangesCount
+    if (draftMeta.id === upwell.rootDraft.id) {
+      changes = 0
     }
     return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
       ? `${changes} changes`
@@ -220,6 +225,7 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <InputModal
+        defaultValue={`${storedChangesCount} changes`}
         open={modalOpen !== undefined}
         onCreateDraft={modalOpen === 'merge' ? onMerge : createDraft}
         onClose={() => setModalOpen(undefined)}
