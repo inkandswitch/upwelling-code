@@ -31,6 +31,7 @@ export default function Contributors(props: Props) {
               height: 1.7rem;
               width: 1.7rem;
               line-height: 1.7rem;
+              cursor: default;
             `}
             key={id}
             title={name}
