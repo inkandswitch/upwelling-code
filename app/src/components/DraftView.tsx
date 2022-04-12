@@ -244,7 +244,7 @@ export default function DraftView(props: DraftViewProps) {
               css={css`
                 display: flex;
                 align-items: baseline;
-                column-gap: 30px;
+                column-gap: 10px;
                 justify-content: space-between;
                 align-items: center;
               `}
@@ -362,6 +362,7 @@ export default function DraftView(props: DraftViewProps) {
                 css={css`
                   font-size: 1.1em;
                   font-weight: 600;
+                  padding-left: 20px;
                 `}
               />
 
