@@ -4,7 +4,6 @@ import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { EditorView } from 'prosemirror-view'
 import { schema } from '../UpwellSchema'
-import deterministicColor from '../../color'
 import { Author } from 'api'
 import TextField from '@mui/material/TextField'
 import DialogActions from '@mui/material/DialogActions'
@@ -12,6 +11,9 @@ import DialogContent from '@mui/material/DialogContent'
 import { useState } from 'react'
 import Button from '@mui/material/Button'
 import Popover from '@mui/material/Popover'
+import Documents from '../../Documents'
+
+let documents = Documents()
 
 type CommentModalProps = {
   view: EditorView
@@ -42,7 +44,7 @@ function CommentModal({
     let commentMark = schema.mark('comment', {
       id: 'new-comment',
       author,
-      authorColor: deterministicColor(author.id),
+      authorColor: documents.upwell.getAuthorColor(author.id),
       message: comment,
     })
     let tr = view.state.tr.addMark(from, to, commentMark)

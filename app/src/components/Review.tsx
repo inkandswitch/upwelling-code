@@ -60,7 +60,7 @@ export function ReviewView(props: {
         })
       }
 
-      let atjsonDraft = UpwellSource.fromRaw(draft)
+      let atjsonDraft = UpwellSource.fromRaw(draft, upwell)
       setState({ atjsonDraft })
     },
     [upwell, heads, changeDraftIds]

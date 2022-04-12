@@ -1,7 +1,6 @@
 import Document from '@atjson/document'
 import { InlineAnnotation, BlockAnnotation } from '@atjson/document'
-import { Draft, CommentState } from 'api'
-import deterministicColor from '../color'
+import { Upwell, Draft, CommentState } from 'api'
 
 export class Insertion extends InlineAnnotation<{
   author?: string
@@ -60,7 +59,7 @@ export default class UpwellSource extends Document {
   ]
 
   // This converts an upwell/automerge draft to an atjson document.
-  static fromRaw(draft: Draft) {
+  static fromRaw(draft: Draft, upwell: Upwell) {
     // first convert marks to annotations
     let marks = []
     draft.marks.forEach((m: any) => {
@@ -68,13 +67,13 @@ export default class UpwellSource extends Document {
       if (m.type === 'comment') {
         if (m.value.state === CommentState.CLOSED) return
         attrs = draft.comments.get(m.value)
-        attrs.authorColor = deterministicColor(attrs.author)
+        attrs.authorColor = upwell.getAuthorColor(attrs.author)
       } else {
         try {
           if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
 
           if (m.type === 'insert' || m.type === 'delete') {
-            attrs['authorColor'] = deterministicColor(attrs.author)
+            attrs['authorColor'] = upwell.getAuthorColor(attrs.author)
           }
         } catch {
           console.log(
