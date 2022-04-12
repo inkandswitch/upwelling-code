@@ -112,6 +112,7 @@ export default function DraftView(props: DraftViewProps) {
   // every time the draft id changes
   useEffect(() => {
     let emitter = documents.connectDraft(id, draft.id)
+    log('connecting', draft.id)
     emitter.on('data', () => {
       log('updating draft metadata')
       let upwell = documents.get(id)
