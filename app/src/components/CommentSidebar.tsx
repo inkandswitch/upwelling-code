@@ -18,17 +18,17 @@ export function CommentView(props: CommentViewProps) {
   let upwell = documents.get(id)
   let authorName = upwell.getAuthorName(comment.author)
   let [state, setState] = useState({
-    archived: comment.state !== CommentState.OPEN,
+    resolved: comment.state !== CommentState.OPEN,
   })
 
-  let archiveComment = () => {
+  let resolveComment = () => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    draftInstance.comments.archive(comment)
+    draftInstance.comments.resolve(comment)
     documents.draftChanged(upwell.id, draft.id)
-    setState({ archived: true })
+    setState({ resolved: true })
   }
-  if (state.archived) return <div></div>
+  if (state.resolved) return <div></div>
 
   return (
     <div
@@ -62,9 +62,9 @@ export function CommentView(props: CommentViewProps) {
             width: 5em;
             font-size: x-small;
           `}
-          onClick={archiveComment}
+          onClick={resolveComment}
         >
-          archive
+          resolve
         </button>
       </div>
     </div>
