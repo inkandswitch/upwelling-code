@@ -17,7 +17,6 @@ import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { getYourDrafts } from '../util'
-import { Option } from './Select'
 import InputModal from './InputModal'
 
 const log = debug('DraftView')
@@ -268,10 +267,6 @@ export default function DraftView(props: DraftViewProps) {
                       console.log('draft is null')
                       return
                     }
-                    if (value.id === 'new-draft') {
-                      setModalOpen('new-draft')
-                      return
-                    }
                     goToDraft(value.id)
                   }}
                   renderValue={() => renderDraftMessage(draft)}
@@ -291,9 +286,6 @@ export default function DraftView(props: DraftViewProps) {
                         />
                       )
                     })}
-                  <Option key={'new-draft'} value={{ id: 'new-draft' }}>
-                    + New Draft
-                  </Option>
                 </Select>
               </FormControl>
               {hasPendingChanges && (
@@ -372,6 +364,10 @@ export default function DraftView(props: DraftViewProps) {
                   font-weight: 600;
                 `}
               />
+
+              <Button onClick={() => setModalOpen('new-draft')}>
+                New Draft
+              </Button>
             </div>
             <div
               css={css`
