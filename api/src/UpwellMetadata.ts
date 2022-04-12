@@ -58,7 +58,7 @@ export class UpwellMetadata {
 
   addAuthor(author: Author) {
     let maybe = this.doc.materialize('/authors')
-    if (maybe.findIndex((a) => a.id === author.id)) {
+    if (maybe.findIndex((a) => a.id === author.id) === -1) {
       author.date = Date.now()
       let len = this.doc.length('/authors')
       this.doc.insert_object('/authors', len, author)
@@ -75,7 +75,9 @@ export class UpwellMetadata {
 
   getAuthorColor(authorId: AuthorId): string {
     let authors = this.getAuthors()
-    let index = authors.findIndex((author) => author === authorId)
+
+    let index = authors.findIndex((author) => author.id === authorId)
+    console.log(index, authors)
     return colors[Math.max(index % colors.length, 0)]
   }
 

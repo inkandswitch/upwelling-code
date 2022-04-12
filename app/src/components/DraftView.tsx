@@ -3,7 +3,7 @@ import { css } from '@emotion/react/macro'
 import React, { useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
-import { DraftMetadata, Draft, Author } from 'api'
+import { Upwell, DraftMetadata, Draft, Author } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
 import { Button } from './Button'
@@ -154,7 +154,7 @@ export default function DraftView(props: DraftViewProps) {
   const handleMergeClick = async () => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    if (draftInstance.message === upwell.SPECIAL_UNNAMED_DOCUMENT) {
+    if (draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) {
       setModalOpen('merge')
     } else {
       upwell.rootDraft = draftInstance
@@ -191,7 +191,7 @@ export default function DraftView(props: DraftViewProps) {
     if (draftMeta.id !== upwell.rootDraft.id) {
       changes = upwell.getChangesFromRoot(draftInstance)
     }
-    return draftInstance.message === upwell.SPECIAL_UNNAMED_DOCUMENT
+    return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
       ? `${changes} changes`
       : draftInstance.message
   }

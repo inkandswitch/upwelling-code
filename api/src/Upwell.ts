@@ -44,6 +44,7 @@ export class Upwell {
   metadata: UpwellMetadata
   author: Author
   static SPECIAL_ROOT_DOCUMENT = 'STACK'
+  static SPECIAL_UNNAMED_SLUG = 'CHANGE_CAPTURE_DOC_'
 
   constructor(metadata: UpwellMetadata, author: Author) {
     this.metadata = metadata
@@ -55,8 +56,9 @@ export class Upwell {
     return this.metadata.id
   }
 
+
   get SPECIAL_UNNAMED_DOCUMENT() {
-    return 'CHANGE_CAPTURE_DOC_' + this.author.id
+    return Upwell.SPECIAL_UNNAMED_SLUG + this.author.id
   }
 
   get rootDraft() {
