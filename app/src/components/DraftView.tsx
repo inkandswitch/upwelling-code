@@ -264,7 +264,7 @@ export default function DraftView(props: DraftViewProps) {
             >
               <Pancake
                 onClick={() => {
-                  drafts.length > 0 && goToDraft(drafts[0].id)
+                  drafts.length > 1 && goToDraft(drafts[1].id)
                 }}
                 css={css`
                   ${pancakeCSS}
@@ -285,21 +285,23 @@ export default function DraftView(props: DraftViewProps) {
                   }}
                   renderValue={() => renderDraftMessage(draft)}
                 >
-                  {getYourDrafts(draftsMeta, upwell.rootDraft.id, author.id)
-                    .filter((d) => d.id !== upwell.rootDraft.id)
-                    .map((d) => {
-                      return (
-                        <DetailedOption
-                          key={d.id}
-                          option={{
-                            ...d,
-                            message: renderDraftMessage(d),
-                          }}
-                          upwell={upwell}
-                          icon={Pancake}
-                        />
-                      )
-                    })}
+                  {getYourDrafts(
+                    draftsMeta,
+                    upwell.rootDraft.id,
+                    author.id
+                  ).map((d) => {
+                    return (
+                      <DetailedOption
+                        key={d.id}
+                        option={{
+                          ...d,
+                          message: renderDraftMessage(d),
+                        }}
+                        upwell={upwell}
+                        icon={Pancake}
+                      />
+                    )
+                  })}
                 </Select>
               </FormControl>
               {hasPendingChanges && (
