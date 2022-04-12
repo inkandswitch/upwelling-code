@@ -77,7 +77,6 @@ export class UpwellMetadata {
     let authors = this.getAuthors()
 
     let index = authors.findIndex((author) => author.id === authorId)
-    console.log(index, authors)
     return colors[Math.max(index % colors.length, 0)]
   }
 
