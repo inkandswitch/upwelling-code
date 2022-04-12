@@ -192,7 +192,9 @@ export default function DraftView(props: DraftViewProps) {
   function renderDraftMessage(draftMeta: DraftMetadata) {
     if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
-    let changes = storedChangesCount
+    let changes =
+      upwell.changes.get(draftMeta.id) ||
+      upwell.getChangesFromRoot(draftInstance)
     if (draftMeta.id === upwell.rootDraft.id) {
       changes = 0
     }

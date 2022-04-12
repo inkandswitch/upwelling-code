@@ -25,13 +25,9 @@ type Props = {
 }
 export default function DraftsHistory({
   epoch,
-  drafts,
   id,
   did,
-  goToDraft,
   setHistorySelection,
-  colors = {},
-  author,
 }: Props) {
   const upwell = documents.get(id)
   let [history, setHistory] = useState<DraftMetadata[]>([])

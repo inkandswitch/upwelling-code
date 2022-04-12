@@ -43,6 +43,7 @@ export class Upwell {
   _archivedLayers: Map<string, Uint8Array> = new Map()
   metadata: UpwellMetadata
   author: Author
+  changes: Map<string, number> = new Map()
   static SPECIAL_ROOT_DOCUMENT = 'STACK'
   static SPECIAL_UNNAMED_SLUG = 'CHANGE_CAPTURE_DOC_'
 
@@ -55,7 +56,6 @@ export class Upwell {
   get id() {
     return this.metadata.id
   }
-
 
   get SPECIAL_UNNAMED_DOCUMENT() {
     return Upwell.SPECIAL_UNNAMED_SLUG + this.author.id
@@ -257,8 +257,10 @@ export class Upwell {
   }
 
   getChangesFromRoot(draft: Draft): number {
-    let changes = draft.doc.getChanges(this.rootDraft.doc.getHeads())
-    return Math.max(changes.length - 2, 0) // 2 initial are trash
+    let changes = draft.doc.getChanges(this.rootDraft.doc.getHeads()).length
+    changes = Math.max(changes - 2, 0)
+    this.changes.set(draft.id, changes)
+    return changes // 2 initial are trash
   }
 
   static create(options?: UpwellOptions): Upwell {
