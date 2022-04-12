@@ -230,10 +230,10 @@ export function Editor(props: Props) {
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
     let beforeHeads = editableDraft.doc.getHeads()
-    editableDraft.addContributor(documents.author.id)
-    editableDraft.edited_at = Date.now()
     for (let step of transaction.steps) {
       if (step instanceof ReplaceStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
 
         if (end !== start) {
@@ -266,6 +266,8 @@ export function Editor(props: Props) {
           })
         }
       } else if (step instanceof AddMarkStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
         let mark = step.mark
 
@@ -281,6 +283,8 @@ export function Editor(props: Props) {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }
       } else if (step instanceof RemoveMarkStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         // TK not implemented because automerge doesn't support removing marks yet
         let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
         let mark = step.mark
@@ -288,6 +292,8 @@ export function Editor(props: Props) {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, false)
         }
       } else if (step instanceof ReplaceAroundStep) {
+        editableDraft.addContributor(documents.author.id)
+        editableDraft.edited_at = Date.now()
         // This is just a guard to prevent us from handling a ReplaceAroundStep
         // that isn't simply replacing the container, because implementing that
         // is complicated and I can't think of an example where this would be
