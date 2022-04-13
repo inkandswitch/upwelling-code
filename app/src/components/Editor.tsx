@@ -154,8 +154,10 @@ export function Editor(props: Props) {
       ],
     }
 
-    setState(EditorState.create(editorConfig))
-  }, [editableDraftId, upwellId, author])
+    let state = EditorState.create(editorConfig)
+    let transaction = state.tr.setMeta(automergeChangesKey, { showEdits })
+    setState(state.apply(transaction))
+  }, [editableDraftId, upwellId, author, showEdits])
 
   let editableDraft = upwell.get(editableDraftId)
   log('got heads', heads)
