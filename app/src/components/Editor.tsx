@@ -392,7 +392,7 @@ export function Editor(props: Props) {
     setState(newState)
   }
 
-  let color = upwell.getAuthorColor(editableDraft.authorId)
+  let color = upwell.getAuthorColor(documents.author.id)
   if (!state) return <div>loading</div>
   return (
     <ProseMirror

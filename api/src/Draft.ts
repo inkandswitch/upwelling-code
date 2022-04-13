@@ -389,36 +389,6 @@ export class Draft {
     return opIds
   }
 
-  static mergeWithEdits(
-    author: Author,
-    ours: Draft,
-    ...theirs: Draft[]
-  ): { draft: Draft; attribution: ChangeSet[] } {
-    // Fork the comparison draft, because we want to create a copy, not modify
-    // the original. It might make sense to remove this from here and force the
-    // caller to do the fork if this is the behaviour they want in order to
-    // parallel Draft.merge() behaviour.
-    let newDraft = ours.fork('Attribution merge', {
-      id: this.getActorId(createAuthorId()),
-      name: 'fake',
-    })
-    let origHead = newDraft.doc.getHeads()
-
-    // Merge all the passed-in drafts to this one.
-    theirs.forEach((draft) => newDraft.merge(draft))
-
-    // Now do a blame against the heads of the comparison drafts.
-    let heads = theirs.map((draft) => draft.doc.getHeads())
-
-    let obj = newDraft.doc.value(ROOT, 'text')
-    if (!obj || obj[0] !== 'text')
-      throw new Error('Text field not properly initialized')
-
-    let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
-
-    return { draft: newDraft, attribution }
-  }
-
   static getActorId(authorId: AuthorId) {
     return authorId + '0000' + createAuthorId()
   }

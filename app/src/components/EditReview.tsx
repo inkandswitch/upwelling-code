@@ -42,7 +42,7 @@ export function EditReviewView(props: Props) {
   let backTheBackUp = async () => {
     let draft = upwell.get(did)
     let changes = draft.doc.getChanges([])
-    let oldIsNewAgain = upwell.createDraft(`Recovery from ${draft.message}`)
+    let oldIsNewAgain = upwell.createDraft(`${draft.message} (recovered)`)
     oldIsNewAgain.doc.applyChanges(changes.slice(0, changes.length - 1))
     await documents.save(id)
     window.location.href = `/${id}/${oldIsNewAgain.id}`

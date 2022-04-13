@@ -26,7 +26,7 @@ export function ReviewView(props: {
       let baseDraft = upwell.rootDraft.checkout(heads)
       let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
 
-      let { draft, attribution } = Draft.mergeWithEdits(
+      let { draft, attribution } = upwell.mergeWithEdits(
         documents.author,
         baseDraft,
         ...changeDrafts

@@ -32,15 +32,14 @@ function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
       console.log(fromCoords, toCoords)
       sidebarThing.style.top = `${fromCoords.top}px`
       sidebarThing.style.height = `${toCoords.bottom - fromCoords.top}px`
-      sidebarThing.style.left = `${
-        view.dom.clientLeft +
+      sidebarThing.style.left = `${view.dom.clientLeft +
         parseFloat(
           window
             .getComputedStyle(view.dom, null)
             .getPropertyValue('padding-left')
         ) -
         5
-      }px`
+        }px`
       sidebarThing.style.width = '3px'
       sidebarThing.style.borderRadius = '3px'
       sidebarThing.style.background = documents.upwell.getAuthorColor(
@@ -55,8 +54,8 @@ function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
   })
 }
 
-function getAllChanges(baseDraft: Draft, draft: Draft, doc: Node) {
-  let { attribution } = Draft.mergeWithEdits(
+function getAllChanges(upwell: Upwell, baseDraft: Draft, draft: Draft, doc: Node) {
+  let { attribution } = upwell.mergeWithEdits(
     { id: draft.authorId, name: '' },
     baseDraft,
     draft
@@ -80,7 +79,7 @@ export const automergeChangesPlugin: (
         return {
           heads: null,
           showEdits: false,
-          decorations: getAllChanges(baseDraft, initialDraft, state.doc),
+          decorations: getAllChanges(upwell, baseDraft, initialDraft, state.doc),
         }
       },
 
@@ -147,6 +146,7 @@ export const automergeChangesPlugin: (
           if (showEdits === true) {
             prev.showEdits = true
             prev.decorations = getAllChanges(
+              upwell,
               baseDraft,
               initialDraft,
               newState.doc
@@ -170,6 +170,7 @@ export const automergeChangesPlugin: (
             .add(tr.doc, newDecos)
         } else if (tr.steps.length > 0) {
           prev.decorations = getAllChanges(
+            upwell,
             baseDraft,
             initialDraft,
             newState.doc
