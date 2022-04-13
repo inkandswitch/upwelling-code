@@ -405,6 +405,7 @@ export function Editor(props: Props) {
       css={css`
         ${textCSS}
         caret-color: ${color || 'auto'};
+        overflow-wrap: break-word;
       `}
     />
   )
