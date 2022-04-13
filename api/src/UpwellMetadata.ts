@@ -65,6 +65,14 @@ export class UpwellMetadata {
     }
   }
 
+  updateAuthor(id: AuthorId, name: string) {
+    let maybe = this.doc.materialize('/authors')
+    let index = maybe.findIndex((a) => a.id === id)
+    let old = maybe[index]
+    old.name = name
+    this.doc.insert_object('/authors', index, old)
+  }
+
   getAuthors() {
     return this.doc.materialize('/authors')
   }

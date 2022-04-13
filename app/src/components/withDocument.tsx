@@ -10,6 +10,7 @@ import { debounce } from 'lodash'
 import NoDocument from './NoDocument'
 import Input from './Input'
 import Documents from '../Documents'
+import { ReactComponent as User } from '../components/icons/User.svg'
 
 let documents = Documents()
 
@@ -33,6 +34,7 @@ export default function withDocument(
     let [, setLocation] = useLocation()
     let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
     let [timedOut, setTimedOut] = useState<boolean>(false)
+    let [hideProfile, setHideProfile] = useState<boolean>(true)
     let { id, author } = props
 
     const sync = useCallback(async () => {
@@ -75,6 +77,7 @@ export default function withDocument(
         }
 
         try {
+          sync()
           upwell = documents.get(id)
         } catch (err) {
           console.log(err)
@@ -91,7 +94,6 @@ export default function withDocument(
           if (upwell) {
             if (!unmounted) setRoot(upwell.rootDraft)
             documents.connectUpwell(id)
-            sync()
           }
         }
       }
@@ -127,11 +129,20 @@ export default function withDocument(
         >
           <div
             css={css`
-              padding: 10px;
+              padding: 2px;
+              display: flex;
+              z-index: 2;
+              border-bottom: 5px solid
+                ${documents.get(id).getAuthorColor(documents.author.id)};
+              &:hover {
+                cursor: pointer;
+              }
             `}
           >
-            You are <SyncIndicator state={sync_state}></SyncIndicator>,{' '}
             <Input
+              css={css`
+                display: ${hideProfile ? 'none' : 'block'};
+              `}
               onClick={(e) => {
                 e.stopPropagation()
               }}
@@ -148,16 +159,22 @@ export default function withDocument(
                   name: e.target.value,
                 }
                 upwell.author = newAuthor
-                upwell.metadata.addAuthor(newAuthor)
+                upwell.metadata.updateAuthor(
+                  documents.author.id,
+                  newAuthor.name
+                )
                 documents.save(id)
               }}
               defaultValue={documents.author.name}
             />
-            <div
+
+            <User
+              onClick={() => setHideProfile((p) => !p)}
               css={css`
-                background-color: white;
+                fill: black;
               `}
-            >
+            />
+            <div css={css``}>
               <div
                 css={css`
                   height: 5px;
@@ -170,6 +187,16 @@ export default function withDocument(
             </div>
           </div>
         </div>
+        <div
+          css={css`
+            background: #f9f9fa;
+          `}
+        >
+          {sync_state === SYNC_STATE.OFFLINE && (
+            <SyncIndicator state={sync_state} />
+          )}
+        </div>
+
         <WrappedComponent sync={debouncedSync} root={root} {...props} />
       </div>
     )
