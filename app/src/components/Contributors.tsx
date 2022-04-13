@@ -28,9 +28,10 @@ export default function Contributors(props: Props) {
 
               border-radius: 50%;
               border: 2px solid ${props.upwell.getAuthorColor(id)};
-              height: 1.7rem;
-              width: 1.7rem;
-              line-height: 1.7rem;
+              box-sizing: content-box;
+              height: 29px;
+              width: 29px;
+              line-height: 29px;
               cursor: default;
             `}
             key={id}
@@ -39,6 +40,8 @@ export default function Contributors(props: Props) {
             <div
               css={css`
                 text-align: center;
+                display: flex;
+                justify-content: center;
 
                 /* second background, see parent element for comment */
                 background: ${getAuthorHighlight(
