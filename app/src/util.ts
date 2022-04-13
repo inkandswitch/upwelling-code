@@ -13,6 +13,7 @@ export function getYourDrafts(
     if (l.id === rootId) {
       return false
     }
+    if (l.shared) return true
     // don't show if it's someone elses' and you aren't on the contributor list
     if (l.authorId !== yourId && l.contributors.indexOf(yourId) === -1) {
       return false
