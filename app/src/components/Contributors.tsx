@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { Upwell } from 'api'
 import { css } from '@emotion/react/macro'
+import { getAuthorHighlight } from '../util'
 
 type Props = {
   upwell: Upwell
@@ -21,27 +22,42 @@ export default function Contributors(props: Props) {
           <div
             css={css`
               overflow: hidden;
-              background: white; /* icon background needs a white backdrop to match others because of semi-transparency */
+
+              /* icon background needs a white backdrop to match others because of semi-transparency */
+              background: white;
 
               border-radius: 50%;
+              border: 2px solid ${props.upwell.getAuthorColor(id)};
+              box-sizing: content-box;
+              height: 29px;
+              width: 29px;
+              line-height: 29px;
+              cursor: default;
             `}
             key={id}
             title={name}
           >
             <div
               css={css`
-                background: ${props.upwell.getAuthorColor(id)};
-                font-size: 18px;
-                line-height: 18px;
-                height: 1.5rem;
-                width: 1.5rem;
+                text-align: center;
                 display: flex;
-                align-items: center;
                 justify-content: center;
-                padding-top: 3px;
+
+                /* second background, see parent element for comment */
+                background: ${getAuthorHighlight(
+                  props.upwell.getAuthorColor(id)
+                )};
               `}
             >
-              {name?.slice(0, 1)}
+              <span
+                css={css`
+                  display: inline-block;
+                  vertical-align: middle;
+                  font-size: 1rem;
+                `}
+              >
+                {name?.slice(0, 1).toUpperCase()}
+              </span>
             </div>
           </div>
         )

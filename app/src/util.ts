@@ -21,3 +21,9 @@ export function getYourDrafts(
     return true
   })
 }
+
+// use consistent opacity for highlighting and background uses of author colors.
+// returns in the format #FFFFFFNN where NN is % of opacity
+export function getAuthorHighlight(hexColor: string): string {
+  return hexColor + '40'
+}
