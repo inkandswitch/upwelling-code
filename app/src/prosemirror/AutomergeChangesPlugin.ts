@@ -5,6 +5,7 @@ import { Draft, Upwell } from 'api'
 import { automergeToProsemirror } from './utils/PositionMapper'
 import { ChangeSet } from 'automerge-wasm-pack'
 import Documents from '../Documents'
+import { getAuthorHighlight } from '../util'
 
 let documents = Documents()
 
@@ -14,8 +15,8 @@ function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     return Decoration.inline(from, to, {
-      style: `background: ${documents.upwell.getAuthorColor(
-        change.actor.split('0000')[0]
+      style: `background: ${getAuthorHighlight(
+        documents.upwell.getAuthorColor(change.actor.split('0000')[0])
       )}`,
     })
   })
