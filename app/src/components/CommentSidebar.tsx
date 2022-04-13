@@ -8,7 +8,6 @@ import { Button } from '@mui/material'
 import TextField from '@mui/material/TextField'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
-import { uniqueId } from 'lodash'
 
 let documents = Documents()
 
@@ -40,7 +39,7 @@ export function CommentView(props: CommentViewProps) {
 
   const handleReply = () => {
     const comment: Comment = {
-      id: uniqueId(),
+      id: '', // is this correct? presumably the backend sees this and assigns an id? can't leave this field out or TS error.
       author: documents.author.id,
       message: reply,
       children: [],
