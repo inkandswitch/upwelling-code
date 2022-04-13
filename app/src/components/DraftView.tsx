@@ -61,6 +61,7 @@ export default function DraftView(props: DraftViewProps) {
   } catch (err) {
     maybeDraft = upwell.rootDraft
   }
+  maybeDraft.addContributor(documents.author.id)
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [heads, setHistoryHeads] = useState<string[]>([])
@@ -130,12 +131,6 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.title = e.target.value
     documents.save(id)
-  }
-
-  const handleShareClick = () => {
-    let draftInstance = upwell.get(draft.id)
-    draftInstance.shared = !draftInstance.shared
-    documents.draftChanged(id, draft.id)
   }
 
   let handleUpdateClick = () => {
@@ -329,12 +324,6 @@ export default function DraftView(props: DraftViewProps) {
                   onClick={handleMergeClick}
                 >
                   Merge
-                </Button>
-                <Button
-                  disabled={hasPendingChanges || stackSelected}
-                  onClick={handleShareClick}
-                >
-                  {draft.shared ? 'Unshare' : 'Share'}
                 </Button>
               </>
             </div>

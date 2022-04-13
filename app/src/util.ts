@@ -13,11 +13,10 @@ export function getYourDrafts(
     if (l.id === rootId) {
       return false
     }
-    // don't show if it's someone elses' and not shared
-    if (l.authorId !== yourId && !l.shared) {
+    // don't show if it's someone elses' and you aren't on the contributor list
+    if (l.authorId !== yourId && l.contributors.indexOf(yourId) === -1) {
       return false
     }
-
     return true
   })
 }
