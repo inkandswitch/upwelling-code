@@ -19,6 +19,16 @@ export default function App() {
     let doc = await documents.create(id, documents.author)
     setLocation('/' + doc.id + '/stack')
   }
+
+  async function openUpwell() {
+    let binary = null
+  }
+
+  async function onBinary(binary: Buffer) {
+    let upwell = await documents.toUpwell(binary)
+    await documents.storage.setItem(upwell.id, binary)
+    setLocation('/' + upwell.id + '/stack')
+  }
   return (
     <>
       <Route path="/:id/:did">

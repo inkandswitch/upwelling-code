@@ -5,9 +5,10 @@ const path = require('path')
 function createWindow() {
   // Create the browser window.
   const mainWindow = new electron.BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1250,
+    height: 900,
     webPreferences: {
+      nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   })

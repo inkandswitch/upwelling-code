@@ -20,7 +20,7 @@ console.log(STORAGE_URL)
 // TODO: refactor to not store the whole upwell as a file but instead individual draft ids
 
 export class Documents {
-  upwell: Upwell = null
+  upwell?: Upwell = undefined
   upwells = new Map<string, Upwell>()
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)

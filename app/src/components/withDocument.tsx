@@ -179,7 +179,7 @@ export default function withDocument(
                 css={css`
                   height: 5px;
                   content: '';
-                  background: ${documents.upwell.getAuthorColor(
+                  background: ${documents.upwell!.getAuthorColor(
                     documents.author.id
                   )};
                 `}
