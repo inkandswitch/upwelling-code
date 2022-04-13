@@ -5,6 +5,10 @@ import { DraftMetadata, Comment, CommentState } from 'api'
 import Documents from '../Documents'
 import { Contributor } from './Contributors'
 import { Button } from '@mui/material'
+import TextField from '@mui/material/TextField'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
+import { uniqueId } from 'lodash'
 
 let documents = Documents()
 
@@ -22,6 +26,8 @@ export function CommentView(props: CommentViewProps) {
   let [state, setState] = useState({
     resolved: comment.state !== CommentState.OPEN,
   })
+  const [showReply, setShowReply] = useState(false)
+  const [reply, setReply] = useState('')
 
   let resolveComment = () => {
     let upwell = documents.get(id)
@@ -31,6 +37,22 @@ export function CommentView(props: CommentViewProps) {
     setState({ resolved: true })
   }
   if (state.resolved) return <div></div>
+
+  const handleReply = () => {
+    const comment: Comment = {
+      id: uniqueId(),
+      author: documents.author.id,
+      message: reply,
+      children: [],
+      state: CommentState.OPEN,
+    }
+    const upwell = documents.get(id)
+    const draftInstance = upwell.get(draft.id)
+    draftInstance.comments.addChild(props.comment, comment)
+    documents.draftChanged(upwell.id, draft.id)
+
+    setReply('')
+  }
 
   return (
     <div
@@ -71,8 +93,38 @@ export function CommentView(props: CommentViewProps) {
           padding-top: 5px;
         `}
       >
-        <Button onClick={resolveComment}>Resolve</Button>
+        <Button color="warning" onClick={resolveComment}>
+          Resolve
+        </Button>
+        <Button onClick={() => setShowReply(true)}>Reply</Button>
       </div>
+      {showReply && (
+        <form id="comment-area">
+          <DialogContent>
+            <TextField
+              autoFocus
+              id="comment-input"
+              label="Comment"
+              type="textarea"
+              fullWidth
+              variant="standard"
+              onChange={(e) => setReply(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setShowReply(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="outlined" onClick={handleReply} type="submit">
+              Create
+            </Button>
+          </DialogActions>
+        </form>
+      )}
     </div>
   )
 }
