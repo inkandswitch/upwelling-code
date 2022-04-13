@@ -92,6 +92,7 @@
     "wouter": "^2.8.0-alpha.2"
   },
   "scripts": {
+    "electron": "electron electron-starter.js",
     "start": "node scripts/start.js",
     "build:api": "cd ../api && npm i && npm run build && cd ../app",
     "build": "node scripts/build.js",
@@ -132,6 +133,7 @@
     "buffer": "^6.0.3",
     "constants-browserify": "^1.0.0",
     "crypto-browserify": "^3.12.0",
+    "electron": "^18.0.3",
     "fake-indexeddb": "^3.1.7",
     "path-browserify": "^1.0.1",
     "prettier": "^2.5.1",
