@@ -3,6 +3,8 @@ import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
 import { DraftMetadata, Comment, CommentState } from 'api'
 import Documents from '../Documents'
+import { Contributor } from './Contributors'
+import { Button } from '@mui/material'
 
 let documents = Documents()
 
@@ -33,39 +35,43 @@ export function CommentView(props: CommentViewProps) {
   return (
     <div
       css={css`
-        width: 15vw;
         display: flex;
         flex-direction: column;
-        padding: 5px;
         background-color: white;
-        margin: 10px;
         color: black;
+        border-radius: 3px;
+        padding: 10px;
       `}
     >
       <div
         css={css`
-          font-size: small;
-          color: ${upwell.getAuthorColor(comment.author)};
+          display: flex;
+          align-items: center;
+          column-gap: 10px;
+          align-items: baseline;
+          font-size: 0.9em;
+          line-height: 1.2em;
         `}
       >
-        {authorName}
+        <Contributor
+          authorColor={upwell.getAuthorColor(comment.author)}
+          name={authorName}
+        />
+        <div
+          css={css`
+            padding: 10px 0;
+          `}
+        >
+          {comment.message}
+        </div>
       </div>
-      <div>{comment.message}</div>
       <div
         css={css`
           text-align: right;
           padding-top: 5px;
         `}
       >
-        <button
-          css={css`
-            width: 5em;
-            font-size: x-small;
-          `}
-          onClick={resolveComment}
-        >
-          resolve
-        </button>
+        <Button onClick={resolveComment}>Resolve</Button>
       </div>
     </div>
   )
@@ -98,18 +104,23 @@ export default function CommentSidebar(props: CommentSidebarProps) {
     .filter((cObj) => cObj.comment.state === CommentState.OPEN)
 
   return (
-    <div>
+    <div
+      css={css`  padding: 10px;
+      display: flex;
+      flex-direction: column;
+      row-gap: 10px;
+    }
+      `}
+    >
       {commentObjs.map(({ comment, mark }) => {
         return (
-          <div>
-            <CommentView
-              key={comment.id}
-              comment={comment}
-              mark={mark}
-              id={id}
-              draft={draft}
-            />
-          </div>
+          <CommentView
+            key={comment.id}
+            comment={comment}
+            mark={mark}
+            id={id}
+            draft={draft}
+          />
         )
       })}
     </div>
