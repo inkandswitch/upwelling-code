@@ -8,6 +8,7 @@ import History from './History'
 import { Draft } from './Draft'
 import { UpwellMetadata } from './UpwellMetadata'
 import { ChangeSet } from 'automerge-wasm-pack'
+import { me } from './colors'
 
 export type AuthorId = string
 export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: 'Anonymous' }
@@ -135,6 +136,7 @@ export class Upwell {
   }
 
   getAuthorColor(authorId): string {
+    if (authorId === this.author.id) return me
     return this.metadata.getAuthorColor(authorId)
   }
 

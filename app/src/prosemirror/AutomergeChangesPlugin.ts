@@ -14,10 +14,10 @@ export const automergeChangesKey = new PluginKey('automergeChanges')
 function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
+    let id = change.actor.slice(0, 32)
+    let color = documents.upwell.getAuthorColor(id)
     return Decoration.inline(from, to, {
-      style: `background: ${getAuthorHighlight(
-        documents.upwell.getAuthorColor(change.actor.split('0000')[0])
-      )}`,
+      style: `background: ${getAuthorHighlight(color)}`,
     })
   })
 }
@@ -33,19 +33,18 @@ function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
       console.log(fromCoords, toCoords)
       sidebarThing.style.top = `${fromCoords.top}px`
       sidebarThing.style.height = `${toCoords.bottom - fromCoords.top}px`
-      sidebarThing.style.left = `${
-        view.dom.clientLeft +
+      sidebarThing.style.left = `${view.dom.clientLeft +
         parseFloat(
           window
             .getComputedStyle(view.dom, null)
             .getPropertyValue('padding-left')
         ) -
         5
-      }px`
+        }px`
       sidebarThing.style.width = '3px'
       sidebarThing.style.borderRadius = '3px'
       sidebarThing.style.background = documents.upwell.getAuthorColor(
-        change.actor.split('0000')[0]
+        change.actor.slice(0, 32)
       )
       console.log(sidebarThing)
       console.log(view, getPos())
