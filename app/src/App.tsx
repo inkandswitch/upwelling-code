@@ -52,6 +52,12 @@ export default function App() {
         }}
       </Route>
 
+      <Route path="/new">
+        {() => {
+          newUpwell()
+          return null
+        }}
+      </Route>
       <Route path="/:id">
         <Redirect to="/" />
       </Route>

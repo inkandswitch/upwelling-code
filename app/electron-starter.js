@@ -1,30 +1,31 @@
 // Modules to control application life and create native browser window
 const electron = require('electron')
-const path = require('path')
 
-function createWindow() {
+let window = null
+
+function createWindow(id = '') {
   // Create the browser window.
-  const mainWindow = new electron.BrowserWindow({
+  const window = new electron.BrowserWindow({
     width: 1250,
     height: 900,
     webPreferences: {
       nodeIntegration: true,
-      preload: path.join(__dirname, 'preload.js'),
     },
   })
 
   // and load the index.html of the app.
-  mainWindow.loadURL('http://localhost:3000')
+  window.loadURL('http://localhost:3000/' + id)
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  window.webContents.openDevTools()
+  return window
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 electron.app.whenReady().then(() => {
-  createWindow()
+  window = createWindow()
 
   electron.app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -40,9 +41,30 @@ electron.app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') electron.app.quit()
 })
 
+function newFile() {
+  createWindow('new')
+}
+
+async function open() {
+  let result = await dialog.showOpenDialog(window, {
+    filters: [{ extensions: ['.upwell'], name: 'Upwell' }],
+  })
+  let path = result.filePaths && result.filePaths[0]
+  if (path) {
+  }
+}
+
+async function save() {
+  let result = await dialog.showSaveDialog(window, {})
+  let path = result.filePath
+  if (path) {
+  }
+}
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
 const { app, Menu } = require('electron')
+const { dialog } = require('electron/main')
 
 const isMac = process.platform === 'darwin'
 
@@ -73,14 +95,23 @@ const template = [
       {
         label: 'New',
         role: 'new',
+        click: () => {
+          newFile()
+        },
       },
       {
         label: 'Open',
         role: 'open',
+        click: () => {
+          open()
+        },
       },
       {
         label: 'Save',
         role: 'save',
+        click: () => {
+          save()
+        },
       },
       {
         label: 'Save as...',
