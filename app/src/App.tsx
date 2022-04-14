@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Redirect, Route } from 'wouter'
 import Documents from './Documents'
 import DraftView from './components/DraftView'
@@ -14,7 +14,17 @@ let documents = Documents()
 require('setimmediate')
 
 export default function App() {
+  let [ids, setIds] = useState<string[]>([])
   let [, setLocation] = useLocation()
+
+  useEffect(() => {
+    async function main() {
+      let ids = await documents.storage.ids()
+      setIds(ids)
+    }
+    main()
+  }, [])
+
   const onDrop = useCallback(
     (acceptedFiles) => {
       const reader = new FileReader()
@@ -74,7 +84,7 @@ export default function App() {
                 <div>
                   Recently opened documents
                   <ul>
-                    {documents.storage.ids().map((id: string) => {
+                    {ids.map((id: string) => {
                       return (
                         <li>
                           <a href={`/${id}/stack`}>{id}</a>

@@ -112,7 +112,7 @@ export class Documents {
     let upwell = this.upwells.get(id)
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
-    this.storage.setItem(id, binary)
+    await this.storage.setItem(id, binary)
     this.upwellChanged(id, true)
     return upwell
   }
@@ -125,7 +125,7 @@ export class Documents {
       return upwell
     } else {
       // local-first
-      let localBinary = this.storage.getItem(id)
+      let localBinary = await this.storage.getItem(id)
       if (localBinary) {
         let ours = await this.toUpwell(localBinary)
         this.upwells.set(id, ours)
@@ -173,7 +173,7 @@ export class Documents {
       // update our local one
       inMemory.merge(theirs)
       let newFile = await inMemory.toFile()
-      this.storage.setItem(id, newFile)
+      await this.storage.setItem(id, newFile)
       log('uploading', id)
       return this.remote.setItem(id, newFile, filename)
     }

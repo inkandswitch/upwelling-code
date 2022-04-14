@@ -50,6 +50,7 @@
     "jest": "^27.4.3",
     "jest-resolve": "^27.4.2",
     "jest-watch-typeahead": "^1.0.0",
+    "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "mini-css-extract-plugin": "^2.4.5",
     "nanoid": "^3.1.30",
