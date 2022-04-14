@@ -247,7 +247,7 @@ export function DetailedOption({
               align-content: space-between;
             `}
           >
-            {changes && (
+            {changes ? (
               <InfoText
                 css={css`
                   flex: 0;
@@ -257,6 +257,8 @@ export function DetailedOption({
               >
                 {changes} changes
               </InfoText>
+            ) : (
+              <div></div>
             )}
             <InfoText
               css={css`
