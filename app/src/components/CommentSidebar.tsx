@@ -178,11 +178,11 @@ export default function CommentSidebar(props: CommentSidebarProps) {
 
   return (
     <div
-      css={css`  padding: 10px;
-      display: flex;
-      flex-direction: column;
-      row-gap: 4px;
-    }
+      css={css`
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        row-gap: 4px;
       `}
     >
       {commentObjs.map(({ comment, mark }) => {
