@@ -1,5 +1,6 @@
 import { AuthorId } from './Upwell'
 import { Collection } from './Collection'
+import { nanoid } from 'nanoid'
 
 export type CommentId = string
 export enum CommentState {
@@ -22,7 +23,16 @@ export class Comments extends Collection<Comment> {
     this.doc.set(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
   }
 
-  addChild(child: Comment) {
+  addChild(message: string, author: AuthorId, parentId: CommentId) {
+    const id = nanoid()
+    const child = {
+      id,
+      author,
+      message,
+      children: [],
+      parentId,
+      state: CommentState.OPEN,
+    }
     this.insert(child)
     let path = `/${this.name}/${child.parentId}/children`
     let len = this.doc.length(path)

@@ -43,17 +43,14 @@ export function CommentView(props: CommentViewProps) {
 
   const handleReply = (e: any) => {
     e.preventDefault() // stop page reload
-    const comment: Comment = {
-      id: '', // is this correct? presumably the backend sees this and assigns an id? can't leave this field out or TS error.
-      author: documents.author.id,
-      message: reply,
-      children: [],
-      parentId: props.comment.id,
-      state: CommentState.OPEN,
-    }
+
     const upwell = documents.get(id)
     const draftInstance = upwell.get(draft.id)
-    draftInstance.comments.addChild(comment)
+    draftInstance.comments.addChild(
+      reply,
+      documents.author.id,
+      props.comment.id
+    )
     documents.draftChanged(upwell.id, draft.id)
 
     setReply('')
