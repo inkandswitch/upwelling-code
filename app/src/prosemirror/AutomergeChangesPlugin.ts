@@ -5,6 +5,7 @@ import { Draft, Upwell } from 'api'
 import { automergeToProsemirror } from './utils/PositionMapper'
 import { ChangeSet } from 'automerge-wasm-pack'
 import Documents from '../Documents'
+import { getAuthorHighlight } from '../util'
 
 let documents = Documents()
 
@@ -14,8 +15,8 @@ function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     return Decoration.inline(from, to, {
-      style: `background: ${documents.upwell.getAuthorColor(
-        change.actor.split('0000')[0]
+      style: `background: ${getAuthorHighlight(
+        documents.upwell.getAuthorColor(change.actor.split('0000')[0])
       )}`,
     })
   })
@@ -55,8 +56,13 @@ function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
   })
 }
 
-function getAllChanges(baseDraft: Draft, draft: Draft, doc: Node) {
-  let { attribution } = Draft.mergeWithEdits(
+function getAllChanges(
+  upwell: Upwell,
+  baseDraft: Draft,
+  draft: Draft,
+  doc: Node
+) {
+  let { attribution } = upwell.mergeWithEdits(
     { id: draft.authorId, name: '' },
     baseDraft,
     draft
@@ -80,7 +86,12 @@ export const automergeChangesPlugin: (
         return {
           heads: null,
           showEdits: false,
-          decorations: getAllChanges(baseDraft, initialDraft, state.doc),
+          decorations: getAllChanges(
+            upwell,
+            baseDraft,
+            initialDraft,
+            state.doc
+          ),
         }
       },
 
@@ -147,6 +158,7 @@ export const automergeChangesPlugin: (
           if (showEdits === true) {
             prev.showEdits = true
             prev.decorations = getAllChanges(
+              upwell,
               baseDraft,
               initialDraft,
               newState.doc
@@ -170,6 +182,7 @@ export const automergeChangesPlugin: (
             .add(tr.doc, newDecos)
         } else if (tr.steps.length > 0) {
           prev.decorations = getAllChanges(
+            upwell,
             baseDraft,
             initialDraft,
             newState.doc

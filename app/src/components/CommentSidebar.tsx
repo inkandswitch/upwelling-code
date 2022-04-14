@@ -3,73 +3,149 @@ import { css } from '@emotion/react/macro'
 import React, { useState } from 'react'
 import { DraftMetadata, Comment, CommentState } from 'api'
 import Documents from '../Documents'
+import { Contributor } from './Contributors'
+import { Button } from '@mui/material'
+import TextField from '@mui/material/TextField'
+import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
 
 let documents = Documents()
+
+type Comments = {
+  [key: string]: Comment
+}
 
 type CommentViewProps = {
   id: string
   draft: DraftMetadata
   comment: Comment
   mark: { start: number; end: number }
+  comments: Comments
+  level: number
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { id, comment, draft } = props
+  let { id, comment, draft, level } = props
   let upwell = documents.get(id)
   let authorName = upwell.getAuthorName(comment.author)
-  let [state, setState] = useState({
-    resolved: comment.state !== CommentState.OPEN,
-  })
+  const [isOpen, setIsOpen] = useState(comment.state === CommentState.OPEN)
+  const [showReply, setShowReply] = useState(false)
+  const [reply, setReply] = useState('')
 
   let resolveComment = () => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
     draftInstance.comments.resolve(comment)
     documents.draftChanged(upwell.id, draft.id)
-    setState({ resolved: true })
+    setIsOpen(false)
   }
-  if (state.resolved) return <div></div>
+  if (!isOpen) return null
+
+  const handleReply = (e: any) => {
+    e.preventDefault() // stop page reload
+
+    const upwell = documents.get(id)
+    const draftInstance = upwell.get(draft.id)
+    draftInstance.comments.addChild(
+      reply,
+      documents.author.id,
+      props.comment.id
+    )
+    documents.draftChanged(upwell.id, draft.id)
+
+    setReply('')
+    setShowReply(false)
+  }
 
   return (
     <div
       css={css`
-        width: 15vw;
         display: flex;
         flex-direction: column;
-        padding: 5px;
         background-color: white;
-        margin: 10px;
         color: black;
+        border-radius: 3px;
+        padding: 10px;
+        margin-left: ${20 * level}px;
       `}
     >
       <div
         css={css`
-          font-size: small;
-          color: ${upwell.getAuthorColor(comment.author)};
+          display: flex;
+          align-items: center;
+          column-gap: 10px;
+          align-items: baseline;
+          font-size: 0.9em;
+          line-height: 1.2em;
         `}
       >
-        {authorName}
+        <Contributor
+          authorColor={upwell.getAuthorColor(comment.author)}
+          name={authorName}
+        />
+        <div
+          css={css`
+            padding: 10px 0;
+          `}
+        >
+          {comment.message}
+        </div>
       </div>
-      <div>{comment.message}</div>
       <div
         css={css`
           text-align: right;
           padding-top: 5px;
         `}
       >
-        <button
-          css={css`
-            width: 5em;
-            font-size: x-small;
-          `}
-          onClick={resolveComment}
-        >
-          resolve
-        </button>
+        <Button color="warning" onClick={resolveComment}>
+          Resolve
+        </Button>
+        <Button onClick={() => setShowReply(true)}>Reply</Button>
       </div>
+      {showReply && (
+        <form id="comment-area">
+          <DialogContent>
+            <TextField
+              autoFocus
+              id="comment-input"
+              label="Comment"
+              type="textarea"
+              fullWidth
+              variant="standard"
+              onChange={(e) => setReply(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => setShowReply(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="outlined" onClick={handleReply} type="submit">
+              Reply
+            </Button>
+          </DialogActions>
+        </form>
+      )}
     </div>
   )
 }
+
+const CommentThread = (props: CommentViewProps) => (
+  <>
+    <CommentView {...props} />
+    {props.comment.children?.map((cid) => (
+      <CommentThread
+        key={`thread-${cid}`}
+        {...props}
+        comment={props.comments[cid]}
+        level={props.level + 1}
+      />
+    ))}
+  </>
+)
 
 type CommentSidebarProps = {
   draft: DraftMetadata
@@ -95,21 +171,31 @@ export default function CommentSidebar(props: CommentSidebarProps) {
         mark,
       }
     })
-    .filter((cObj) => cObj.comment.state === CommentState.OPEN)
+    .filter(
+      (cObj) =>
+        cObj.comment.state === CommentState.OPEN && !cObj.comment.parentId
+    )
 
   return (
-    <div>
+    <div
+      css={css`
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        row-gap: 4px;
+      `}
+    >
       {commentObjs.map(({ comment, mark }) => {
         return (
-          <div>
-            <CommentView
-              key={comment.id}
-              comment={comment}
-              mark={mark}
-              id={id}
-              draft={draft}
-            />
-          </div>
+          <CommentThread
+            key={comment.id}
+            comment={comment}
+            comments={comments}
+            mark={mark}
+            id={id}
+            draft={draft}
+            level={0}
+          />
         )
       })}
     </div>

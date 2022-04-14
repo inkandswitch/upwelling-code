@@ -4,7 +4,7 @@ import { css } from '@emotion/react/macro'
 import ReactRenderer, { ReactRendererProvider } from '@atjson/renderer-react'
 import * as components from './review-components'
 import UpwellSource from './upwell-source'
-import { Upwell, Draft } from 'api'
+import { Upwell } from 'api'
 import { editorSharedCSS, textCSS } from './Editor'
 import Documents from '../Documents'
 
@@ -26,7 +26,7 @@ export function ReviewView(props: {
       let baseDraft = upwell.rootDraft.checkout(heads)
       let changeDrafts = changeDraftIds.map((id) => upwell.get(id))
 
-      let { draft, attribution } = Draft.mergeWithEdits(
+      let { draft, attribution } = upwell.mergeWithEdits(
         documents.author,
         baseDraft,
         ...changeDrafts

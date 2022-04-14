@@ -421,6 +421,8 @@ export default function DraftView(props: DraftViewProps) {
       <div
         id="comments"
         css={css`
+          width: 19vw;
+          max-width: 300px;
           flex: 0 1 auto;
           background: rgba(0, 0, 0, 0.2);
           color: white;

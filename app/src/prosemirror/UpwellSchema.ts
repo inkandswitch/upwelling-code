@@ -3,6 +3,7 @@ import {
   nodes as basicNodes,
   marks as basicMarks,
 } from 'prosemirror-schema-basic'
+import { tokens } from '../colors'
 
 export const nodes = {
   doc: basicNodes.doc,
@@ -20,8 +21,8 @@ let comment: MarkSpec = {
   },
   inclusive: false,
   toDOM(node: any) {
-    let { id, authorColor, class: cssClass } = node.attrs
-    let style = `background-color: ${authorColor}`
+    let { id, class: cssClass } = node.attrs
+    let style = `border-bottom: 3px solid ${tokens.gold}`
     return ['span', { id, style, class: cssClass }, 0]
   },
 }

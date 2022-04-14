@@ -3,11 +3,11 @@ import tar from 'tar-stream'
 import crypto from 'crypto'
 import { nanoid } from 'nanoid'
 import { Readable } from 'stream'
-import { getRandomDessert } from 'random-desserts'
 import Debug from 'debug'
 import History from './History'
 import { Draft } from './Draft'
 import { UpwellMetadata } from './UpwellMetadata'
+import { ChangeSet } from 'automerge-wasm-pack'
 
 export type AuthorId = string
 export const UNKNOWN_AUTHOR = { id: createAuthorId(), name: 'Anonymous' }
@@ -43,6 +43,7 @@ export class Upwell {
   _archivedLayers: Map<string, Uint8Array> = new Map()
   metadata: UpwellMetadata
   author: Author
+  attribution_cache = new Map()
   changes: Map<string, number> = new Map()
   static SPECIAL_ROOT_DOCUMENT = 'STACK'
   static SPECIAL_UNNAMED_SLUG = 'CHANGE_CAPTURE_DOC_'
@@ -83,6 +84,47 @@ export class Upwell {
     for (let draft of this.drafts()) {
       this.updateToRoot(draft)
     }
+  }
+
+  mergeWithEdits(
+    author: Author,
+    ours: Draft,
+    ...theirs: Draft[]
+  ): { draft: Draft; attribution: ChangeSet[] } {
+
+    // Fork the comparison draft, because we want to create a copy, not modify
+    // the original. It might make sense to remove this from here and force the
+    // caller to do the fork if this is the behaviour they want in order to
+    // parallel Draft.merge() behaviour.
+    let newDraft = ours.fork('Attribution merge', {
+      id: Draft.getActorId(createAuthorId()),
+      name: 'fake',
+    })
+    let origHead = newDraft.doc.getHeads()
+
+    let cache_id = origHead.join('_') + theirs.reduce((prev, cur) => prev + '_' + cur.id, '')
+    let hit = this.attribution_cache.get(cache_id)
+    console.log('cache_id', cache_id)
+    if (hit) {
+      console.log('cache_hit')
+      return { draft: newDraft, attribution: hit }
+    }
+
+    // Merge all the passed-in drafts to this one.
+    theirs.forEach((draft) => newDraft.merge(draft))
+
+    // Now do a blame against the heads of the comparison drafts.
+    let heads = theirs.map((draft) => draft.doc.getHeads())
+
+    let obj = newDraft.doc.value('_root', 'text')
+    if (!obj || obj[0] !== 'text')
+      throw new Error('Text field not properly initialized')
+
+    let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
+
+    this.attribution_cache.set(cache_id, attribution)
+
+    return { draft: newDraft, attribution }
   }
 
   drafts(): Draft[] {

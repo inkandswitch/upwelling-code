@@ -40,7 +40,9 @@ describe('edits', () => {
     let merged: Draft
 
     beforeEach(async () => {
-      merged = Draft.mergeWithEdits(author, doc1, doc2)
+      let upwell = Upwell.create({ author })
+      let { draft } = upwell.mergeWithEdits(author, doc1, doc2)
+      merged = draft
     })
 
     describe('with two drafts', () => {
@@ -94,7 +96,8 @@ describe('edits', () => {
         // recent root. See parallel merge below for the more realistic scenario.
 
         beforeEach(() => {
-          merged123 = Draft.mergeWithEdits(author, doc1, doc2, doc3)
+          let upwell = Upwell.create({ author })
+          merged123 = upwell.mergeWithEdits(author, doc1, doc2, doc3)
         })
 
         it('has the correct number of marks', () => {

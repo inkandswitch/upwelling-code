@@ -154,8 +154,10 @@ export function Editor(props: Props) {
       ],
     }
 
-    setState(EditorState.create(editorConfig))
-  }, [editableDraftId, upwellId, author])
+    let state = EditorState.create(editorConfig)
+    let transaction = state.tr.setMeta(automergeChangesKey, { showEdits })
+    setState(state.apply(transaction))
+  }, [editableDraftId, upwellId, author, showEdits])
 
   let editableDraft = upwell.get(editableDraftId)
   log('got heads', heads)
@@ -390,7 +392,7 @@ export function Editor(props: Props) {
     setState(newState)
   }
 
-  let color = upwell.getAuthorColor(editableDraft.authorId)
+  let color = upwell.getAuthorColor(documents.author.id)
   if (!state) return <div>loading</div>
   return (
     <ProseMirror
@@ -403,6 +405,7 @@ export function Editor(props: Props) {
       css={css`
         ${textCSS}
         caret-color: ${color || 'auto'};
+        overflow-wrap: break-word;
       `}
     />
   )

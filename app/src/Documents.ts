@@ -200,4 +200,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-function noop() { }
+function noop() {}
