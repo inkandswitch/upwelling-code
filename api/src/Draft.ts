@@ -65,7 +65,7 @@ export class Draft {
   doc: Automerge
   comments: Comments
   _heads?: Heads = []
-  subscriber: Subscriber = () => {}
+  subscriber: Subscriber = () => { }
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id
@@ -371,6 +371,8 @@ export class Draft {
     doc.set(ROOT, 'merged_at', false)
     doc.set(ROOT, 'edited_at', Date.now())
     doc.set(ROOT, 'archived', false)
+    doc.set_object(ROOT, 'comments', {})
+    doc.set_object(ROOT, 'contributors', {})
     doc.set(ROOT, 'parent_id', this.id)
     let draft = new Draft(id, doc)
     draft.addContributor(authorId)

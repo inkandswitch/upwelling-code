@@ -64,16 +64,18 @@ export default function Contributors(props: Props) {
         column-gap: 6px;
       `}
     >
-      {props.contributors.map((id) => {
-        let name = props.upwell.getAuthorName(id)
-        return (
-          <Contributor
-            authorColor={props.upwell.getAuthorColor(id)}
-            name={name}
-            key={id}
-          />
-        )
-      })}
+      {props.contributors
+        .filter((id) => id !== props.upwell.author.id)
+        .map((id) => {
+          let name = props.upwell.getAuthorName(id)
+          return (
+            <Contributor
+              authorColor={props.upwell.getAuthorColor(id)}
+              name={name}
+              key={id}
+            />
+          )
+        })}
     </div>
   )
 }
