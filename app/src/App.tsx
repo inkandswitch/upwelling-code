@@ -36,7 +36,10 @@ export default function App() {
     [setLocation]
   )
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    noClick: true,
+    onDrop,
+  })
 
   async function newUpwell() {
     let id = nanoid()
