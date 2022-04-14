@@ -102,7 +102,6 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
     try {
       this.ws.send(JSON.stringify(msg));
     } catch (err) {
-      this.retry();
     }
   }
 
