@@ -54,9 +54,10 @@ export function CommentView(props: CommentViewProps) {
     const upwell = documents.get(id)
     const draftInstance = upwell.get(draft.id)
     draftInstance.comments.addChild(comment)
-    // documents.draftChanged(upwell.id, draft.id)
+    documents.draftChanged(upwell.id, draft.id)
 
     setReply('')
+    setShowReply(false)
   }
 
   return (
