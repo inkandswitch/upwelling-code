@@ -36,6 +36,18 @@ export default function App() {
         {() => {
           return (
             <NoDocument>
+              <div>
+                Recently opened documents
+                <ul>
+                  {documents.storage.ids().map((id: string) => {
+                    return (
+                      <li>
+                        <a href={`/${id}/stack`}>{id}</a>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
               <Button onClick={newUpwell}>New Document</Button>
             </NoDocument>
           )
