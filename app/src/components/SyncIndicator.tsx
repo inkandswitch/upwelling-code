@@ -12,7 +12,7 @@ export function SyncIndicator(props: { state: SYNC_STATE }) {
       indicator = <span>in error</span>
       break
     case SYNC_STATE.OFFLINE:
-      indicator = <span>You are offline, but you can still edit.</span>
+      indicator = <span>offline</span>
       break
     default:
       indicator = <span></span>
@@ -25,7 +25,9 @@ export function SyncIndicator(props: { state: SYNC_STATE }) {
           color: white;
           width: 20px;
         }
-        margin: 0px;
+        bottom: 0;
+        position: fixed;
+        left: 0;
         padding: 10px;
         font-size: 10px;
         color: #a2a5a6;
