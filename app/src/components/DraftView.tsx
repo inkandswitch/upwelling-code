@@ -184,9 +184,7 @@ export default function DraftView(props: DraftViewProps) {
       })
   }
 
-  // Hack because the params are always undefined?
-  function renderDraftMessage(draftMeta: DraftMetadata) {
-    if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
+  function getChanges(draftMeta: DraftMetadata) {
     let draftInstance = upwell.get(draftMeta.id)
     let changes =
       upwell.changes.get(draftMeta.id) ||
@@ -194,8 +192,14 @@ export default function DraftView(props: DraftViewProps) {
     if (draftMeta.id === upwell.rootDraft.id) {
       changes = 0
     }
+    return changes
+  }
+  // Hack because the params are always undefined?
+  function renderDraftMessage(draftMeta: DraftMetadata) {
+    if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
+    let draftInstance = upwell.get(draftMeta.id)
     return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
-      ? `${changes} changes`
+      ? 'Untitled'
       : draftInstance.message
   }
 
@@ -295,6 +299,7 @@ export default function DraftView(props: DraftViewProps) {
                           ...d,
                           message: renderDraftMessage(d),
                         }}
+                        changes={getChanges(d)}
                         upwell={upwell}
                         icon={Pancake}
                       />
