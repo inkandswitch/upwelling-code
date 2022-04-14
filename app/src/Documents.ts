@@ -6,8 +6,8 @@ import {
   createAuthorId,
 } from 'api'
 import FS from './storage/localStorage'
-import intoStream from 'into-stream'
 import HTTP from './storage/http'
+import intoStream from 'into-stream'
 import catNames from 'cat-names'
 import debug from 'debug'
 
@@ -20,7 +20,8 @@ console.log(STORAGE_URL)
 // TODO: refactor to not store the whole upwell as a file but instead individual draft ids
 
 export class Documents {
-  upwell: Upwell = null
+  upwell?: Upwell = undefined
+  paths = new Map<string, string>()
   upwells = new Map<string, Upwell>()
   storage = new FS('upwell-')
   remote = new HTTP(STORAGE_URL)
@@ -116,7 +117,8 @@ export class Documents {
     return upwell
   }
 
-  async open(id: string): Promise<Upwell> {
+  async open(id: string, filename?: string): Promise<Upwell> {
+    if (filename) this.paths.set(id, filename)
     let upwell = this.upwells.get(id)
     if (upwell) {
       this.upwell = upwell
@@ -150,6 +152,7 @@ export class Documents {
 
   async sync(id: string): Promise<any> {
     log('sync called')
+    let filename = this.paths.get(id)
     let inMemory = this.upwells.get(id)
     let remoteBinary = await this.remote.getItem(id)
     if (!inMemory && remoteBinary) {
@@ -158,11 +161,11 @@ export class Documents {
       this.upwells.set(id, upwell)
       this.upwell = upwell
       await this.storage.setItem(id, buf)
-      return this.remote.setItem(id, buf)
+      return this.remote.setItem(id, buf, filename)
     } else if (!remoteBinary && inMemory) {
       let newFile = await inMemory.toFile()
       await this.storage.setItem(id, newFile)
-      return this.remote.setItem(id, newFile)
+      return this.remote.setItem(id, newFile, filename)
     } else if (inMemory && remoteBinary) {
       let buf = Buffer.from(remoteBinary)
       // do sync
@@ -172,7 +175,7 @@ export class Documents {
       let newFile = await inMemory.toFile()
       this.storage.setItem(id, newFile)
       log('uploading', id)
-      return this.remote.setItem(id, newFile)
+      return this.remote.setItem(id, newFile, filename)
     }
   }
 }
@@ -200,4 +203,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-function noop() {}
+function noop() { }

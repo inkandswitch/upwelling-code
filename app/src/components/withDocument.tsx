@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useCallback, useState, useEffect } from 'react'
+import querystring from 'querystring'
 import { Upwell, Draft, Author } from 'api'
 import Debug from 'debug'
 import { useLocation } from 'wouter'
@@ -60,12 +61,36 @@ export default function withDocument(
       [sync]
     )
 
+    async function onDownloadUpwell(id: string) {
+      let upwell = documents.get(id)
+      let binary = await upwell.toFile()
+      let a = document.createElement('a')
+      a.download = 'MyDocument.upwell'
+      let blob = new Blob([binary], { type: 'application/octet-stream' })
+      a.setAttribute('href', window.URL.createObjectURL(blob))
+      document.body.appendChild(a)
+      a.click()
+    }
+
     useEffect(() => {
       let unmounted = false
       let retries = 0
       let upwell: Upwell | undefined
+
+      window.onhashchange = (ev) => {
+        switch (window.location.hash) {
+          case '#download':
+            onDownloadUpwell(id)
+            break
+        }
+      }
+
       async function render() {
         try {
+          let query = querystring.parse(window.location.search.replace('?', ''))
+          if (query.path) {
+            documents.paths.set(id, query.path as string)
+          }
           log('render function')
           upwell = await documents.open(id)
           if (!unmounted && upwell) {
@@ -179,7 +204,7 @@ export default function withDocument(
                 css={css`
                   height: 5px;
                   content: '';
-                  background: ${documents.upwell.getAuthorColor(
+                  background: ${documents.upwell!.getAuthorColor(
                     documents.author.id
                   )};
                 `}
