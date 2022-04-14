@@ -15,22 +15,26 @@ require('setimmediate')
 
 export default function App() {
   let [, setLocation] = useLocation()
-  const onDrop = useCallback((acceptedFiles) => {
-    const reader = new FileReader()
+  const onDrop = useCallback(
+    (acceptedFiles) => {
+      const reader = new FileReader()
 
-    reader.onabort = () => console.log('file reading was aborted')
-    reader.onerror = () => console.log('file reading has failed')
-    reader.onload = async () => {
-      // Do whatever you want with the file contents
-      const binaryStr = reader.result
-      if (binaryStr) {
-        let upwell = await documents.toUpwell(Buffer.from(binaryStr))
-        await documents.storage.setItem(upwell.id, binaryStr)
-        setLocation('/' + upwell.id + '/stack')
+      reader.onabort = () => console.log('file reading was aborted')
+      reader.onerror = () => console.log('file reading has failed')
+      reader.onload = async () => {
+        // Do whatever you want with the file contents
+        const binaryStr = reader.result
+        if (binaryStr) {
+          let buf = Buffer.from(binaryStr)
+          let upwell = await documents.toUpwell(buf)
+          await documents.storage.setItem(upwell.id, buf)
+          setLocation('/' + upwell.id + '/stack')
+        }
       }
-    }
-    reader.readAsArrayBuffer(acceptedFiles[0])
-  }, [])
+      reader.readAsArrayBuffer(acceptedFiles[0])
+    },
+    [setLocation]
+  )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
 
