@@ -206,7 +206,7 @@ export function HistorySelect<TValue extends {}>(
 
 type DetailedOptionProps = {
   option: DraftMetadata
-  changes: number
+  changes?: number
   upwell: Upwell
   icon?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>
   iconStyles?: SerializedStyles
@@ -247,15 +247,17 @@ export function DetailedOption({
               align-content: space-between;
             `}
           >
-            <InfoText
-              css={css`
-                flex: 0;
-                white-space: nowrap;
-                text-align: left;
-              `}
-            >
-              {changes} changes
-            </InfoText>
+            {changes && (
+              <InfoText
+                css={css`
+                  flex: 0;
+                  white-space: nowrap;
+                  text-align: left;
+                `}
+              >
+                {changes} changes
+              </InfoText>
+            )}
             <InfoText
               css={css`
                 flex: 0;
