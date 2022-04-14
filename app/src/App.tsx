@@ -68,6 +68,18 @@ export default function App() {
                 ) : (
                   <p>Drag 'n' drop some files here, or click to select files</p>
                 )}
+                <div>
+                  Recently opened documents
+                  <ul>
+                    {documents.storage.ids().map((id: string) => {
+                      return (
+                        <li>
+                          <a href={`/${id}/stack`}>{id}</a>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
                 <Button onClick={newUpwell}>New Document</Button>
               </NoDocument>
             </div>
