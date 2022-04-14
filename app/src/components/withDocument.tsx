@@ -1,6 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
 import React, { useCallback, useState, useEffect } from 'react'
+import querystring from 'querystring'
 import { Upwell, Draft, Author } from 'api'
 import Debug from 'debug'
 import { useLocation } from 'wouter'
@@ -86,6 +87,10 @@ export default function withDocument(
 
       async function render() {
         try {
+          let query = querystring.parse(window.location.search.replace('?', ''))
+          if (query.path) {
+            documents.paths.set(id, query.path as string)
+          }
           log('render function')
           upwell = await documents.open(id)
           if (!unmounted && upwell) {

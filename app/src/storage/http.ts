@@ -19,10 +19,10 @@ export default class HTTP {
     }
   }
 
-  async setItem(id: string, binary: Uint8Array): Promise<Response> {
+  async setItem(id: string, binary: Uint8Array, filename?: string): Promise<Response> {
     let form = new FormData()
     form.append(id, new Blob([binary]))
-    return fetch(this.getURI(id), {
+    return fetch(this.getURI(id) + '?filename=' + filename, {
       body: form,
       method: 'post',
     })

@@ -1,5 +1,14 @@
 // Modules to control application life and create native browser window
 const electron = require('electron')
+const fs = require('fs')
+const path = require('path')
+const { createAuthorId, Upwell } = require('api')
+const server = require('./server')
+
+let port = 5001
+server.listen(port, () => {
+  console.log('listening on http://localhost:' + port)
+})
 
 let window = null
 
@@ -10,6 +19,7 @@ function createWindow(id = '') {
     height: 900,
     webPreferences: {
       nodeIntegration: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
   })
 
@@ -38,37 +48,46 @@ electron.app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 electron.app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') electron.app.quit()
+  if (process.platform !== 'darwin') {
+    server.close()
+    electron.app.quit()
+  }
 })
 
 function newFile() {
-  createWindow('new')
+  window = createWindow('new')
 }
 
 async function open() {
-  let result = await dialog.showOpenDialog(window, {
+  let window = electron.BrowserWindow.getFocusedWindow()
+  let result = await electron.dialog.showOpenDialog(window, {
     filters: [{ extensions: ['.upwell'], name: 'Upwell' }],
   })
   let path = result.filePaths && result.filePaths[0]
   if (path) {
-    createWindow('?path=' + path)
+    let opened = createWindow('?path=' + path)
+    let buf = fs.readFileSync(path)
+    let stream = fs.createReadStream(path)
+    Upwell.deserialize(stream, { id: createAuthorId(), name: 'system' }).then(
+      (item) => {
+        opened.webContents.send('open-file', {
+          id: item.id,
+          buf,
+          path,
+        })
+      }
+    )
   }
 }
 
 async function save() {
-  let result = await dialog.showSaveDialog(window, {})
-  let path = result.filePath
-  if (path) {
-    let url = window.webContents.url
-    window.webContents.loadURL(url + '/download')
-  }
+  let window = electron.BrowserWindow.getFocusedWindow()
+  let url = window.webContents.getURL()
+  window.webContents.loadURL(url + '#download')
 }
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
-const { app, Menu } = require('electron')
-const { dialog } = require('electron/main')
-
 const isMac = process.platform === 'darwin'
 
 const template = [
@@ -76,7 +95,7 @@ const template = [
   ...(isMac
     ? [
         {
-          label: app.name,
+          label: electron.app.name,
           submenu: [
             { role: 'about' },
             { type: 'separator' },
@@ -110,7 +129,7 @@ const template = [
         },
       },
       {
-        label: 'Save',
+        label: 'Save as...',
         role: 'save',
         click: () => {
           save()
@@ -188,5 +207,5 @@ const template = [
   },
 ]
 
-const menu = Menu.buildFromTemplate(template)
-Menu.setApplicationMenu(menu)
+const menu = electron.Menu.buildFromTemplate(template)
+electron.Menu.setApplicationMenu(menu)

@@ -7,7 +7,6 @@ import NoDocument from './components/NoDocument'
 import { useLocation } from 'wouter'
 import { Button } from './components/Button'
 import { nanoid } from 'nanoid'
-import querystring from 'querystring'
 
 let documents = Documents()
 
@@ -20,14 +19,6 @@ export default function App() {
     let doc = await documents.create(id, documents.author)
     setLocation('/' + doc.id + '/stack')
   }
-
-  /*
-  async function onBinary(binary: Buffer) {
-    let upwell = await documents.toUpwell(binary)
-    await documents.storage.setItem(upwell.id, binary)
-    setLocation('/' + upwell.id + '/stack')
-  }
-  */
 
   return (
     <>
@@ -44,11 +35,6 @@ export default function App() {
       </Route>
       <Route path="/">
         {(params) => {
-          let query = querystring.parse(window.location.search.replace('?', ''))
-          if (query.path) {
-            //open document at path
-          }
-
           return (
             <NoDocument>
               <Button onClick={newUpwell}>New Document</Button>
