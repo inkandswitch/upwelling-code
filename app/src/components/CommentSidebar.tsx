@@ -11,20 +11,24 @@ import DialogContent from '@mui/material/DialogContent'
 
 let documents = Documents()
 
+type Comments = {
+  [key: string]: Comment
+}
+
 type CommentViewProps = {
   id: string
   draft: DraftMetadata
   comment: Comment
   mark: { start: number; end: number }
+  comments: Comments
+  level: number
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { id, comment, draft } = props
+  let { id, comment, draft, level } = props
   let upwell = documents.get(id)
   let authorName = upwell.getAuthorName(comment.author)
-  let [state, setState] = useState({
-    resolved: comment.state !== CommentState.OPEN,
-  })
+  const [isOpen, setIsOpen] = useState(comment.state === CommentState.OPEN)
   const [showReply, setShowReply] = useState(false)
   const [reply, setReply] = useState('')
 
@@ -33,22 +37,24 @@ export function CommentView(props: CommentViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.comments.resolve(comment)
     documents.draftChanged(upwell.id, draft.id)
-    setState({ resolved: true })
+    setIsOpen(false)
   }
-  if (state.resolved) return <div></div>
+  if (!isOpen) return null
 
-  const handleReply = () => {
+  const handleReply = (e: any) => {
+    e.preventDefault() // stop page reload
     const comment: Comment = {
       id: '', // is this correct? presumably the backend sees this and assigns an id? can't leave this field out or TS error.
       author: documents.author.id,
       message: reply,
       children: [],
+      parentId: props.comment.id,
       state: CommentState.OPEN,
     }
     const upwell = documents.get(id)
     const draftInstance = upwell.get(draft.id)
-    draftInstance.comments.addChild(props.comment, comment)
-    documents.draftChanged(upwell.id, draft.id)
+    draftInstance.comments.addChild(comment)
+    // documents.draftChanged(upwell.id, draft.id)
 
     setReply('')
   }
@@ -62,6 +68,7 @@ export function CommentView(props: CommentViewProps) {
         color: black;
         border-radius: 3px;
         padding: 10px;
+        margin-left: ${20 * level}px;
       `}
     >
       <div
@@ -119,7 +126,7 @@ export function CommentView(props: CommentViewProps) {
               Cancel
             </Button>
             <Button variant="outlined" onClick={handleReply} type="submit">
-              Create
+              Reply
             </Button>
           </DialogActions>
         </form>
@@ -127,6 +134,20 @@ export function CommentView(props: CommentViewProps) {
     </div>
   )
 }
+
+const CommentThread = (props: CommentViewProps) => (
+  <>
+    <CommentView {...props} />
+    {props.comment.children?.map((cid) => (
+      <CommentThread
+        key={`thread-${cid}`}
+        {...props}
+        comment={props.comments[cid]}
+        level={props.level + 1}
+      />
+    ))}
+  </>
+)
 
 type CommentSidebarProps = {
   draft: DraftMetadata
@@ -152,25 +173,30 @@ export default function CommentSidebar(props: CommentSidebarProps) {
         mark,
       }
     })
-    .filter((cObj) => cObj.comment.state === CommentState.OPEN)
+    .filter(
+      (cObj) =>
+        cObj.comment.state === CommentState.OPEN && !cObj.comment.parentId
+    )
 
   return (
     <div
       css={css`  padding: 10px;
       display: flex;
       flex-direction: column;
-      row-gap: 10px;
+      row-gap: 4px;
     }
       `}
     >
       {commentObjs.map(({ comment, mark }) => {
         return (
-          <CommentView
+          <CommentThread
             key={comment.id}
             comment={comment}
+            comments={comments}
             mark={mark}
             id={id}
             draft={draft}
+            level={0}
           />
         )
       })}

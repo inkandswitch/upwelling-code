@@ -13,6 +13,7 @@ export type Comment = {
   author: AuthorId
   message: string
   children: string[]
+  parentId?: CommentId
   state: CommentState
 }
 
@@ -21,9 +22,9 @@ export class Comments extends Collection<Comment> {
     this.doc.set(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
   }
 
-  addChild(parent: Comment, child: Comment) {
+  addChild(child: Comment) {
     this.insert(child)
-    let path = `/${this.name}/${parent.id}/children`
+    let path = `/${this.name}/${child.parentId}/children`
     let len = this.doc.length(path)
     this.doc.insert(path, len, child.id)
   }
