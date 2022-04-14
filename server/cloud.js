@@ -2,9 +2,24 @@ const express = require('express')
 const path = require('path')
 const cors = require('cors')
 const bodyParser = require('body-parser')
+const { GetObjectCommand, S3Client } = require('@aws-sdk/client-s3')
 const fs = require('fs')
 const expressWs = require('express-ws')
 
+let accessKeyId = 'ZRJT7RHB37KDQC72YYAT'
+let secretAccessKey = process.env.SPACES_SECRET
+let endpoint = 'https://sfo3.digitaloceanspaces.com'
+let region = 'sfo3'
+const s3Client = new S3Client({
+  endpoint,
+  region,
+  credentials: {
+    accessKeyId,
+    secretAccessKey,
+  },
+})
+
+const BUCKET = 'upwelling-semi-reliable-storage'
 let app = express()
 expressWs(app)
 app.use(cors())
@@ -28,18 +43,25 @@ const streamToString = (stream) => {
   })
 }
 
-app.get('/:id', async (req, res) => {
+app.get('/:id', (req, res) => {
   let id = req.params.id
 
-  let filename = path.join(__dirname, 'data', `${req.params.id}.upwell`)
-  console.log(filename)
-  try {
-    const data = fs.createReadStream(filename)
-    res.send(await streamToString(data))
-  } catch (err) {
-    console.error(err)
-    res.status(404).send('Not found')
+  // Specifies a path within your Space and the file to download.
+  const bucketParams = {
+    Bucket: BUCKET,
+    Key: id,
   }
+  s3Client
+    .send(new GetObjectCommand(bucketParams))
+    .then(async (response) => {
+      const data = await streamToString(response.Body)
+      res.send(data)
+      console.log('sending')
+    })
+    .catch((err) => {
+      console.error(err)
+      res.status(404).send('Not found')
+    })
 })
 
 app.post('/:id', (req, res) => {
@@ -49,8 +71,28 @@ app.post('/:id', (req, res) => {
 
   req.file(id).upload({
     dirname: path.join(__dirname, 'data'),
-    saveAs: `${req.params.id}.upwell`,
   })
+  req.file(id).upload(
+    {
+      adapter: require('skipper-s3'),
+      key: accessKeyId,
+      secret: secretAccessKey,
+      bucket: BUCKET,
+      region,
+      saveAs: id,
+      endpoint,
+    },
+    (err, uploadedFiles) => {
+      if (err) {
+        return res.status(500).send(err.message)
+      }
+
+      return res.json({
+        message: uploadedFiles.length + ' file(s) uploaded successfully!',
+        files: uploadedFiles,
+      })
+    }
+  )
 })
 
 let documents = {}
