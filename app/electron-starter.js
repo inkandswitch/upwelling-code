@@ -51,6 +51,7 @@ async function open() {
   })
   let path = result.filePaths && result.filePaths[0]
   if (path) {
+    createWindow('?path=' + path)
   }
 }
 
@@ -58,6 +59,8 @@ async function save() {
   let result = await dialog.showSaveDialog(window, {})
   let path = result.filePath
   if (path) {
+    let url = window.webContents.url
+    window.webContents.loadURL(url + '/download')
   }
 }
 
@@ -112,10 +115,6 @@ const template = [
         click: () => {
           save()
         },
-      },
-      {
-        label: 'Save as...',
-        role: 'save-as',
       },
       isMac ? { role: 'close' } : { role: 'quit' },
     ],
