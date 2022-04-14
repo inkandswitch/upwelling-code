@@ -280,7 +280,6 @@ export function Editor(props: Props) {
             mark.attrs.message,
             mark.attrs.author.id
           )
-          documents.draftChanged(upwell.id, editableDraft.id)
         } else {
           editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
         }
@@ -387,6 +386,7 @@ export function Editor(props: Props) {
       transaction.setMeta(automergeChangesKey, { changeSet })
     }
 
+    documents.draftChanged(upwell.id, editableDraft.id)
     onChange()
     let newState = state.apply(transaction)
     setState(newState)
