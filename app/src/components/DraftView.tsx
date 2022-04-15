@@ -12,7 +12,6 @@ import DraftsHistory from './DraftsHistory'
 import CommentSidebar from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
-import { debounce } from 'lodash'
 import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
@@ -42,7 +41,6 @@ const pancakeCSS = `
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, sync } = props
-  let [reviewMode, setReviewMode] = useState<boolean>(true)
   let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
   let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
@@ -64,7 +62,8 @@ export default function DraftView(props: DraftViewProps) {
   maybeDraft.addContributor(documents.author.id)
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
-  let [heads, setHistoryHeads] = useState<string[]>([])
+  let [historyHeads, setHistoryHeads] = useState<string[] | false>([])
+  let [historyTitle, setHistoryTitle] = useState<string>('')
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
@@ -203,14 +202,15 @@ export default function DraftView(props: DraftViewProps) {
       : draftInstance.message
   }
 
-  const setHistorySelection = debounce((d: DraftMetadata) => {
-    if (d.id === upwell.rootDraft.id) {
+  const setHistorySelection = (d: DraftMetadata) => {
+    let draft = upwell.metadata.getDraft(d.id)
+    if (draft.id === upwell.rootDraft.id) {
       setHistoryHeads([])
     } else {
-      let draft = upwell.metadata.getDraft(d.id)
-      setHistoryHeads(draft.heads)
+      setHistoryHeads(draft.initialHeads)
     }
-  }, 30)
+    setHistoryTitle(d.message)
+  }
 
   const draftsMeta = drafts.map((d) => d.materialize())
 
@@ -279,10 +279,7 @@ export default function DraftView(props: DraftViewProps) {
               <FormControl>
                 <Select
                   onChange={(value: DraftMetadata | null) => {
-                    if (value === null) {
-                      console.log('draft is null')
-                      return
-                    }
+                    if (value === null) return
                     goToDraft(value.id)
                   }}
                   renderValue={() => renderDraftMessage(draft)}
@@ -393,13 +390,15 @@ export default function DraftView(props: DraftViewProps) {
               <span>
                 <Switch
                   inputProps={{ 'aria-label': 'show changes' }}
-                  checked={reviewMode}
-                  onClick={() => setReviewMode(!reviewMode)}
+                  checked={historyHeads !== false}
+                  onClick={() => {
+                    if (historyHeads) setHistoryHeads(false)
+                    else setHistoryHeads([])
+                  }}
                 />
-                {!reviewMode || (reviewMode && !heads.length)
-                  ? 'show changes '
-                  : 'showing changes from ' +
-                    upwell.rootDraft._getValue('message', heads)}
+                {historyHeads && historyHeads.length > 0
+                  ? `showing changes from ${historyTitle}`
+                  : 'show changes '}
               </span>
               <DraftsHistory
                 did={draft.id}
@@ -417,9 +416,8 @@ export default function DraftView(props: DraftViewProps) {
           visible={[stackSelected ? upwell.rootDraft.id : draft.id]}
           id={id}
           author={author}
-          reviewMode={reviewMode}
           editable={!stackSelected}
-          heads={heads}
+          historyHeads={historyHeads}
           onClick={handleOnClickEditor}
         />
       </div>
