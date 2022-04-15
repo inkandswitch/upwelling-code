@@ -42,7 +42,7 @@ const pancakeCSS = `
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, sync } = props
-  let [reviewMode, setReviewMode] = useState<boolean>(true)
+  let [reviewMode, setReviewMode] = useState<boolean>(false)
   let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
   let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
