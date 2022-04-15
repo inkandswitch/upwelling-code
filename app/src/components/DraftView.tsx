@@ -62,7 +62,7 @@ export default function DraftView(props: DraftViewProps) {
   maybeDraft.addContributor(documents.author.id)
   let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
-  let [historyHeads, setHistoryHeads] = useState<string[] | false>([])
+  let [historyHeads, setHistoryHeads] = useState<string[] | false>(false)
   let [historyTitle, setHistoryTitle] = useState<string>('')
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
