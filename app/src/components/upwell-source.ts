@@ -73,6 +73,7 @@ export default class UpwellSource extends Document {
       } else {
         try {
           if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)
+          if (!attrs) return
 
           if (m.type === 'insert' || m.type === 'delete') {
             attrs['authorColor'] = upwell.getAuthorColor(attrs.author)
