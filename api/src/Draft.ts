@@ -31,6 +31,7 @@ export type Heads = string[]
 export type DraftMetadata = {
   id: string
   heads: string[]
+  initialHeads: string[]
   contributors: string[]
   title: string
   text: string
@@ -84,6 +85,12 @@ export class Draft {
   _getValue(prop: string, heads?: string[]) {
     let value = this.doc.value(ROOT, prop, heads || this._heads)
     if (value && value[0]) return value[1]
+  }
+
+  get initialHeads() {
+    let initialHeads = this._getValue('initialHeads') as string
+    if (initialHeads) return initialHeads.split(',')
+    else return this.doc.getHeads()
   }
 
   get shared() {
@@ -172,6 +179,7 @@ export class Draft {
       id: this.id,
       title: this.title,
       heads: heads || this.doc.getHeads(),
+      initialHeads: this.initialHeads,
       parent_id: this.parent_id,
       text: this.text,
       contributors: this.contributors,
@@ -363,6 +371,7 @@ export class Draft {
   fork(message: string, author: Author): Draft {
     let id = nanoid()
     let doc = this.doc.fork(Draft.getActorId(author.id))
+    doc.set(ROOT, 'initialHeads', this.doc.getHeads().join(','))
     doc.set(ROOT, 'message', message)
     let authorId = author.id.toString()
     doc.set(ROOT, 'author', authorId)

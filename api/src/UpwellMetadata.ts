@@ -36,6 +36,7 @@ export class UpwellMetadata {
     this.doc.set_object('/drafts', id, {
       id: draft.id,
       heads: draft.heads,
+      initialHeads: draft.initialHeads,
       archived: true,
     })
   }
@@ -47,12 +48,18 @@ export class UpwellMetadata {
     this.doc.set_object('/drafts', draft.id, {
       id: draft.id,
       heads: draftMetadata.heads,
+      initialHeads: draftMetadata.initialHeads,
       archived: false,
       shared: draft.shared,
     })
   }
 
-  getDraft(id: string): { id: string; heads: string[]; archived: boolean } {
+  getDraft(id: string): {
+    id: string
+    heads: string[]
+    initialHeads: string[]
+    archived: boolean
+  } {
     return this.doc.materialize('/drafts/' + id)
   }
 

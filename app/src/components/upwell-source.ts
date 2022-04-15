@@ -65,10 +65,11 @@ export default class UpwellSource extends Document {
     draft.marks.forEach((m: any) => {
       let attrs: any = {}
       if (m.type === 'comment') {
-        if (m.value.state === CommentState.CLOSED) return
         attrs = draft.comments.get(m.value)
+        if (m.value.state === CommentState.CLOSED) return
         if (!attrs) return
-        attrs.authorColor = upwell.getAuthorColor(attrs.author)
+        if (attrs) attrs.authorColor = upwell.getAuthorColor(attrs.author)
+        else attrs = { authorColor: '', message: '' }
       } else {
         try {
           if (m.value && m.value.length > 0) attrs = JSON.parse(m.value)

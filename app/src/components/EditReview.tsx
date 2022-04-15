@@ -16,9 +16,8 @@ type Props = {
   editable: boolean
   did: string
   visible: string[]
-  heads: string[]
+  historyHeads: string[] | false
   author: Author
-  reviewMode: boolean
   onClick: React.MouseEventHandler<HTMLDivElement>
 }
 
@@ -34,7 +33,7 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, editable, heads, visible, reviewMode, author, onClick } = props
+  const { id, editable, historyHeads, visible, author, onClick } = props
   //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
   let { did } = props
@@ -54,9 +53,8 @@ export function EditReviewView(props: Props) {
         upwellId={upwell.id}
         author={author}
         editable={editable}
-        heads={heads}
+        historyHeads={historyHeads}
         editableDraftId={visible[0]}
-        showEdits={reviewMode}
       ></Editor>
     </ErrorBoundary>
   )
