@@ -52,10 +52,7 @@ export default function DraftsHistory({ id, did, setHistorySelection }: Props) {
       <HistorySelect
         value={history.find((d) => d.id === did)}
         onChange={(value: DraftMetadata | null) => {
-          if (value === null) {
-            console.log('draft is null')
-            return
-          }
+          if (value === null) return
           setHistorySelection(value)
         }}
         renderValue={renderValue}

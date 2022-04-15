@@ -7,7 +7,7 @@ import { ChangeSet } from 'automerge-wasm-pack'
 import Documents from '../Documents'
 import { getAuthorHighlight } from '../util'
 
-let documents = Documents()
+let documents = Documents()!
 
 export const automergeChangesKey = new PluginKey('automergeChanges')
 
@@ -15,7 +15,7 @@ function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     let id = change.actor.slice(0, 32)
-    let color = documents.upwell.getAuthorColor(id)
+    let color = documents.upwell!.getAuthorColor(id)
     return Decoration.inline(from, to, {
       style: `background: ${getAuthorHighlight(color)}`,
     })
@@ -25,34 +25,72 @@ function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
 function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
   return changeSet.add.map((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
+    if (draft.text[change.start] === '\uFFFC') from += 1
     return Decoration.widget(from, (view, getPos) => {
       let sidebarThing = document.createElement('div')
       sidebarThing.style.position = 'absolute'
       let fromCoords = view.coordsAtPos(from)
       let toCoords = view.coordsAtPos(to)
-      console.log(fromCoords, toCoords)
       sidebarThing.style.top = `${fromCoords.top}px`
       sidebarThing.style.height = `${toCoords.bottom - fromCoords.top}px`
-      sidebarThing.style.left = `${view.dom.clientLeft +
+      sidebarThing.style.left = `${
+        view.dom.clientLeft +
         parseFloat(
           window
             .getComputedStyle(view.dom, null)
             .getPropertyValue('padding-left')
         ) -
         5
-        }px`
+      }px`
       sidebarThing.style.width = '3px'
       sidebarThing.style.borderRadius = '3px'
-      sidebarThing.style.background = documents.upwell.getAuthorColor(
+      sidebarThing.style.background = documents.upwell!.getAuthorColor(
         change.actor.slice(0, 32)
       )
-      console.log(sidebarThing)
-      console.log(view, getPos())
-      console.log(view.coordsAtPos(from))
-      console.log(view.coordsAtPos(to))
       return sidebarThing
     })
   })
+}
+
+function getOldChanges(
+  editableDraft: Draft,
+  heads: string[],
+  baseDraft: Draft
+) {
+  let obj = editableDraft.doc.value('_root', 'text', heads)
+
+  if (obj && obj[0] === 'text') {
+    if (heads.length > 0) {
+      let history = editableDraft.doc.attribute2(obj[1], heads, [
+        baseDraft.doc.getHeads(),
+      ])
+      let before = changeSetToInlineDecorations(history[0], editableDraft)
+      let beforeMargins = changeSetToMarginDecorations(
+        history[0],
+        editableDraft
+      )
+      return before.concat(beforeMargins)
+    }
+  }
+  return []
+}
+
+function getNewChanges(editableDraft: Draft, baseDraft: Draft) {
+  let latestObj = editableDraft.doc.value(
+    '_root',
+    'text',
+    baseDraft.doc.getHeads()
+  )
+  if (latestObj && latestObj[0] === 'text') {
+    let newHistory = editableDraft.doc.attribute2(
+      latestObj[1],
+      baseDraft.doc.getHeads(),
+      [editableDraft.doc.getHeads()]
+    )
+    let after = changeSetToInlineDecorations(newHistory[0], editableDraft)
+    return after
+  }
+  return []
 }
 
 function getAllChanges(
@@ -72,23 +110,21 @@ function getAllChanges(
 
 export const automergeChangesPlugin: (
   upwell: Upwell,
-  initialDraft: Draft,
-  authorId: string
-) => Plugin = (upwell, initialDraft, authorId) => {
-  const baseDraft = upwell.rootDraft
-
+  editableDraft: Draft,
+  authorId: string,
+  baseDraft: Draft
+) => Plugin = (upwell, editableDraft, authorId, baseDraft) => {
   return new Plugin({
     key: automergeChangesKey,
 
     state: {
       init(_, state) {
         return {
-          heads: null,
-          showEdits: false,
+          heads: false,
           decorations: getAllChanges(
             upwell,
             baseDraft,
-            initialDraft,
+            editableDraft,
             state.doc
           ),
         }
@@ -96,96 +132,46 @@ export const automergeChangesPlugin: (
 
       apply(tr, prev, oldState, newState) {
         let automergeChanges = tr.getMeta(automergeChangesKey)
+        if (!automergeChanges) return prev
 
         // Handle config changes
-        if (automergeChanges) {
-          let { heads, showEdits } = automergeChanges
+        let { heads, changeSet } = automergeChanges
 
-          if (heads) {
-            // fixme recompute changes
-            prev.heads = automergeChanges.heads
-            let obj = initialDraft.doc.value('_root', 'text', heads)
-            let latestObj = initialDraft.doc.value(
-              '_root',
-              'text',
-              baseDraft.doc.getHeads()
-            )
-
-            if (
-              obj &&
-              obj[0] === 'text' &&
-              latestObj &&
-              latestObj[0] === 'text'
-            ) {
-              console.log({
-                heads: { heads, text: initialDraft.doc.text(obj[1], heads) },
-                initial: {
-                  heads: initialDraft.doc.getHeads(),
-                  text: initialDraft.text,
-                },
-                base: { heads: baseDraft.doc.getHeads(), text: baseDraft.text },
-              })
-              let history = initialDraft.doc.attribute2(obj[1], heads, [
-                baseDraft.doc.getHeads(),
-              ])
-              let newHistory = initialDraft.doc.attribute2(
-                latestObj[1],
-                baseDraft.doc.getHeads(),
-                [initialDraft.doc.getHeads()]
-              )
-              let before = changeSetToInlineDecorations(
-                history[0],
-                initialDraft
-              )
-              let beforeMargins = changeSetToMarginDecorations(
-                history[0],
-                initialDraft
-              )
-              let after = changeSetToInlineDecorations(
-                newHistory[0],
-                initialDraft
-              )
-              prev.decorations = DecorationSet.create(tr.doc, before)
-                .add(tr.doc, after)
-                .add(tr.doc, beforeMargins)
-
-              console.log({ history, newHistory })
-              // FIXME this isn't working for some reason. attribute2 is a bit finnicky.
-            }
-          }
-
-          if (showEdits === true) {
-            prev.showEdits = true
-            prev.decorations = getAllChanges(
-              upwell,
-              baseDraft,
-              initialDraft,
-              newState.doc
-            )
-          } else if (automergeChanges.showEdits === false) {
-            prev.showEdits = false
-          }
+        if (heads === false) {
+          prev.heads = false
+          prev.decorations = DecorationSet.empty
+          return prev
         }
 
-        // just a little optimization - don't do work we don't have to.
-        if (!prev.showEdits) return prev
+        if (heads) {
+          prev.heads = automergeChanges.heads
 
-        if (automergeChanges?.changeSet) {
+          let oldChanges = getOldChanges(editableDraft, heads, baseDraft)
+          let newChanges = getNewChanges(editableDraft, baseDraft)
+
+          let set = DecorationSet.create(tr.doc, [])
+          prev.decorations = set.add(tr.doc, oldChanges).add(tr.doc, newChanges)
+        }
+
+        if (!heads && changeSet) {
           let newDecos = changeSetToInlineDecorations(
             automergeChanges.changeSet[0],
-            initialDraft
+            editableDraft
           )
           let decorations: DecorationSet = prev.decorations
           prev.decorations = decorations
             .map(tr.mapping, tr.doc)
             .add(tr.doc, newDecos)
         } else if (tr.steps.length > 0) {
+          prev.decorations = prev.decorations.map(tr.mapping, tr.doc)
+          /*
           prev.decorations = getAllChanges(
             upwell,
             baseDraft,
-            initialDraft,
+            editableDraft,
             newState.doc
           )
+          */
         }
         return prev
       },
@@ -194,7 +180,7 @@ export const automergeChangesPlugin: (
     props: {
       decorations(state) {
         let amState = automergeChangesKey.getState(state)
-        if (amState.showEdits) {
+        if (amState.heads) {
           return amState.decorations
         } else {
           return DecorationSet.empty

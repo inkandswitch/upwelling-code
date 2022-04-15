@@ -50,9 +50,8 @@ type Props = {
   upwellId: string
   editable: boolean
   editableDraftId: string
-  heads?: string[]
+  historyHeads: string[] | false
   author: Author
-  showEdits: boolean
 }
 
 export const editorSharedCSS = css`
@@ -84,7 +83,7 @@ export const textCSS = css`
 let prevHeads: any
 
 export function Editor(props: Props) {
-  let { upwellId, heads, editable, editableDraftId, author, showEdits } = props
+  let { upwellId, historyHeads, editable, editableDraftId, author } = props
 
   const [state, setState] = React.useState<EditorState | null>(null)
 
@@ -94,7 +93,6 @@ export function Editor(props: Props) {
     () =>
       debounce(() => {
         documents.save(upwellId)
-        console.log('syncing from onTextChange')
       }, 500),
     [upwellId]
   )
@@ -104,6 +102,7 @@ export function Editor(props: Props) {
     debouncedOnTextChange()
   }
 
+  /*
   function useTraceUpdate(propss: any) {
     const prev = useRef(propss)
     useEffect(() => {
@@ -122,6 +121,7 @@ export function Editor(props: Props) {
 
   // Usage
   useTraceUpdate(props)
+  */
 
   useEffect(() => {
     let upwell = documents.get(upwellId)
@@ -134,7 +134,12 @@ export function Editor(props: Props) {
       plugins: [
         contextMenu([commentButton(author)]),
         remoteCursorPlugin(),
-        automergeChangesPlugin(upwell, editableDraft, author.id),
+        automergeChangesPlugin(
+          upwell,
+          editableDraft,
+          author.id,
+          upwell.rootDraft
+        ),
         history(),
         keymap({
           ...baseKeymap,
@@ -154,42 +159,40 @@ export function Editor(props: Props) {
       ],
     }
 
-    let state = EditorState.create(editorConfig)
-    let transaction = state.tr.setMeta(automergeChangesKey, { showEdits })
-    setState(state.apply(transaction))
-  }, [editableDraftId, upwellId, author, showEdits])
+    let newState = EditorState.create(editorConfig)
+    let transaction = newState.tr.setMeta(automergeChangesKey, {
+      heads: historyHeads,
+    })
+    setState(newState.apply(transaction))
+  }, [editableDraftId, upwellId, author, historyHeads])
 
   let editableDraft = upwell.get(editableDraftId)
-  log('got heads', heads)
+  log('got heads', historyHeads)
 
   const viewRef = useRef(null)
 
   useEffect(() => {
     if (!state) return
-    let transaction = state.tr.setMeta(automergeChangesKey, { showEdits })
+    let transaction = state.tr.setMeta(automergeChangesKey, {
+      heads: historyHeads,
+    })
     setState(state.apply(transaction))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showEdits])
-
-  useEffect(() => {
-    if (!state) return
-    let transaction = state.tr.setMeta(automergeChangesKey, { heads })
-    setState(state.apply(transaction))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heads])
+  }, [historyHeads])
 
   useEffect(() => {
     if (!state) return
     // @ts-ignore
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
       documents.rtcDraft.transactions.subscribe((edits: AutomergeEdit) => {
-        let newHeads = editableDraft.doc.getHeads()
         let transaction = convertAutomergeTransactionToProsemirrorTransaction(
           editableDraft,
           state,
           edits
         )
 
+        /*
+        let newHeads = editableDraft.doc.getHeads()
         if (prevHeads && prevHeads !== newHeads) {
           let obj = editableDraft.doc.value('_root', 'text')
           let changeSet
@@ -197,15 +200,23 @@ export function Editor(props: Props) {
             changeSet = editableDraft.doc.attribute2(obj[1], prevHeads, [
               newHeads,
             ])
+          console.log('i have a changset?', changeSet)
           if (changeSet) {
+            console.log('i think i should update the changes view')
             if (transaction) {
-              transaction.setMeta(automergeChangesKey, { changeSet })
+              console.log('have transaction', transaction)
+              transaction.setMeta(automergeChangesKey, {
+                changeSet,
+              })
             } else {
               transaction = state.tr.setMeta(automergeChangesKey, { changeSet })
             }
           }
         }
+        console.log('transaction', transaction)
         prevHeads = newHeads
+        */
+
         if (transaction) {
           let newState = state.apply(transaction)
           setState(newState)
@@ -227,7 +238,7 @@ export function Editor(props: Props) {
     return () => {
       documents.rtcDraft?.transactions.unsubscribe()
     }
-  })
+  }, [editableDraftId, editableDraft, state])
 
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
@@ -374,10 +385,11 @@ export function Editor(props: Props) {
       )
     )
 
+    // Adjust decorations in response to transaction changes
     let afterHeads = editableDraft.doc.getHeads()
     let changeSet
     let amConfig = automergeChangesKey.getState(state)
-    if (amConfig?.showChanges) {
+    if (amConfig?.heads) {
       let obj = editableDraft.doc.value('_root', 'text')
       if (obj && obj[0] === 'text')
         changeSet = editableDraft.doc.attribute2(obj[1], beforeHeads, [
