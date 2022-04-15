@@ -80,8 +80,6 @@ export const textCSS = css`
   }
 `
 
-let prevHeads: any
-
 export function Editor(props: Props) {
   let { upwellId, historyHeads, editable, editableDraftId, author } = props
 
