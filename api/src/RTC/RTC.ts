@@ -30,6 +30,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
   ws: WebSocket;
   doc: Automerge;
   author: Author;
+  destroyed: boolean = false;
   timeout: any;
   peerId: string = nanoid();
   peerStates = new Map<string, SyncState>();
@@ -45,10 +46,11 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
 
   retry() {
     this.retries++;
-    log('Retrying in 3 seconds')
+    let sec = this.retries * 3000
+    log(`Retrying in ${sec}ms`)
     this.timeout = setTimeout(() => {
       this.ws = this.connect();
-    }, 3000);
+    }, sec);
   }
 
   _getPeerState(peerId: string) {
@@ -158,7 +160,8 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
 
 
     ws.onclose = () => {
-      this.retry();
+      console.log('ws closed')
+      if (!this.destroyed) this.retry()
     };
     return ws;
   }
@@ -170,6 +173,7 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
       method: "BYE",
     };
     this.send(msg as T);
+    this.destroyed = true
     this.ws.close();
   }
 
