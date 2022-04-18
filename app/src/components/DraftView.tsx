@@ -173,7 +173,7 @@ export default function DraftView(props: DraftViewProps) {
     const upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
     draftInstance.message = draftName
-    upwell.rootDraft = draftInstance
+    documents.save(id)
   }
 
   const handleDeleteDraft = () => {
