@@ -17,6 +17,7 @@ import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
+import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
 
 const log = debug('DraftView')
@@ -168,6 +169,19 @@ export default function DraftView(props: DraftViewProps) {
     goToDraft(newDraft.id)
   }
 
+  const handleEditName = (draftName: string) => {
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.message = draftName
+    documents.save(id)
+  }
+
+  const handleDeleteDraft = () => {
+    const upwell = documents.get(id)
+    upwell.archive(draft.id)
+    goToDraft('stack')
+  }
+
   function goToDraft(did: string) {
     documents
       .save(id)
@@ -228,7 +242,7 @@ export default function DraftView(props: DraftViewProps) {
     >
       <InputModal
         open={modalOpen !== undefined}
-        onCreateDraft={modalOpen === 'merge' ? onMerge : createDraft}
+        onSubmit={modalOpen === 'merge' ? onMerge : createDraft}
         onClose={() => setModalOpen(undefined)}
       />
       <div id="spacer-placeholder" />
@@ -319,15 +333,16 @@ export default function DraftView(props: DraftViewProps) {
                   Pending changes
                 </Button>
               )}
-
-              <>
-                <Button
-                  disabled={hasPendingChanges || stackSelected}
-                  onClick={handleMergeClick}
-                >
-                  Merge
-                </Button>
-              </>
+              <Button
+                disabled={hasPendingChanges || stackSelected}
+                onClick={handleMergeClick}
+              >
+                Merge
+              </Button>
+              <DraftMenu
+                onEditName={handleEditName}
+                onDelete={handleDeleteDraft}
+              />
             </div>
           </div>
           <div

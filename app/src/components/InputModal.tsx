@@ -8,34 +8,36 @@ import { useState } from 'react'
 import { Button } from './Button'
 
 type InputModalProps = {
-  onCreateDraft?: Function
+  onSubmit?: Function
   open: boolean
   onClose: Function
+  title?: string
 }
 export default function InputModal({
-  onCreateDraft,
+  onSubmit,
   open,
   onClose,
+  title = 'Name your changes',
 }: InputModalProps) {
   const [text, setText] = useState('')
 
   const handleClose = () => {
     onClose()
   }
-  const handleCreateDraft = (e: any) => {
+  const handleSubmit = (e: any) => {
     e.preventDefault()
-    if (!onCreateDraft) {
-      throw new Error('Pass onCreateDraft to modal. Could not find function')
+    if (!onSubmit) {
+      throw new Error('Pass onSubmit to modal. Could not find function')
     }
     if (text.length) {
-      onCreateDraft(text)
+      onSubmit(text)
       onClose()
     }
   }
 
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Name your changes</DialogTitle>
+      <DialogTitle>{title}</DialogTitle>
       <form>
         <DialogContent>
           <TextField
@@ -52,7 +54,7 @@ export default function InputModal({
           <Button variant="outlined" color="error" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="outlined" onClick={handleCreateDraft} type="submit">
+          <Button variant="outlined" onClick={handleSubmit} type="submit">
             OK
           </Button>
         </DialogActions>
