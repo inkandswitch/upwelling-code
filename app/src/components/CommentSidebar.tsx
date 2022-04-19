@@ -36,7 +36,7 @@ export function CommentView(props: CommentViewProps) {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
     draftInstance.comments.resolve(comment)
-    documents.draftChanged(upwell.id, draft.id)
+    documents.updateDraftPeers(upwell.id, draft.id)
     setIsOpen(false)
   }
   if (!isOpen) return null
@@ -51,7 +51,7 @@ export function CommentView(props: CommentViewProps) {
       documents.author.id,
       props.comment.id
     )
-    documents.draftChanged(upwell.id, draft.id)
+    documents.updateDraftPeers(upwell.id, draft.id)
 
     setReply('')
     setShowReply(false)

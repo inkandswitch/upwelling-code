@@ -30,7 +30,6 @@ type DraftViewProps = {
   id: string
   root: Draft
   author: Author
-  sync: () => void
 }
 
 const pancakeCSS = `
@@ -41,7 +40,7 @@ const pancakeCSS = `
 `
 
 export default function DraftView(props: DraftViewProps) {
-  let { id, author, did, sync } = props
+  let { id, author, did } = props
   let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
   let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
@@ -99,14 +98,12 @@ export default function DraftView(props: DraftViewProps) {
       upwell.getChangesFromRoot(instance)
       if (!mounted) {
         setMounted(true)
-      } else {
-        sync()
       }
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, sync, mounted])
+  }, [id, draft.parent_id, draft.id, mounted])
 
   // every time the draft id changes
   useEffect(() => {
@@ -377,7 +374,7 @@ export default function DraftView(props: DraftViewProps) {
                   setDraft({ ...draft, title: e.target.value })
                   let draftInstance = upwell.get(draft.id)
                   draftInstance.title = e.target.value
-                  documents.draftChanged(id, draft.id)
+                  documents.updateDraftPeers(id, draft.id)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)

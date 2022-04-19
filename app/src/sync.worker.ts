@@ -23,7 +23,12 @@ onmessage = function (e) {
       sync(params.id, params.filename)
         .then(() => {
           console.log('Posting message back to main script')
-          postMessage('sync-complete')
+          postMessage({
+            method: 'sync-complete',
+            params: {
+              id: params.id
+            }
+          })
         })
         .catch((err) => {
           console.error('Got error in worker:', err)

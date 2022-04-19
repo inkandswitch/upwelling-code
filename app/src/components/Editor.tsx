@@ -396,7 +396,7 @@ export function Editor(props: Props) {
       transaction.setMeta(automergeChangesKey, { changeSet })
     }
 
-    documents.draftChanged(upwell.id, editableDraft.id)
+    documents.updateDraftPeers(upwell.id, editableDraft.id)
     onChange()
     let newState = state.apply(transaction)
     setState(newState)

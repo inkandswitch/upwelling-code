@@ -1,13 +1,12 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import querystring from 'querystring'
 import { Upwell, Draft, Author } from 'api'
 import Debug from 'debug'
 import { useLocation } from 'wouter'
 import { SYNC_STATE } from '../types'
 import { SyncIndicator } from './SyncIndicator'
-import { debounce } from 'lodash'
 import NoDocument from './NoDocument'
 import Input from './Input'
 import Documents from '../Documents'
@@ -37,29 +36,6 @@ export default function withDocument(
     let [timedOut, setTimedOut] = useState<boolean>(false)
     let [hideProfile, setHideProfile] = useState<boolean>(true)
     let { id, author } = props
-
-    const sync = useCallback(async () => {
-      setSyncState(SYNC_STATE.LOADING)
-      try {
-        documents.sync(id)
-        log('synced')
-        setSyncState(SYNC_STATE.SYNCED)
-        documents.rtcUpwell?.updatePeers()
-      } catch (err) {
-        log('failed to sync', err)
-        setSyncState(SYNC_STATE.OFFLINE)
-      } finally {
-        log('rendering')
-      }
-    }, [id])
-
-    const debouncedSync = React.useMemo(
-      () =>
-        debounce(() => {
-          sync()
-        }, 1000),
-      [sync]
-    )
 
     async function onDownloadUpwell(id: string) {
       let upwell = documents.get(id)
@@ -130,7 +106,7 @@ export default function withDocument(
         unmounted = true
         documents.disconnect(id)
       }
-    }, [id, author, setLocation, sync])
+    }, [id, author, setLocation])
 
     if (!root) {
       return (
@@ -191,6 +167,7 @@ export default function withDocument(
                   newAuthor.name
                 )
                 documents.save(id)
+                documents.upwellChanged(id)
               }}
               defaultValue={documents.author.name}
             />
@@ -224,7 +201,7 @@ export default function withDocument(
           )}
         </div>
 
-        <WrappedComponent sync={debouncedSync} root={root} {...props} />
+        <WrappedComponent root={root} {...props} />
       </div>
     )
   }
