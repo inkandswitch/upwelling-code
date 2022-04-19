@@ -17,20 +17,21 @@ type Comments = {
 
 type CommentViewProps = CommentThreadProps & {
   onReplyClick?: Function
-  children: any
 }
 
 export function CommentView(props: CommentViewProps) {
-  let { id, comment, draft, level, onReplyClick } = props
+  let { id, comment, comments, draft, level, onReplyClick } = props
   let upwell = documents.get(id)
   const [isOpen, setIsOpen] = useState(comment.state === CommentState.OPEN)
 
   let resolveComment = () => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    draftInstance.comments.resolve(comment)
-    documents.draftChanged(upwell.id, draft.id)
+
     setIsOpen(false)
+    draftInstance.comments.resolve(comment)
+    comment.children.map((cid) => draftInstance.comments.resolve(comments[cid]))
+    documents.draftChanged(upwell.id, draft.id)
   }
   if (!isOpen) return null
 
@@ -68,9 +69,10 @@ type CommentThreadProps = {
 }
 
 const CommentThread = (props: CommentThreadProps) => {
+  const { comment, comments, id, draft } = props
   const [showReply, setShowReply] = useState(false)
   const [reply, setReply] = useState('')
-  const upwell = documents.get(props.id)
+  const upwell = documents.get(id)
 
   const handleReplyClick = () => {
     setShowReply(true)
@@ -79,13 +81,9 @@ const CommentThread = (props: CommentThreadProps) => {
   const handleReply = (e: any) => {
     e.preventDefault() // stop page reload
 
-    const draftInstance = upwell.get(props.draft.id)
-    draftInstance.comments.addChild(
-      reply,
-      documents.author.id,
-      props.comment.id
-    )
-    documents.draftChanged(upwell.id, props.draft.id)
+    const draftInstance = upwell.get(draft.id)
+    draftInstance.comments.addChild(reply, documents.author.id, comment.id)
+    documents.draftChanged(upwell.id, draft.id)
 
     setReply('')
     setShowReply(false)
@@ -93,18 +91,14 @@ const CommentThread = (props: CommentThreadProps) => {
 
   return (
     <>
-      <CommentView {...props} onReplyClick={handleReplyClick}>
-        {props.comment.message}
-      </CommentView>
-      {props.comment.children?.map((cid) => (
+      <CommentView {...props} onReplyClick={handleReplyClick} />
+      {comment.children?.map((cid) => (
         <CommentView
           key={`thread-${cid}`}
           {...props}
-          comment={props.comments[cid]}
+          comment={comments[cid]}
           level={1}
-        >
-          {props.comments[cid].message}
-        </CommentView>
+        />
       ))}
       {showReply && (
         <CommentBox level={1}>
