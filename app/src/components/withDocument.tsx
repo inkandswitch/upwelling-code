@@ -78,7 +78,7 @@ export default function withDocument(
         }
 
         try {
-          sync()
+          await documents.sync(id)
           upwell = documents.get(id)
           console.log('got upwell', upwell.id)
         } catch (err) {

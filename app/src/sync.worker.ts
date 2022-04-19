@@ -13,9 +13,9 @@ function toUpwell(binary: any) {
   return Upwell.deserialize(stream, { id: createAuthorId(), name: 'system' })
 }
 
-loadForTheFirstTimeLoL()
 
 onmessage = function (e) {
+  loadForTheFirstTimeLoL()
   const { method, params } = e.data
   console.log('Message received from main script', method, params)
   switch (method) {

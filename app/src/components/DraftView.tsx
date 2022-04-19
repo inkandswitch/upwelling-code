@@ -84,12 +84,16 @@ export default function DraftView(props: DraftViewProps) {
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       let upwell = documents.get(id)
-      if (!local && upwell.isArchived(draft.id)) {
-        // someone merged or archived my draft while i was looking at it
-        window.location.href = `/${id}/stack`
-      }
       if (!local && upwell.metadata.main !== draft.parent_id) {
+        // someone merged my draft while i was looking at it
         setHasPendingChanges(true)
+      }
+      if (!local && upwell.isArchived(draft.id)) {
+        // someone archived my draft while i was looking at it
+        setDrafts(upwell.drafts())
+        setDraft(upwell.rootDraft.materialize())
+        const url = `/${id}/stack`
+        setLocation(url)
       }
       let instance = upwell.get(draft.id)
       if (local) {
@@ -103,7 +107,7 @@ export default function DraftView(props: DraftViewProps) {
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, mounted])
+  }, [id, draft.parent_id, draft.id, setLocation, mounted])
 
   // every time the draft id changes
   useEffect(() => {
