@@ -52,8 +52,7 @@ export class Documents {
     this.subscriptions.set(id, fn)
   }
 
-  draftChanged(id: string, did: string) {
-    this.save(id)
+  updateDraftPeers(id: string, did: string) {
     if (this.rtcDraft && this.rtcDraft.draft.id === did) {
       log('updating peers')
       this.rtcDraft.updatePeers()
@@ -78,7 +77,8 @@ export class Documents {
     this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
     this.rtcUpwell.on('data', () => {
       log('got change')
-      this.upwellChanged(id, false)
+      let fn = this.subscriptions.get(id) || noop
+      fn(false)
     })
   }
 
@@ -105,17 +105,18 @@ export class Documents {
     return upwell
   }
 
-  upwellChanged(id: string, local: boolean) {
+  upwellChanged(id: string) {
     let fn = this.subscriptions.get(id) || noop
-    fn(local)
+    fn(true)
+    this.rtcUpwell?.updatePeers()
   }
 
   async save(id: string): Promise<Upwell> {
     let upwell = this.upwells.get(id)
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
     let binary = await upwell.toFile()
+    log('save called', id)
     await this.storage.setItem(id, binary)
-    this.upwellChanged(id, true)
     return upwell
   }
 
