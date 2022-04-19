@@ -43,8 +43,7 @@ export class UpwellMetadata {
 
   addDraft(draft: Draft) {
     let draftMetadata = draft.materialize()
-    if (this.isArchived(draft.id))
-      throw new Error('Cant update an archived draft')
+    if (this.isArchived(draft.id)) return
     this.doc.set_object('/drafts', draft.id, {
       id: draft.id,
       heads: draftMetadata.heads,

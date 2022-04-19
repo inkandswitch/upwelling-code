@@ -8,6 +8,7 @@ import NoDocument from './components/NoDocument'
 import { useLocation } from 'wouter'
 import { Button } from './components/Button'
 import { nanoid } from 'nanoid'
+import localforage from 'localforage'
 
 let documents = Documents()
 
@@ -57,6 +58,11 @@ export default function App() {
     setLocation('/' + doc.id + '/stack')
   }
 
+  function clearAll() {
+    localforage.clear()
+    window.location.href = '/'
+  }
+
   return (
     <>
       <Route path="/:id/:did">
@@ -93,6 +99,7 @@ export default function App() {
                     })}
                   </ul>
                 </div>
+                <Button onClick={clearAll}>Clear All</Button>
                 <Button onClick={newUpwell}>New Document</Button>
               </NoDocument>
             </div>
