@@ -41,7 +41,7 @@ export default function withDocument(
     const sync = useCallback(async () => {
       setSyncState(SYNC_STATE.LOADING)
       try {
-        await documents.sync(id)
+        documents.sync(id)
         log('synced')
         setSyncState(SYNC_STATE.SYNCED)
         documents.rtcUpwell?.updatePeers()
@@ -57,7 +57,7 @@ export default function withDocument(
       () =>
         debounce(() => {
           sync()
-        }, 500),
+        }, 1000),
       [sync]
     )
 
@@ -104,6 +104,7 @@ export default function withDocument(
         try {
           sync()
           upwell = documents.get(id)
+          console.log('got upwell', upwell.id)
         } catch (err) {
           console.log(err)
           if (!upwell) {
@@ -118,6 +119,7 @@ export default function withDocument(
         } finally {
           if (upwell) {
             if (!unmounted) setRoot(upwell.rootDraft)
+            documents.save(id)
             documents.connectUpwell(id)
           }
         }

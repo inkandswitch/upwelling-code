@@ -87,9 +87,7 @@ export default function DraftView(props: DraftViewProps) {
       let upwell = documents.get(id)
       if (!local && upwell.isArchived(draft.id)) {
         // someone merged or archived my draft while i was looking at it
-        documents.sync(id).then(() => {
-          window.location.href = `/${id}/stack`
-        })
+        window.location.href = `/${id}/stack`
       }
       if (!local && upwell.metadata.main !== draft.parent_id) {
         setHasPendingChanges(true)

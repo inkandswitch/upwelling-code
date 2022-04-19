@@ -7,9 +7,9 @@ import {
 } from 'api'
 import FS from './storage/localStorage'
 import HTTP from './storage/http'
-import intoStream from 'into-stream'
 import catNames from 'cat-names'
 import debug from 'debug'
+import intoStream from 'into-stream'
 
 const STORAGE_URL = process.env.STORAGE_URL
 
@@ -29,9 +29,11 @@ export class Documents {
   author: Author
   rtcUpwell?: RealTimeUpwell
   rtcDraft?: RealTimeDraft
+  worker: Worker
 
   constructor(author: Author) {
     this.author = author
+    this.worker = new Worker(new URL('./sync.worker.ts', import.meta.url))
   }
 
   set authorName(name: string) {
@@ -133,6 +135,7 @@ export class Documents {
         return ours
       } else {
         // no local binary, get from server
+        log('no local binary')
         try {
           let remoteBinary = this.remote.getItem(id)
           if (remoteBinary) {
@@ -153,30 +156,7 @@ export class Documents {
   async sync(id: string): Promise<any> {
     log('sync called')
     let filename = this.paths.get(id)
-    let inMemory = this.upwells.get(id)
-    let remoteBinary = await this.remote.getItem(id)
-    if (!inMemory && remoteBinary) {
-      let buf = Buffer.from(remoteBinary)
-      let upwell = await this.toUpwell(buf)
-      this.upwells.set(id, upwell)
-      this.upwell = upwell
-      await this.storage.setItem(id, buf)
-      return this.remote.setItem(id, buf, filename)
-    } else if (!remoteBinary && inMemory) {
-      let newFile = await inMemory.toFile()
-      await this.storage.setItem(id, newFile)
-      return this.remote.setItem(id, newFile, filename)
-    } else if (inMemory && remoteBinary) {
-      let buf = Buffer.from(remoteBinary)
-      // do sync
-      let theirs = await this.toUpwell(buf)
-      // update our local one
-      inMemory.merge(theirs)
-      let newFile = await inMemory.toFile()
-      await this.storage.setItem(id, newFile)
-      log('uploading', id)
-      return this.remote.setItem(id, newFile, filename)
-    }
+    this.worker.postMessage({ method: 'sync', params: { id, filename } })
   }
 }
 
@@ -203,4 +183,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-function noop() { }
+function noop() {}
