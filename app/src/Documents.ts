@@ -134,7 +134,7 @@ export class Documents {
       } else {
         // no local binary, get from server
         try {
-          let remoteBinary = this.remote.getItem(id)
+          let remoteBinary = await this.remote.getItem(id)
           if (remoteBinary) {
             let theirs = await this.toUpwell(Buffer.from(remoteBinary))
             this.upwells.set(id, theirs)
