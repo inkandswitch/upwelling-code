@@ -57,7 +57,7 @@ function getOldChanges(
   heads: string[],
   baseDraft: Draft
 ) {
-  let obj = editableDraft.doc.value('_root', 'text', heads)
+  let obj = editableDraft.doc.get('_root', 'text', heads)
 
   if (obj && obj[0] === 'text') {
     if (heads.length > 0) {
@@ -76,7 +76,7 @@ function getOldChanges(
 }
 
 function getNewChanges(editableDraft: Draft, baseDraft: Draft) {
-  let latestObj = editableDraft.doc.value(
+  let latestObj = editableDraft.doc.get(
     '_root',
     'text',
     baseDraft.doc.getHeads()

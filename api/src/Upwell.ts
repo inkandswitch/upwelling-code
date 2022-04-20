@@ -92,7 +92,6 @@ export class Upwell {
     ours: Draft,
     ...theirs: Draft[]
   ): { draft: Draft; attribution: ChangeSet[] } {
-
     // Fork the comparison draft, because we want to create a copy, not modify
     // the original. It might make sense to remove this from here and force the
     // caller to do the fork if this is the behaviour they want in order to
@@ -103,7 +102,8 @@ export class Upwell {
     })
     let origHead = newDraft.doc.getHeads()
 
-    let cache_id = origHead.join('_') + theirs.reduce((prev, cur) => prev + '_' + cur.id, '')
+    let cache_id =
+      origHead.join('_') + theirs.reduce((prev, cur) => prev + '_' + cur.id, '')
     let hit = this.attribution_cache.get(cache_id)
     console.log('cache_id', cache_id)
     if (hit) {
@@ -117,7 +117,7 @@ export class Upwell {
     // Now do a blame against the heads of the comparison drafts.
     let heads = theirs.map((draft) => draft.doc.getHeads())
 
-    let obj = newDraft.doc.value('_root', 'text')
+    let obj = newDraft.doc.get('_root', 'text')
     if (!obj || obj[0] !== 'text')
       throw new Error('Text field not properly initialized')
 

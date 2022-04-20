@@ -192,7 +192,7 @@ export function Editor(props: Props) {
         /*
         let newHeads = editableDraft.doc.getHeads()
         if (prevHeads && prevHeads !== newHeads) {
-          let obj = editableDraft.doc.value('_root', 'text')
+          let obj = editableDraft.doc.get('_root', 'text')
           let changeSet
           if (obj && obj[0] === 'text')
             changeSet = editableDraft.doc.attribute2(obj[1], prevHeads, [
@@ -387,7 +387,7 @@ export function Editor(props: Props) {
     let changeSet
     let amConfig = automergeChangesKey.getState(state)
     if (amConfig?.heads) {
-      let obj = editableDraft.doc.value('_root', 'text')
+      let obj = editableDraft.doc.get('_root', 'text')
       if (obj && obj[0] === 'text')
         changeSet = editableDraft.doc.attribute2(obj[1], beforeHeads, [
           afterHeads,
