@@ -23,7 +23,7 @@ export class Comments extends Collection<Comment> {
     this.doc.set(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
   }
 
-  addChild(message: string, author: AuthorId, parentId: CommentId) {
+  addChild(message: string, author: AuthorId, parentId: CommentId): Comment {
     const id = nanoid()
     const child = {
       id,
@@ -37,5 +37,6 @@ export class Comments extends Collection<Comment> {
     let path = `/${this.name}/${child.parentId}/children`
     let len = this.doc.length(path)
     this.doc.insert(path, len, child.id)
+    return child
   }
 }

@@ -5,6 +5,7 @@ import { assert } from 'chai'
 describe('upwell', () => {
   it('subscribes to document changes', async () => {
     let d = Upwell.create()
+    d.createDraft('hi')
     let drafts = d.drafts()
     assert.lengthOf(drafts, 1)
 
@@ -16,8 +17,8 @@ describe('upwell', () => {
     let times = 0
     doc.subscribe((doc: Draft) => {
       times++
-      if (times === 1) assert.equal(doc.text, 'Hello\ufffc ')
-      if (times === 2) assert.equal(doc.text, 'Hola\ufffc ')
+      if (times === 1) assert.equal(doc.text, 'Hello')
+      if (times === 2) assert.equal(doc.text, 'Hola')
     })
 
     doc.insertAt(0, 'H')
@@ -39,9 +40,11 @@ describe('upwell', () => {
     assert.equal(times, 2)
   })
 
+  let first_author: Author = { id: createAuthorId(), name: 'Susan' }
+  let second_author: Author = { id: createAuthorId(), name: 'Theroux' }
   it('creates drafts with authors', async () => {
-    let first_author: Author = { id: createAuthorId(), name: 'Susan' }
     let d = Upwell.create({ author: first_author })
+    d.createDraft('boop')
     let drafts = d.drafts()
     let doc = drafts[0]
 
@@ -50,14 +53,13 @@ describe('upwell', () => {
     doc.insertAt(2, 'l')
     doc.insertAt(3, 'l')
     doc.insertAt(4, 'o')
-    assert.equal(doc.text, 'Hello\ufffc ')
-    assert.equal(d.drafts()[0].text, 'Hello\ufffc ')
+    assert.equal(doc.text, 'Hello')
+    assert.equal(d.drafts()[0].text, 'Hello')
 
     d.rootDraft = doc
 
     let name = 'Started typing on the train'
-    let author: Author = { id: createAuthorId(), name: 'Theroux' }
-    let e = await Upwell.deserialize(d.serialize(), author)
+    let e = await Upwell.deserialize(d.serialize(), second_author)
     let newDraft = e.createDraft(name)
 
     newDraft.insertAt(0, 'H')
@@ -67,17 +69,21 @@ describe('upwell', () => {
     newDraft.deleteAt(3)
     newDraft.insertAt(3, 'a')
     newDraft.deleteAt(4)
-    assert.equal(newDraft.text, 'Hola\ufffc ')
-    assert.equal(newDraft.authorId, author.id)
-    assert.deepEqual(e.metadata.getAuthors(), {
-      [author.id]: author,
-      [first_author.id]: first_author,
+    assert.equal(newDraft.text, 'Hola')
+    assert.equal(newDraft.authorId, second_author.id)
+    it('orders authors by order they contributed', () => {
+      assert.deepEqual(e.metadata.getAuthors(), [
+        first_author,
+        second_author,
+      ])
     })
   })
+
 
   it('merges many drafts to come to a single root', () => {
     let first_author: Author = { id: createAuthorId(), name: 'Susan' }
     let d = Upwell.create({ author: first_author })
+    d.createDraft('first')
     let drafts = d.drafts()
     let doc = drafts[0]
 
@@ -96,6 +102,7 @@ describe('upwell', () => {
   describe('Draft', () => {
     let first_author: Author = { id: createAuthorId(), name: 'Susan' }
     let d = Upwell.create({ author: first_author })
+    d.createDraft('Test')
     let drafts = d.drafts()
     let doc = drafts[0]
     let rootId
@@ -107,7 +114,7 @@ describe('upwell', () => {
       doc.insertAt(2, 'l')
       doc.insertAt(3, 'l')
       doc.insertAt(4, 'o')
-      assert.equal(doc.text, 'Hello\ufffc ')
+      assert.equal(doc.text, 'Hello')
       d.rootDraft = doc
     })
 
@@ -126,7 +133,7 @@ describe('upwell', () => {
 
     it('merged', () => {
       doc.merge(newDraft)
-      assert.equal(doc.text, 'Hello world\ufffc ')
+      assert.equal(doc.text, 'Hello world')
 
       drafts = d.drafts()
       assert.equal(drafts.length, 1)
@@ -144,7 +151,7 @@ describe('upwell', () => {
         assert.equal(d.isArchived(draft.id), true)
         let root = d.rootDraft
         assert.equal(root.id, rootId)
-        assert.equal(doc.id, rootId)
+        assert.notEqual(doc.id, rootId)
       }
     })
 
@@ -162,9 +169,10 @@ describe('upwell', () => {
   it('makes drafts visible and shared', async () => {
     let first_author: Author = { id: createAuthorId(), name: 'Susan' }
     let d = Upwell.create({ author: first_author })
+    d.createDraft('first')
     let drafts = d.drafts()
     let doc = drafts[0]
-    d.share(doc.id)
+    doc.shared = true
     assert.equal(doc.shared, true)
 
     let author = { id: createAuthorId(), name: 'Theroux' }
@@ -182,6 +190,7 @@ describe('upwell', () => {
   it('gets root draft', () => {
     let first_author: Author = { id: createAuthorId(), name: 'Susan' }
     let d = Upwell.create({ author: first_author })
+    d.createDraft('first')
     let drafts = d.drafts()
     let doc = drafts[0]
     let root = d.rootDraft
@@ -200,16 +209,14 @@ describe('upwell', () => {
     let d = Upwell.create({ author: first_author })
 
     let draft = d.createDraft('first')
-    d.share(draft.id)
+    draft.shared = true
 
     let boop = d.createDraft('boop')
 
     assert.equal(d.drafts().filter((l) => l.shared).length, 1)
 
     let beep = d.createDraft('beep')
-    d.share(beep.id)
-
-    boop = d.createDraft('boop')
+    beep.shared = true
 
     for (let i = 0; i < 100; i++) {
       assert.equal(d.drafts().filter((l) => l.shared).length, 2)
