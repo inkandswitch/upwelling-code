@@ -149,7 +149,6 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.message = draftName
     upwell.rootDraft = draftInstance
-    documents.save(id)
     documents.rtcUpwell?.updatePeers()
     goToDraft('stack')
   }
@@ -161,6 +160,7 @@ export default function DraftView(props: DraftViewProps) {
       setModalOpen('merge')
     } else {
       upwell.rootDraft = draftInstance
+      documents.rtcUpwell?.updatePeers()
       goToDraft('stack')
     }
   }
@@ -193,9 +193,6 @@ export default function DraftView(props: DraftViewProps) {
         console.error('failure to save', err)
       })
       .finally(() => {
-        let draftInstance = upwell.get(did)
-        setDrafts(upwell.drafts())
-        setDraft(draftInstance.materialize())
         const url = `/${id}/${did}`
         setLocation(url)
       })
@@ -298,7 +295,8 @@ export default function DraftView(props: DraftViewProps) {
                 <Select
                   onChange={(value: DraftMetadata | null) => {
                     if (value === null) return
-                    goToDraft(value.id)
+                    const url = `/${id}/${value.id}`
+                    setLocation(url)
                   }}
                   renderValue={() => renderDraftMessage(draft)}
                 >
