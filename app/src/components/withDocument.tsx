@@ -32,11 +32,10 @@ export default function withDocument(
 ) {
   return function () {
     let [root, setRoot] = useState<Draft>()
-    let [, setLocation] = useLocation()
     let [sync_state, setSyncState] = useState<SYNC_STATE>(SYNC_STATE.SYNCED)
     let [timedOut, setTimedOut] = useState<boolean>(false)
     let [hideProfile, setHideProfile] = useState<boolean>(true)
-    let { id, author } = props
+    let { id } = props
 
     const sync = useCallback(async () => {
       setSyncState(SYNC_STATE.LOADING)
@@ -44,7 +43,6 @@ export default function withDocument(
         await documents.sync(id)
         log('synced')
         setSyncState(SYNC_STATE.SYNCED)
-        documents.rtcUpwell?.updatePeers()
       } catch (err) {
         log('failed to sync', err)
         setSyncState(SYNC_STATE.OFFLINE)
@@ -57,7 +55,7 @@ export default function withDocument(
       () =>
         debounce(() => {
           sync()
-        }, 500),
+        }, 2000),
       [sync]
     )
 
@@ -102,10 +100,11 @@ export default function withDocument(
         }
 
         try {
-          sync()
+          await sync()
           upwell = documents.get(id)
         } catch (err) {
-          console.log(err)
+          console.log('could not find upwell on server')
+          console.error(err)
           if (!upwell) {
             log('Retrying in', RETRY_TIMEOUT, retries)
             if (retries >= MAX_RETRIES) return setTimedOut(true)
@@ -128,7 +127,7 @@ export default function withDocument(
         unmounted = true
         documents.disconnect(id)
       }
-    }, [id, author, setLocation, sync])
+    }, [id, sync])
 
     if (!root) {
       return (

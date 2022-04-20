@@ -29,11 +29,9 @@ const streamToString = (stream) => {
 }
 
 app.get('/:id', async (req, res) => {
-  let id = req.params.id
-
   let filename = path.join(__dirname, 'data', `${req.params.id}.upwell`)
-  console.log(filename)
   try {
+    console.log('get ', req.params.id)
     const data = fs.createReadStream(filename)
     res.send(await streamToString(data))
   } catch (err) {
@@ -44,9 +42,7 @@ app.get('/:id', async (req, res) => {
 
 app.post('/:id', (req, res) => {
   let id = req.params.id
-
-  console.log('uploading', id)
-
+  console.log('post', id)
   req.file(id).upload({
     dirname: path.join(__dirname, 'data'),
     saveAs: `${req.params.id}.upwell`,

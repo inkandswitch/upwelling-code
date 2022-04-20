@@ -111,6 +111,7 @@ export class Documents {
   async save(id: string): Promise<Upwell> {
     let upwell = this.upwells.get(id)
     if (!upwell) throw new Error('upwell does not exist with id=' + id)
+    log('save called')
     let binary = await upwell.toFile()
     await this.storage.setItem(id, binary)
     this.upwellChanged(id, true)

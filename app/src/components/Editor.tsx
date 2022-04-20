@@ -91,7 +91,7 @@ export function Editor(props: Props) {
     () =>
       debounce(() => {
         documents.save(upwellId)
-      }, 500),
+      }, 2000),
     [upwellId]
   )
 

@@ -145,6 +145,7 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.message = draftName
     upwell.rootDraft = draftInstance
+    documents.rtcUpwell?.updatePeers()
     goToDraft('stack')
   }
 
@@ -162,6 +163,7 @@ export default function DraftView(props: DraftViewProps) {
   const createDraft = async (draftName: string) => {
     let upwell = documents.get(id)
     let newDraft = upwell.createDraft(draftName)
+    documents.rtcUpwell?.updatePeers()
     goToDraft(newDraft.id)
   }
 
@@ -175,6 +177,7 @@ export default function DraftView(props: DraftViewProps) {
   const handleDeleteDraft = () => {
     const upwell = documents.get(id)
     upwell.archive(draft.id)
+    documents.rtcUpwell?.updatePeers()
     goToDraft('stack')
   }
 
