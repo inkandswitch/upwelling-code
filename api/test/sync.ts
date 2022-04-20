@@ -4,6 +4,7 @@ import { assert } from 'chai'
 
 function helloWorld(): Upwell {
   let upwell = Upwell.create()
+  upwell.createDraft('boop')
   let drafts = upwell.drafts()
   let A = drafts[0]
   A.insertAt(0, 'hello world')
@@ -70,7 +71,7 @@ describe('save and load', () => {
     let b_author: Author = { id: createAuthorId(), name: 'Joe' }
     let b = Upwell.create({ author: b_author })
 
-    let draft = a.createDraft()
+    let draft = a.createDraft('hi')
     a.rootDraft = draft
     let c = await Upwell.deserialize(await a.serialize(), b_author)
     b.merge(c)
