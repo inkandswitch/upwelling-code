@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useState } from 'react'
+import React, { MouseEventHandler, useState } from 'react'
 import { DraftMetadata, Comment, CommentState } from 'api'
 import Documents from '../Documents'
 import { Contributor } from './Contributors'
@@ -16,7 +16,7 @@ type Comments = {
 }
 
 type CommentViewProps = CommentThreadProps & {
-  onReplyClick?: Function
+  onReplyClick?: MouseEventHandler<HTMLButtonElement>
 }
 
 export function CommentView(props: CommentViewProps) {

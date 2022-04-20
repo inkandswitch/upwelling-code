@@ -14,12 +14,6 @@ import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import Debug from 'debug'
 import {
-  ReplaceStep,
-  AddMarkStep,
-  RemoveMarkStep,
-  ReplaceAroundStep,
-} from 'prosemirror-transform'
-import {
   EditorState,
   Transaction as ProsemirrorTransaction,
 } from 'prosemirror-state'
