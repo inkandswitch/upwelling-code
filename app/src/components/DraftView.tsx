@@ -84,6 +84,7 @@ export default function DraftView(props: DraftViewProps) {
   // every time the upwell id changes
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
+      log('got a subscription event', local)
       let upwell = documents.get(id)
       if (!local && upwell.isArchived(draft.id)) {
         // someone merged or archived my draft while i was looking at it

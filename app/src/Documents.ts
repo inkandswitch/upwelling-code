@@ -1,5 +1,5 @@
 import {
-  RealTimeUpwell,
+  RTC,
   Author,
   RealTimeDraft,
   Upwell,
@@ -27,7 +27,7 @@ export class Documents {
   remote = new HTTP(STORAGE_URL)
   subscriptions = new Map<string, Function>()
   author: Author
-  rtcUpwell?: RealTimeUpwell
+  rtcUpwell?: RTC
   rtcDraft?: RealTimeDraft
 
   constructor(author: Author) {
@@ -70,14 +70,13 @@ export class Documents {
     }
   }
 
-  connectUpwell(id: string) {
-    let upwell = this.get(id)
-    if (this.rtcUpwell) return
-    this.rtcUpwell = new RealTimeUpwell(upwell, this.author)
-    this.rtcUpwell.on('data', () => {
+  connectUpwell(id: string): Upwell {
+    this.rtcUpwell = new RTC(id, null, this.author)
+    this.rtcUpwell.on('syncMessage', () => {
       log('got change')
       this.upwellChanged(id, false)
     })
+    return new Upwell(this.rtcUpwell.doc, this.author)
   }
 
   connectDraft(id: string, did: string) {
@@ -120,6 +119,7 @@ export class Documents {
 
   async open(id: string, filename?: string): Promise<Upwell> {
     if (filename) this.paths.set(id, filename)
+    let fake = this.connectUpwell(id)
     let upwell = this.upwells.get(id)
     if (upwell) {
       this.upwell = upwell
@@ -133,20 +133,7 @@ export class Documents {
         this.upwell = ours
         return ours
       } else {
-        // no local binary, get from server
-        try {
-          let remoteBinary = await this.remote.getItem(id)
-          if (remoteBinary) {
-            let theirs = await this.toUpwell(Buffer.from(remoteBinary))
-            this.upwells.set(id, theirs)
-            this.upwell = theirs
-            return theirs
-          } else {
-            throw new Error('No document with id=' + id)
-          }
-        } catch (err) {
-          throw new Error('Could not connect to server')
-        }
+        return fake
       }
     }
   }

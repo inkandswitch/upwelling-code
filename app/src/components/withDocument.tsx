@@ -72,7 +72,6 @@ export default function withDocument(
 
     useEffect(() => {
       let unmounted = false
-      let retries = 0
       let upwell: Upwell | undefined
 
       window.onhashchange = (ev) => {
@@ -97,27 +96,8 @@ export default function withDocument(
           }
         } catch (err) {
           console.log(err)
-        }
-
-        try {
-          await sync()
-          upwell = documents.get(id)
-        } catch (err) {
-          console.log('could not find upwell on server')
-          console.error(err)
-          if (!upwell) {
-            log('Retrying in', RETRY_TIMEOUT, retries)
-            if (retries >= MAX_RETRIES) return setTimedOut(true)
-            setTimeout(() => {
-              log('retrying', retries)
-              retries++
-              if (retries <= MAX_RETRIES) render()
-            }, RETRY_TIMEOUT)
-          }
-        } finally {
           if (upwell) {
             if (!unmounted) setRoot(upwell.rootDraft)
-            documents.connectUpwell(id)
           }
         }
       }
