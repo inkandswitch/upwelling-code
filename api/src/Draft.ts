@@ -66,6 +66,7 @@ export class Draft {
   doc: Automerge
   comments: Comments
   _heads?: Heads = []
+  _textCache?: string
   subscriber: Subscriber = () => {}
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
@@ -76,10 +77,12 @@ export class Draft {
   }
 
   private _getAutomergeText(prop: string): string {
+    if (this._textCache) return this._textCache
     let value = this.doc.get(ROOT, prop, this._heads)
-    if (value && value[0] === 'text')
-      return this.doc.text(value[1], this._heads)
-    else return ''
+    if (value && value[0] === 'text') {
+      this._textCache = this.doc.text(value[1], this._heads)
+      return this._textCache
+    } else return ''
   }
 
   _getValue(prop: string, heads?: string[]) {
@@ -196,9 +199,10 @@ export class Draft {
 
   insertAt(position: number, value: string | Array<string>, prop = 'text') {
     let obj = this.doc.get(ROOT, prop)
-    if (obj && obj[0] === 'text')
+    if (obj && obj[0] === 'text') {
+      delete this._textCache
       return this.doc.splice(obj[1], position, 0, value)
-    else throw new Error('Text field not properly initialized')
+    } else throw new Error('Text field not properly initialized')
   }
 
   insertBlock(position: number, type: string, attributes: any = {}) {
@@ -210,6 +214,7 @@ export class Draft {
       block[`attribute-${key}`] = attributes[key]
     })
     if (text && text[0] === 'text') {
+      delete this._textCache
       let obj = this.doc.insertObject(text[1], position, block)
     } else throw new Error('text not properly initialized')
   }
@@ -238,6 +243,7 @@ export class Draft {
         `unable to modify block, position ${position} is not a block!`
       )
     this.deleteAt(position, 1)
+    delete this._textCache
     this.insertBlock(position, type, attributes)
   }
 
@@ -265,9 +271,10 @@ export class Draft {
 
   deleteAt(position: number, count: number = 1, prop = 'text') {
     let obj = this.doc.get(ROOT, prop)
-    if (obj && obj[0] === 'text')
+    if (obj && obj[0] === 'text') {
+      delete this._textCache
       return this.doc.splice(obj[1], position, count, '')
-    else throw new Error('Text field not properly initialized')
+    } else throw new Error('Text field not properly initialized')
   }
 
   mark(name: string, range: string, value: Value, prop = 'text') {
