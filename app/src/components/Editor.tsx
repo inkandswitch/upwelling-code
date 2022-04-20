@@ -236,9 +236,7 @@ export function Editor(props: Props) {
       )
     )
 
-    window.requestIdleCallback(() => {
-      documents.draftChanged(upwell.id, editableDraft.id)
-    })
+    documents.draftChanged(upwell.id, editableDraft.id)
     onChange()
     let newState = state.apply(transaction)
     setState(newState)

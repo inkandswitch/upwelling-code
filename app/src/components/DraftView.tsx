@@ -100,6 +100,10 @@ export default function DraftView(props: DraftViewProps) {
       if (!mounted) {
         setMounted(true)
       }
+      console.log('subscribe called')
+      window.requestIdleCallback(() => {
+        sync()
+      })
     })
     return () => {
       documents.unsubscribe(id)
@@ -145,6 +149,7 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.message = draftName
     upwell.rootDraft = draftInstance
+    documents.save(id)
     documents.rtcUpwell?.updatePeers()
     goToDraft('stack')
   }
@@ -379,6 +384,7 @@ export default function DraftView(props: DraftViewProps) {
                   let draftInstance = upwell.get(draft.id)
                   draftInstance.title = e.target.value
                   documents.draftChanged(id, draft.id)
+                  documents.save(id)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)
