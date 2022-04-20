@@ -1,9 +1,10 @@
 import {
-  RTC,
+  RealTime,
   Author,
   RealTimeDraft,
   Upwell,
   createAuthorId,
+  UpwellMetadata
 } from 'api'
 import FS from './storage/localStorage'
 import HTTP from './storage/http'
@@ -27,7 +28,7 @@ export class Documents {
   remote = new HTTP(STORAGE_URL)
   subscriptions = new Map<string, Function>()
   author: Author
-  rtcUpwell?: RTC
+  rtcUpwell?: RealTime<any>
   rtcDraft?: RealTimeDraft
 
   constructor(author: Author) {
@@ -70,13 +71,14 @@ export class Documents {
     }
   }
 
-  connectUpwell(id: string): Upwell {
-    this.rtcUpwell = new RTC(id, null, this.author)
-    this.rtcUpwell.on('syncMessage', () => {
+  connectUpwell(id: string): RealTime<any> {
+    let rt = new RealTime(id, this.author)
+    rt.on('syncMessage', () => {
       log('got change')
       this.upwellChanged(id, false)
     })
-    return new Upwell(this.rtcUpwell.doc, this.author)
+    this.rtcUpwell = rt
+    return rt
   }
 
   connectDraft(id: string, did: string) {
@@ -118,24 +120,31 @@ export class Documents {
   }
 
   async open(id: string, filename?: string): Promise<Upwell> {
-    if (filename) this.paths.set(id, filename)
-    let fake = this.connectUpwell(id)
     let upwell = this.upwells.get(id)
     if (upwell) {
       this.upwell = upwell
       return upwell
-    } else {
-      // local-first
-      let localBinary = await this.storage.getItem(id)
-      if (localBinary) {
-        let ours = await this.toUpwell(localBinary)
-        this.upwells.set(id, ours)
-        this.upwell = ours
-        return ours
-      } else {
-        return fake
-      }
     }
+    let localBinary = await this.storage.getItem(id)
+    if (localBinary) {
+      let ours = await this.toUpwell(localBinary)
+      this.upwells.set(id, ours)
+      this.upwell = ours
+      return ours
+    }
+
+    return new Promise(async (resolve, reject) => {
+      let rt = this.connectUpwell(id)
+      console.log('connecting')
+      rt.on('sync-complete', () => {
+        console.log('sync complete')
+        let upwell = new Upwell(new UpwellMetadata(rt.doc), this.author)
+        this.upwells.set(id, upwell)
+        this.save(id)
+        this.upwell = upwell
+        resolve(upwell)
+      })
+    })
   }
 
   async sync(id: string): Promise<any> {

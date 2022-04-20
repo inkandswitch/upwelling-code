@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { nanoid } from "nanoid";
 import { ChangeSet, create, Automerge, SyncState, initSyncState } from "automerge-wasm-pack";
-import { Author, Draft } from "..";
+import { Author, Draft } from ".";
 import Queue from "./Queue";
 
 import debug from 'debug'
@@ -20,7 +20,7 @@ export type WebsocketSyncMessage = {
   author: Author;
 };
 
-export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
+export class RealTime<T extends WebsocketSyncMessage> extends EventEmitter {
   id: string;
   ws: WebSocket;
   doc: Automerge;
@@ -31,11 +31,11 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
   peerStates = new Map<string, SyncState>();
   retries: number = 0;
 
-  constructor(id: string, doc: Automerge, author: Author) {
+  constructor(id: string, author: Author, doc?: Automerge) {
     super()
     this.id = id
-    this.doc = doc
-    this.author = author || create()
+    this.doc = doc || create()
+    this.author = author
     this.ws = this.connect();
   }
 
@@ -80,11 +80,14 @@ export default class RTC<T extends WebsocketSyncMessage> extends EventEmitter {
     }
   }
 
-
   sendSyncMessage(peerId: string) {
     let state = this._getPeerState(peerId);
     let syncMessage = this.doc.generateSyncMessage(state);
-    if (!syncMessage) return; // done
+    if (!syncMessage) {
+      console.log('sync complete')
+      this.emit('sync-complete')
+      return; // done
+    }
     let msg = {
       peerId: this.peerId,
       author: this.author,
@@ -190,12 +193,12 @@ export interface DraftWebsocketMessage extends WebsocketSyncMessage {
 }
 
 
-export class RealTimeDraft extends RTC<DraftWebsocketMessage> {
+export class RealTimeDraft extends RealTime<DraftWebsocketMessage> {
   draft: Draft;
   transactions: Queue<Transaction> = new Queue()
 
   constructor(draft: Draft, author: Author) {
-    super(draft.id, draft.doc, author)
+    super(draft.id, author, draft.doc)
     this.draft = draft;
     this.author = author
     this.on('syncMessage', ({ heads, msg, opIds }) => {

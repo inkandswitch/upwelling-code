@@ -35,7 +35,7 @@ app.ws('/:docId/connect/:peerId', function (ws, req) {
   if (!peer) peerList[peerId] = ws
 
   ws.on('message', function (msg) {
-    peerList = peers[id]
+    let peerList = peers[id]
     let value = JSON.parse(msg)
     if (value.method === 'BYE') {
       try {
@@ -46,7 +46,6 @@ app.ws('/:docId/connect/:peerId', function (ws, req) {
       return
     }
     let incomingPeer = value.peerId
-    let peerList = peers[id]
     if (!peerList) {
       console.error('sad, no peerList?')
       return

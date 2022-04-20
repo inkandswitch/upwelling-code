@@ -1,7 +1,7 @@
 export * from './Upwell'
 export * from './UpwellMetadata'
 export * from './Draft'
-export * from './RTC'
+export * from './RealTime'
 export * from './Comments'
 import debug from 'debug'
 

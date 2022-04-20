@@ -90,12 +90,12 @@ export default function withDocument(
           }
           log('render function')
           upwell = await documents.open(id)
+          console.log('got', upwell.rootDraft)
           if (!unmounted && upwell) {
             log('getting rootDraft in main component')
             setRoot(upwell.rootDraft)
           }
         } catch (err) {
-          console.log(err)
           if (upwell) {
             if (!unmounted) setRoot(upwell.rootDraft)
           }
