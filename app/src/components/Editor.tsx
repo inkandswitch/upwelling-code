@@ -91,7 +91,9 @@ export function Editor(props: Props) {
   let debouncedOnTextChange = React.useMemo(
     () =>
       debounce(() => {
-        documents.save(upwellId)
+        window.requestIdleCallback(() => {
+          documents.save(upwellId)
+        })
       }, 2000),
     [upwellId]
   )
@@ -234,7 +236,9 @@ export function Editor(props: Props) {
       )
     )
 
-    documents.draftChanged(upwell.id, editableDraft.id)
+    window.requestIdleCallback(() => {
+      documents.draftChanged(upwell.id, editableDraft.id)
+    })
     onChange()
     let newState = state.apply(transaction)
     setState(newState)
