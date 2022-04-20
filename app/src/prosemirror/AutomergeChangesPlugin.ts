@@ -144,6 +144,7 @@ export const automergeChangesPlugin: (
         }
 
         if (heads) {
+          console.log('i have heads', heads)
           prev.heads = automergeChanges.heads
 
           let oldChanges = getOldChanges(editableDraft, heads, baseDraft)
