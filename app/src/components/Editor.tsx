@@ -14,12 +14,6 @@ import { baseKeymap, setBlockType } from 'prosemirror-commands'
 import { history, redo, undo } from 'prosemirror-history'
 import Debug from 'debug'
 import {
-  ReplaceStep,
-  AddMarkStep,
-  RemoveMarkStep,
-  ReplaceAroundStep,
-} from 'prosemirror-transform'
-import {
   EditorState,
   Transaction as ProsemirrorTransaction,
 } from 'prosemirror-state'
@@ -36,7 +30,8 @@ import UpwellSource from './upwell-source'
 import { css } from '@emotion/react'
 import Documents from '../Documents'
 import { commentButton } from '../prosemirror/context-menu-items/CommentButton'
-import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemirror/utils/TransformHelper'
+import { convertAutomergeTransactionToProsemirrorTransaction } from '../prosemirror/utils/AutomergeToProsemirrorTransaction'
+import { prosemirrorTransactionToAutomerge } from '../prosemirror/utils/ProsemirrorTransactionToAutomerge'
 import {
   automergeChangesKey,
   automergeChangesPlugin,
@@ -90,7 +85,9 @@ export function Editor(props: Props) {
   let debouncedOnTextChange = React.useMemo(
     () =>
       debounce(() => {
-        documents.save(upwellId)
+        window.requestIdleCallback(() => {
+          documents.save(upwellId)
+        })
       }, 2000),
     [upwellId]
   )
@@ -189,32 +186,6 @@ export function Editor(props: Props) {
           edits
         )
 
-        /*
-        let newHeads = editableDraft.doc.getHeads()
-        if (prevHeads && prevHeads !== newHeads) {
-          let obj = editableDraft.doc.value('_root', 'text')
-          let changeSet
-          if (obj && obj[0] === 'text')
-            changeSet = editableDraft.doc.attribute2(obj[1], prevHeads, [
-              newHeads,
-            ])
-          console.log('i have a changset?', changeSet)
-          if (changeSet) {
-            console.log('i think i should update the changes view')
-            if (transaction) {
-              console.log('have transaction', transaction)
-              transaction.setMeta(automergeChangesKey, {
-                changeSet,
-              })
-            } else {
-              transaction = state.tr.setMeta(automergeChangesKey, { changeSet })
-            }
-          }
-        }
-        console.log('transaction', transaction)
-        prevHeads = newHeads
-        */
-
         if (transaction) {
           let newState = state.apply(transaction)
           setState(newState)
@@ -240,136 +211,13 @@ export function Editor(props: Props) {
 
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
-    let beforeHeads = editableDraft.doc.getHeads()
-    for (let step of transaction.steps) {
-      if (step instanceof ReplaceStep) {
-        editableDraft.addContributor(documents.author.id)
-        editableDraft.edited_at = Date.now()
-        let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
 
-        if (end !== start) {
-          editableDraft.deleteAt(start, end - start)
-        }
-
-        if (step.slice) {
-          let insOffset = start
-          step.slice.content.forEach((node, idx) => {
-            if (node.type.name === 'text' && node.text) {
-              editableDraft.insertAt(insOffset, node.text)
-              insOffset += node.text.length
-            } else if (
-              ['paragraph', 'heading'].indexOf(node.type.name) !== -1
-            ) {
-              if (idx !== 0)
-                // @ts-ignore
-                editableDraft.insertBlock(insOffset++, node.type.name)
-
-              let nodeText = node.textBetween(0, node.content.size)
-              editableDraft.insertAt(insOffset, nodeText)
-              insOffset += nodeText.length
-            } else {
-              alert(
-                `Hi! We would love to insert that text (and other stuff), but
-                this is a research prototype, and that action hasn't been
-                implemented.`
-              )
-            }
-          })
-        }
-      } else if (step instanceof AddMarkStep) {
-        editableDraft.addContributor(documents.author.id)
-        editableDraft.edited_at = Date.now()
-        let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
-        let mark = step.mark
-
-        if (mark.type.name === 'comment') {
-          editableDraft.insertComment(
-            start,
-            end,
-            mark.attrs.message,
-            mark.attrs.author.id
-          )
-        } else {
-          editableDraft.mark(mark.type.name, `(${start}..${end})`, true)
-        }
-      } else if (step instanceof RemoveMarkStep) {
-        editableDraft.addContributor(documents.author.id)
-        editableDraft.edited_at = Date.now()
-        // TK not implemented because automerge doesn't support removing marks yet
-        let { start, end } = prosemirrorToAutomerge(step, editableDraft, state)
-        let mark = step.mark
-        if (mark.type.name === 'strong' || mark.type.name === 'em') {
-          editableDraft.mark(mark.type.name, `(${start}..${end})`, false)
-        }
-      } else if (step instanceof ReplaceAroundStep) {
-        editableDraft.addContributor(documents.author.id)
-        editableDraft.edited_at = Date.now()
-        // This is just a guard to prevent us from handling a ReplaceAroundStep
-        // that isn't simply replacing the container, because implementing that
-        // is complicated and I can't think of an example where this would be
-        // the case!
-        //
-        // e.g. the normal case for p -> h1:
-        //   start == <p>
-        //   end == </p>
-        //   gapStart == the first character of the paragraph
-        //   gapEnd == the last character of the paragraph
-        //
-        // The step contains an empty node that has a `heading` type instead of
-        // `paragraph`
-        //
-        if (
-          //@ts-ignore: step.structure isn't defined in prosemirror's types
-          !step.structure ||
-          step.insert !== 1 ||
-          step.from !== step.gapFrom - 1 ||
-          step.to !== step.gapTo + 1
-        ) {
-          console.debug(
-            'Unhandled scenario in ReplaceAroundStep (non-structure)',
-            step
-          )
-        }
-
-        let { start: gapStart, end: gapEnd } = prosemirrorToAutomerge(
-          { from: step.gapFrom, to: step.gapTo },
-          editableDraft,
-          state
-        )
-
-        let text = editableDraft.text
-        // Double-check that we're doing what we think we are, i.e., replacing a parent node
-        if (text[gapStart - 1] !== '\uFFFC') {
-          console.error(
-            `Unhandled scenario in ReplaceAroundStep, expected character at ${gapStart} (${text[
-              gapStart - 1
-            ].charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)}`,
-            step
-          )
-          continue
-        }
-
-        if (text[gapEnd] !== '\uFFFC' && gapEnd !== text.length) {
-          console.error(
-            `Unhandled scenario in ReplaceAroundStep, expected character at ${gapEnd} (${text[
-              gapEnd
-            ]?.charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(
-              0
-            )} or End of Document (${text.length})`,
-            step
-          )
-          continue
-        }
-
-        // Get the replacement node and extract its attributes and reset the block!
-        let node = step.slice.content.maybeChild(0)
-        if (!node) continue
-
-        let { type, attrs } = node
-
-        editableDraft.setBlock(gapStart - 1, type.name, attrs)
-      }
-    }
+    prosemirrorTransactionToAutomerge(
+      transaction,
+      editableDraft,
+      state,
+      documents
+    )
 
     documents.rtcDraft?.sendCursorMessage(
       prosemirrorToAutomerge(
@@ -381,20 +229,6 @@ export function Editor(props: Props) {
         state
       )
     )
-
-    // Adjust decorations in response to transaction changes
-    let afterHeads = editableDraft.doc.getHeads()
-    let changeSet
-    let amConfig = automergeChangesKey.getState(state)
-    if (amConfig?.heads) {
-      let obj = editableDraft.doc.value('_root', 'text')
-      if (obj && obj[0] === 'text')
-        changeSet = editableDraft.doc.attribute2(obj[1], beforeHeads, [
-          afterHeads,
-        ])
-
-      transaction.setMeta(automergeChangesKey, { changeSet })
-    }
 
     documents.draftChanged(upwell.id, editableDraft.id)
     onChange()

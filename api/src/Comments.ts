@@ -20,7 +20,7 @@ export type Comment = {
 
 export class Comments extends Collection<Comment> {
   resolve(comment: Comment) {
-    this.doc.set(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
+    this.doc.put(`/${this.name}/${comment.id}/`, 'state', CommentState.CLOSED)
   }
 
   addChild(message: string, author: AuthorId, parentId: CommentId): Comment {

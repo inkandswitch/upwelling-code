@@ -1,7 +1,7 @@
 import init, {
   ObjID,
   Automerge,
-  loadDoc,
+  load,
   create,
   Value,
   SyncMessage,
@@ -28,12 +28,12 @@ export class Collection<T extends CollectionRow> {
     try {
       this._getMap()
     } catch (err) {
-      this.doc.set_object(ROOT, name, {})
+      this.doc.putObject(ROOT, name, {})
     }
   }
 
   _getMap(): ObjID {
-    let value = this.doc.value(ROOT, this.name)
+    let value = this.doc.get(ROOT, this.name)
     if (value && value[0] === 'map') {
       let map = value[1]
       return map
@@ -50,18 +50,18 @@ export class Collection<T extends CollectionRow> {
     data.id = id
     let map = this._getMap()
     Object.keys(data).forEach((key) => {
-      let value = this.doc.value(map, id)
+      let value = this.doc.get(map, id)
       let obj: ObjID
       if (value && value[0] === 'map') {
         obj = value[1]
       } else {
-        obj = this.doc.set_object(map, id, {})
+        obj = this.doc.putObject(map, id, {})
       }
 
       if (typeof data[key] === 'object') {
-        this.doc.set_object(obj, key, data[key])
+        this.doc.putObject(obj, key, data[key])
       } else {
-        this.doc.set(obj, key, data[key])
+        this.doc.put(obj, key, data[key])
       }
     })
     return id
@@ -69,7 +69,7 @@ export class Collection<T extends CollectionRow> {
 
   get(id: string): T | undefined {
     let map = this._getMap()
-    let value = this.doc.value(map, id)
+    let value = this.doc.get(map, id)
     if (value && value[0] === 'map') {
       return this.doc.materialize(value[1])
     }

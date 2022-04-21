@@ -14,7 +14,7 @@ export class RealTimeUpwell extends RTC<WebsocketSyncMessage> {
     this.on('syncMessage', ({ opIds, heads }) => {
       if (opIds.length) {
         log('triggering data event')
-        this.emit('data')
+        this.emit('data', { opIds, heads })
       }
     })
   }

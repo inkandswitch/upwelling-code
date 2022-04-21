@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useState } from 'react'
+import React, { MouseEventHandler, useState } from 'react'
 import { DraftMetadata, Comment, CommentState } from 'api'
 import Documents from '../Documents'
 import { Contributor } from './Contributors'
@@ -16,7 +16,7 @@ type Comments = {
 }
 
 type CommentViewProps = CommentThreadProps & {
-  onReplyClick?: Function
+  onReplyClick?: MouseEventHandler<HTMLButtonElement>
 }
 
 export function CommentView(props: CommentViewProps) {
@@ -32,6 +32,7 @@ export function CommentView(props: CommentViewProps) {
     draftInstance.comments.resolve(comment)
     comment.children.map((cid) => draftInstance.comments.resolve(comments[cid]))
     documents.draftChanged(upwell.id, draft.id)
+    documents.save(id)
   }
   if (!isOpen) return null
 
@@ -84,6 +85,7 @@ const CommentThread = (props: CommentThreadProps) => {
     const draftInstance = upwell.get(draft.id)
     draftInstance.comments.addChild(reply, documents.author.id, comment.id)
     documents.draftChanged(upwell.id, draft.id)
+    documents.save(id)
 
     setReply('')
     setShowReply(false)

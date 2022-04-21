@@ -13,15 +13,15 @@ export class UpwellMetadata {
   }
 
   static load(binary: Uint8Array): UpwellMetadata {
-    return new UpwellMetadata(Automerge.loadDoc(binary))
+    return new UpwellMetadata(Automerge.load(binary))
   }
 
   static create(id: string): UpwellMetadata {
     let doc = Automerge.create()
-    doc.set(ROOT, 'id', id)
-    doc.set_object(ROOT, 'drafts', {})
-    doc.set_object(ROOT, 'history', [])
-    doc.set_object(ROOT, 'authors', [])
+    doc.put(ROOT, 'id', id)
+    doc.putObject(ROOT, 'drafts', {})
+    doc.putObject(ROOT, 'history', [])
+    doc.putObject(ROOT, 'authors', [])
     let meta = new UpwellMetadata(doc)
     return meta
   }
@@ -33,7 +33,7 @@ export class UpwellMetadata {
 
   archive(id: string) {
     let draft = this.doc.materialize('/drafts/' + id)
-    this.doc.set_object('/drafts', id, {
+    this.doc.putObject('/drafts', id, {
       id: draft.id,
       heads: draft.heads,
       initialHeads: draft.initialHeads,
@@ -44,7 +44,7 @@ export class UpwellMetadata {
   addDraft(draft: Draft) {
     let draftMetadata = draft.materialize()
     let archived = this.isArchived(draft.id) || false
-    this.doc.set_object('/drafts', draft.id, {
+    this.doc.putObject('/drafts', draft.id, {
       id: draft.id,
       heads: draftMetadata.heads,
       initialHeads: draftMetadata.initialHeads,
@@ -67,7 +67,7 @@ export class UpwellMetadata {
     if (maybe.findIndex((a) => a.id === author.id) === -1) {
       author.date = Date.now()
       let len = this.doc.length('/authors')
-      this.doc.insert_object('/authors', len, author)
+      this.doc.insertObject('/authors', len, author)
     }
   }
 
@@ -76,7 +76,7 @@ export class UpwellMetadata {
     let index = maybe.findIndex((a) => a.id === id)
     let old = maybe[index]
     old.name = name
-    this.doc.insert_object('/authors', index, old)
+    this.doc.insertObject('/authors', index, old)
   }
 
   getAuthors() {
@@ -94,19 +94,19 @@ export class UpwellMetadata {
   }
 
   get id(): string {
-    let value = this.doc.value(ROOT, 'id')
+    let value = this.doc.get(ROOT, 'id')
     if (value) return value[1] as string
     else return ''
   }
 
   get main(): string {
-    let value = this.doc.value(ROOT, 'main')
+    let value = this.doc.get(ROOT, 'main')
     if (!value) throw new Error('no main doc')
     return value[1] as string
   }
 
   set main(id: string) {
-    this.doc.set(ROOT, 'main', id)
+    this.doc.put(ROOT, 'main', id)
   }
 
   addToHistory(id: string) {

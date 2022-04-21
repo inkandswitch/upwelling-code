@@ -1,9 +1,10 @@
 import { nanoid } from 'nanoid'
 import init, {
   Automerge,
-  loadDoc,
+  load,
   create,
   Value,
+  Heads,
   SyncMessage,
   SyncState,
   decodeChange,
@@ -27,7 +28,6 @@ export type ChangeMetadata = {
   authorId: AuthorId
 }
 
-export type Heads = string[]
 export type DraftMetadata = {
   id: string
   heads: string[]
@@ -57,7 +57,7 @@ export class LazyDraft {
   }
 
   hydrate() {
-    return new Draft(this.id, loadDoc(this.binary))
+    return new Draft(this.id, load(this.binary))
   }
 }
 
@@ -66,7 +66,8 @@ export class Draft {
   doc: Automerge
   comments: Comments
   _heads?: Heads = []
-  subscriber: Subscriber = () => { }
+  _textCache?: string
+  subscriber: Subscriber = () => {}
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id
@@ -76,14 +77,16 @@ export class Draft {
   }
 
   private _getAutomergeText(prop: string): string {
-    let value = this.doc.value(ROOT, prop, this._heads)
-    if (value && value[0] === 'text')
-      return this.doc.text(value[1], this._heads)
-    else return ''
+    if (this._textCache) return this._textCache
+    let value = this.doc.get(ROOT, prop, this._heads)
+    if (value && value[0] === 'text') {
+      this._textCache = this.doc.text(value[1], this._heads)
+      return this._textCache
+    } else return ''
   }
 
   _getValue(prop: string, heads?: string[]) {
-    let value = this.doc.value(ROOT, prop, heads || this._heads)
+    let value = this.doc.get(ROOT, prop, heads || this._heads)
     if (value && value[0]) return value[1]
   }
 
@@ -103,7 +106,7 @@ export class Draft {
   }
 
   set shared(value: boolean) {
-    this.doc.set(ROOT, 'shared', value)
+    this.doc.put(ROOT, 'shared', value)
   }
 
   get created_at(): number {
@@ -111,7 +114,7 @@ export class Draft {
   }
 
   set created_at(value: number) {
-    this.doc.set(ROOT, 'time', value)
+    this.doc.put(ROOT, 'time', value)
   }
 
   get edited_at(): number {
@@ -119,7 +122,7 @@ export class Draft {
   }
 
   set edited_at(value: number) {
-    this.doc.set(ROOT, 'edited_at', value)
+    this.doc.put(ROOT, 'edited_at', value)
   }
 
   get merged_at(): number {
@@ -127,7 +130,7 @@ export class Draft {
   }
 
   set merged_at(value: number) {
-    this.doc.set(ROOT, 'merged_at', value)
+    this.doc.put(ROOT, 'merged_at', value)
   }
 
   get message(): string {
@@ -135,7 +138,7 @@ export class Draft {
   }
 
   set message(value: string) {
-    this.doc.set(ROOT, 'message', value)
+    this.doc.put(ROOT, 'message', value)
   }
 
   get text(): string {
@@ -147,7 +150,7 @@ export class Draft {
   }
 
   set title(value: string) {
-    this.doc.set(ROOT, 'title', value)
+    this.doc.put(ROOT, 'title', value)
   }
 
   get title(): string {
@@ -159,7 +162,7 @@ export class Draft {
   }
 
   set parent_id(value: string) {
-    this.doc.set(ROOT, 'parent_id', value)
+    this.doc.put(ROOT, 'parent_id', value)
   }
 
   subscribe(subscriber: Subscriber) {
@@ -195,14 +198,15 @@ export class Draft {
   }
 
   insertAt(position: number, value: string | Array<string>, prop = 'text') {
-    let obj = this.doc.value(ROOT, prop)
-    if (obj && obj[0] === 'text')
+    let obj = this.doc.get(ROOT, prop)
+    if (obj && obj[0] === 'text') {
+      delete this._textCache
       return this.doc.splice(obj[1], position, 0, value)
-    else throw new Error('Text field not properly initialized')
+    } else throw new Error('Text field not properly initialized')
   }
 
   insertBlock(position: number, type: string, attributes: any = {}) {
-    let text = this.doc.value(ROOT, 'text')
+    let text = this.doc.get(ROOT, 'text')
     let block = { type }
     // This is a weird hack and I don't really understand why setting
     // sub-objects doesn't work in automerge
@@ -210,15 +214,16 @@ export class Draft {
       block[`attribute-${key}`] = attributes[key]
     })
     if (text && text[0] === 'text') {
-      let obj = this.doc.insert_object(text[1], position, block)
+      delete this._textCache
+      let obj = this.doc.insertObject(text[1], position, block)
     } else throw new Error('text not properly initialized')
   }
 
   getBlock(position: number) {
-    let text = this.doc.value(ROOT, 'text')
+    let text = this.doc.get(ROOT, 'text')
     if (!text || text[0] !== 'text')
       throw new Error('text not properly initialized')
-    let blockObj = this.doc.value(text[1], position)
+    let blockObj = this.doc.get(text[1], position)
     if (blockObj && blockObj[0] === 'map') {
       let block = this.doc.materialize(blockObj[1])
       block.attributes = {}
@@ -238,6 +243,7 @@ export class Draft {
         `unable to modify block, position ${position} is not a block!`
       )
     this.deleteAt(position, 1)
+    delete this._textCache
     this.insertBlock(position, type, attributes)
   }
 
@@ -264,21 +270,22 @@ export class Draft {
   }
 
   deleteAt(position: number, count: number = 1, prop = 'text') {
-    let obj = this.doc.value(ROOT, prop)
-    if (obj && obj[0] === 'text')
+    let obj = this.doc.get(ROOT, prop)
+    if (obj && obj[0] === 'text') {
+      delete this._textCache
       return this.doc.splice(obj[1], position, count, '')
-    else throw new Error('Text field not properly initialized')
+    } else throw new Error('Text field not properly initialized')
   }
 
   mark(name: string, range: string, value: Value, prop = 'text') {
-    let obj = this.doc.value(ROOT, prop)
+    let obj = this.doc.get(ROOT, prop)
     if (obj && obj[0] === 'text')
       return this.doc.mark(obj[1], range, name, value)
     else throw new Error('Text field not properly initialized')
   }
 
   getMarks(prop = 'text') {
-    let obj = this.doc.value(ROOT, 'text')
+    let obj = this.doc.get(ROOT, 'text')
     if (!obj || obj[0] !== 'text')
       throw new Error('Text field not properly initialized')
 
@@ -371,27 +378,27 @@ export class Draft {
   fork(message: string, author: Author): Draft {
     let id = nanoid()
     let doc = this.doc.fork(Draft.getActorId(author.id))
-    doc.set(ROOT, 'initialHeads', this.doc.getHeads().join(','))
-    doc.set(ROOT, 'message', message)
+    doc.put(ROOT, 'initialHeads', this.doc.getHeads().join(','))
+    doc.put(ROOT, 'message', message)
     let authorId = author.id.toString()
-    doc.set(ROOT, 'author', authorId)
-    doc.set(ROOT, 'shared', false)
-    doc.set(ROOT, 'time', Date.now())
-    doc.set(ROOT, 'merged_at', false)
-    doc.set(ROOT, 'edited_at', Date.now())
-    doc.set(ROOT, 'archived', false)
-    doc.set_object(ROOT, 'comments', {})
-    doc.set_object(ROOT, 'contributors', {})
-    doc.set(ROOT, 'parent_id', this.id)
+    doc.put(ROOT, 'author', authorId)
+    doc.put(ROOT, 'shared', false)
+    doc.put(ROOT, 'time', Date.now())
+    doc.put(ROOT, 'merged_at', false)
+    doc.put(ROOT, 'edited_at', Date.now())
+    doc.put(ROOT, 'archived', false)
+    doc.putObject(ROOT, 'comments', {})
+    doc.putObject(ROOT, 'contributors', {})
+    doc.put(ROOT, 'parent_id', this.id)
     let draft = new Draft(id, doc)
     draft.addContributor(authorId)
     return draft
   }
 
   addContributor(authorId: AuthorId) {
-    let exists = this.doc.value('/contributors', authorId)
+    let exists = this.doc.get('/contributors', authorId)
     if (exists && exists[0] === 'boolean' && exists[1] === true) return
-    this.doc.set('/contributors', authorId, true)
+    this.doc.put('/contributors', authorId, true)
   }
 
   merge(theirs: Draft): string[] {
@@ -405,7 +412,7 @@ export class Draft {
   }
 
   static load(id: string, binary: Uint8Array, authorId: AuthorId): Draft {
-    let doc = loadDoc(binary, this.getActorId(authorId))
+    let doc = load(binary, this.getActorId(authorId))
     let draft = new Draft(id, doc)
     return draft
   }
@@ -413,17 +420,17 @@ export class Draft {
   static create(message: string, authorId: AuthorId): Draft {
     let doc = create(this.getActorId(authorId))
     let id = nanoid()
-    doc.set(ROOT, 'message', message)
-    doc.set(ROOT, 'author', authorId)
-    doc.set(ROOT, 'shared', false, 'boolean')
-    doc.set(ROOT, 'pinned', false)
-    doc.set(ROOT, 'parent_id', id)
-    doc.set(ROOT, 'time', Date.now(), 'timestamp')
-    doc.set(ROOT, 'archived', false, 'boolean')
-    doc.set(ROOT, 'title', '')
-    doc.set_object(ROOT, 'comments', {})
-    doc.set_object(ROOT, 'contributors', {})
-    let text = doc.set_object(ROOT, 'text', '')
+    doc.put(ROOT, 'message', message)
+    doc.put(ROOT, 'author', authorId)
+    doc.put(ROOT, 'shared', false, 'boolean')
+    doc.put(ROOT, 'pinned', false)
+    doc.put(ROOT, 'parent_id', id)
+    doc.put(ROOT, 'time', Date.now(), 'timestamp')
+    doc.put(ROOT, 'archived', false, 'boolean')
+    doc.put(ROOT, 'title', '')
+    doc.putObject(ROOT, 'comments', {})
+    doc.putObject(ROOT, 'contributors', {})
+    let text = doc.putObject(ROOT, 'text', '')
     let draft = new Draft(id, doc)
     draft.addContributor(authorId)
     return draft
@@ -433,6 +440,6 @@ export class Draft {
     let meta: ChangeMetadata = { authorId: this.authorId, message }
     let heads = this.doc.commit(JSON.stringify(meta))
     if (this.subscriber) this.subscriber(this)
-    return heads
+    return [heads]
   }
 }
