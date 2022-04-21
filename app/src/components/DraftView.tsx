@@ -3,13 +3,13 @@ import { css } from '@emotion/react/macro'
 import React, { useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
-import { Upwell, DraftMetadata, Draft, Author } from 'api'
+import { Upwell, DraftMetadata, Draft, Author, CommentState } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
 import { Button } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
-import CommentSidebar from './CommentSidebar'
+import CommentSidebar, { Comments } from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import Select, { DetailedOption } from './Select'
@@ -19,11 +19,19 @@ import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
+import ConfirmModal from './ConfirmModal'
 
 const log = debug('DraftView')
 
 const blue = '#0083A3'
 let documents = Documents()
+
+export enum ModalState {
+  CLOSED,
+  NEW_DRAFT,
+  MERGE,
+  HAS_COMMENTS,
+}
 
 type DraftViewProps = {
   did: string
@@ -44,7 +52,7 @@ export default function DraftView(props: DraftViewProps) {
   let { id, author, did, sync } = props
   let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
-  let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
+  let [modalState, setModalState] = useState<ModalState>(ModalState.CLOSED)
   let upwell = documents.get(id)
   let [stackSelected, setStackSelected] = useState<boolean>(
     did === 'stack' || did === upwell.rootDraft.id
@@ -156,8 +164,14 @@ export default function DraftView(props: DraftViewProps) {
   const handleMergeClick = async () => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    if (draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) {
-      setModalOpen('merge')
+    const comments = draftInstance.comments.objects()
+
+    if (hasUnresolvedComments(comments)) {
+      setModalState(ModalState.HAS_COMMENTS)
+    }
+    // Set to MERGE if it's an unnamed draft, which brings up the "name your draft" modal
+    else if (draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) {
+      setModalState(ModalState.MERGE)
     } else {
       upwell.rootDraft = draftInstance
       documents.rtcUpwell?.updatePeers()
@@ -171,6 +185,23 @@ export default function DraftView(props: DraftViewProps) {
     documents.rtcUpwell?.updatePeers()
     goToDraft(newDraft.id)
   }
+
+  const handleCommentDestroy = async () => {
+    let upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    const comments = draftInstance.comments.objects()
+
+    Object.values(comments).forEach((c) => {
+      draftInstance.comments.resolve(c)
+      c.children.forEach((ch) => draftInstance.comments.resolve(comments[ch]))
+    })
+
+    documents.draftChanged(upwell.id, draft.id)
+    setModalState(ModalState.MERGE)
+    handleMergeClick()
+  }
+
+  const handleModalClose = () => setModalState(ModalState.CLOSED)
 
   const handleEditName = (draftName: string) => {
     const upwell = documents.get(id)
@@ -242,9 +273,21 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <InputModal
-        open={modalOpen !== undefined}
-        onSubmit={modalOpen === 'merge' ? onMerge : createDraft}
-        onClose={() => setModalOpen(undefined)}
+        open={modalState === ModalState.MERGE}
+        onSubmit={onMerge}
+        onClose={handleModalClose}
+      />
+      <InputModal
+        open={modalState === ModalState.NEW_DRAFT}
+        onSubmit={createDraft}
+        onClose={handleModalClose}
+      />
+      <ConfirmModal
+        title="Delete comments and merge?"
+        message="This draft has unresolved comments. If you merge, they won't be brought along."
+        open={modalState === ModalState.HAS_COMMENTS}
+        onSubmit={handleCommentDestroy}
+        onClose={handleModalClose}
       />
       <div id="spacer-placeholder" />
       <div
@@ -394,7 +437,7 @@ export default function DraftView(props: DraftViewProps) {
                 `}
               />
 
-              <Button onClick={() => setModalOpen('new-draft')}>
+              <Button onClick={() => setModalState(ModalState.NEW_DRAFT)}>
                 New Draft
               </Button>
             </div>
@@ -454,5 +497,11 @@ export default function DraftView(props: DraftViewProps) {
         <CommentSidebar draft={draft} id={id} />
       </div>
     </div>
+  )
+}
+
+function hasUnresolvedComments(comments: Comments): boolean {
+  return (
+    0 <= Object.values(comments).findIndex((c) => c.state === CommentState.OPEN)
   )
 }

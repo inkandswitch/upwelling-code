@@ -11,7 +11,7 @@ import DialogContent from '@mui/material/DialogContent'
 
 let documents = Documents()
 
-type Comments = {
+export type Comments = {
   [key: string]: Comment
 }
 
