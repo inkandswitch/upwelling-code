@@ -32,7 +32,7 @@ export default function ConfirmModal({
   }
 
   return (
-    <Dialog open={open} onClose={handleClose}>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs">
       <DialogTitle>{title}</DialogTitle>
       <form>
         <DialogContent>{message}</DialogContent>
