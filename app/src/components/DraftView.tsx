@@ -197,6 +197,7 @@ export default function DraftView(props: DraftViewProps) {
     })
 
     documents.draftChanged(upwell.id, draft.id)
+    documents.save(id)
     setModalState(ModalState.MERGE)
     handleMergeClick()
   }
