@@ -19,6 +19,7 @@ import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
+import ShareSelector from './ShareSelector'
 
 const log = debug('DraftView')
 
@@ -68,6 +69,7 @@ export default function DraftView(props: DraftViewProps) {
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
+  const [isShared, setIsShared] = useState<boolean>(maybeDraft.shared)
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -184,6 +186,24 @@ export default function DraftView(props: DraftViewProps) {
     upwell.archive(draft.id)
     documents.rtcUpwell?.updatePeers()
     goToDraft('stack')
+  }
+
+  const handleShareSelect = () => {
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.shared = true
+    setIsShared(true)
+    documents.save(id)
+    documents.draftChanged(upwell.id, draft.id)
+  }
+
+  const handlePrivateSelect = () => {
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    draftInstance.shared = false
+    setIsShared(false)
+    documents.save(id)
+    documents.draftChanged(upwell.id, draft.id)
   }
 
   function goToDraft(did: string) {
@@ -341,6 +361,11 @@ export default function DraftView(props: DraftViewProps) {
               >
                 Merge
               </Button>
+              <ShareSelector
+                isShared={isShared}
+                onShareSelect={handleShareSelect}
+                onPrivateSelect={handlePrivateSelect}
+              />
               <DraftMenu
                 onEditName={handleEditName}
                 onDelete={handleDeleteDraft}
