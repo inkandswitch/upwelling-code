@@ -6,20 +6,23 @@ import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
 import { useState } from 'react'
 import { Button } from './Button'
+import { getTempDraftName } from '../util'
 
 type InputModalProps = {
   onSubmit?: Function
   open: boolean
   onClose: Function
   title?: string
+  author?: string
 }
 export default function InputModal({
   onSubmit,
   open,
   onClose,
   title = 'Name your changes',
+  author = '',
 }: InputModalProps) {
-  const [text, setText] = useState('')
+  const [text, setText] = useState(getTempDraftName({ author }))
 
   const handleClose = () => {
     onClose()
@@ -47,6 +50,7 @@ export default function InputModal({
             type="text"
             fullWidth
             variant="standard"
+            value={text}
             onChange={(e) => setText(e.target.value)}
           />
         </DialogContent>

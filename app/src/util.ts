@@ -27,3 +27,13 @@ export function getYourDrafts(
 export function getAuthorHighlight(hexColor: string): string {
   return hexColor + '40'
 }
+
+type TempDraftName = {
+  date?: Date
+  author?: string
+}
+export function getTempDraftName({ date = new Date(), author }: TempDraftName) {
+  return (
+    (author ? `${author}'s ` : '') + `draft on ` + date.toLocaleDateString()
+  )
+}

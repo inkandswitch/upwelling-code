@@ -15,7 +15,7 @@ import debug from 'debug'
 import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
-import { getYourDrafts } from '../util'
+import { getTempDraftName, getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
@@ -245,7 +245,10 @@ export default function DraftView(props: DraftViewProps) {
     if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
     return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
-      ? 'Untitled'
+      ? getTempDraftName({
+          date: new Date(draftInstance.created_at),
+          author: author.name,
+        })
       : draftInstance.message
   }
 
@@ -275,11 +278,13 @@ export default function DraftView(props: DraftViewProps) {
     >
       <InputModal
         open={modalState === ModalState.MERGE}
+        author={author.name}
         onSubmit={onMerge}
         onClose={handleModalClose}
       />
       <InputModal
         open={modalState === ModalState.NEW_DRAFT}
+        author={author.name}
         onSubmit={createDraft}
         onClose={handleModalClose}
       />
