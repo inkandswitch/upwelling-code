@@ -260,9 +260,14 @@ export default function DraftView(props: DraftViewProps) {
     }
     return changes
   }
+
+  function notInADraft(draftMeta: DraftMetadata) {
+    return draftMeta.id === upwell.rootDraft.id
+  }
+
   // Hack because the params are always undefined?
   function renderDraftMessage(draftMeta: DraftMetadata) {
-    if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
+    if (notInADraft(draftMeta)) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
     return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
       ? 'Untitled'
@@ -405,11 +410,13 @@ export default function DraftView(props: DraftViewProps) {
               >
                 Merge
               </Button>
-              <ShareSelector
-                isShared={isShared}
-                onShareSelect={handleShareSelect}
-                onPrivateSelect={handlePrivateSelect}
-              />
+              {!notInADraft(draft) && (
+                <ShareSelector
+                  isShared={isShared}
+                  onShareSelect={handleShareSelect}
+                  onPrivateSelect={handlePrivateSelect}
+                />
+              )}
               <DraftMenu
                 onEditName={handleEditName}
                 onDelete={handleDeleteDraft}
