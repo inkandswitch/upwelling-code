@@ -225,7 +225,7 @@ export function DetailedOption({
         css={css`
           display: flex;
           flex-direction: row;
-          align-items: center;
+          align-items: flex-start;
         `}
       >
         {Icon ? (
