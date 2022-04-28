@@ -16,6 +16,11 @@ export function Button(props: PropsFor<typeof ThemedButton>) {
   return <ThemedButton variant="outlined" {...props} />
 }
 
+export const buttonIconStyle = css`
+  min-width: fit-content;
+  padding: 3px;
+`
+
 type ButtonType = React.ClassAttributes<HTMLButtonElement> &
   React.ButtonHTMLAttributes<HTMLButtonElement>
 

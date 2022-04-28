@@ -3,7 +3,7 @@ import { css } from '@emotion/react/macro'
 import * as React from 'react'
 import { ReactComponent as Shared } from '../components/icons/Shared.svg'
 import { ReactComponent as Private } from '../components/icons/Private.svg'
-import { IconButton } from './Button'
+import { Button, buttonIconStyle } from './Button'
 
 type Props = {
   isShared: boolean
@@ -12,26 +12,29 @@ type Props = {
 
 export default function ShareButton({ isShared, onShareSelect }: Props) {
   return isShared ? (
-    <IconButton
+    <Button
       css={css`
-        padding: 3px;
+        ${buttonIconStyle}
         &:disabled {
-          cursor: default;
+          border-color: transparent;
         }
       `}
-      icon={Shared}
+      variant="outlined"
+      aria-label="shared"
       disabled
       title="Shared draft"
-    />
+    >
+      <Shared />
+    </Button>
   ) : (
-    <IconButton
-      css={css`
-        border: 1px solid gray;
-        padding: 2px;
-      `}
-      icon={Private}
+    <Button
+      css={buttonIconStyle}
+      variant="outlined"
+      aria-label="private, make shared"
       onClick={onShareSelect}
       title="Private draft"
-    />
+    >
+      <Private />
+    </Button>
   )
 }
