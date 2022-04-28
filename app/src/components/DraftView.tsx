@@ -6,7 +6,7 @@ import Switch from '@mui/material/Switch'
 import { Upwell, DraftMetadata, Draft, Author, CommentState } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
-import { Button } from './Button'
+import { Button, buttonIconStyle } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
 import CommentSidebar, { Comments } from './CommentSidebar'
@@ -15,6 +15,7 @@ import debug from 'debug'
 import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { ReactComponent as Merge } from '../components/icons/Merge.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
@@ -243,7 +244,7 @@ export default function DraftView(props: DraftViewProps) {
     shareDraft(draftInstance)
   }
 
-  const shareDraft = (draftInstance: DraftMetadata) => {
+  const shareDraft = (draftInstance: Draft) => {
     draftInstance.shared = true
     documents.save(id)
     documents.draftChanged(upwell.id, draft.id)
@@ -421,22 +422,27 @@ export default function DraftView(props: DraftViewProps) {
                   Pending changes
                 </Button>
               )}
-              <Button
-                disabled={hasPendingChanges || stackSelected}
-                onClick={handleMergeClick}
-              >
-                Merge
-              </Button>
               {isInADraft(draft) && (
-                <ShareButton
-                  isShared={draft.shared}
-                  onShareSelect={handleShareSelect}
-                />
+                <>
+                  <ShareButton
+                    isShared={draft.shared}
+                    onShareSelect={handleShareSelect}
+                  />
+                  <Button
+                    css={buttonIconStyle}
+                    variant="outlined"
+                    aria-label="merge"
+                    disabled={hasPendingChanges || stackSelected}
+                    onClick={handleMergeClick}
+                  >
+                    <Merge />
+                  </Button>
+                  <DraftMenu
+                    onEditName={handleEditName}
+                    onDelete={handleDeleteDraft}
+                  />
+                </>
               )}
-              <DraftMenu
-                onEditName={handleEditName}
-                onDelete={handleDeleteDraft}
-              />
             </div>
           </div>
           <div
