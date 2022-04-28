@@ -223,42 +223,23 @@ export function DetailedOption({
     <Option key={option.id} value={option}>
       <div
         css={css`
-          display: flex;
-          flex-direction: row;
+          display: grid;
+          grid: auto-flow auto/36px auto;
           align-items: baseline;
         `}
       >
         {Icon ? (
           <Icon
             css={css`
-              margin: 3px 10px 0 3px;
+              align-self: center;
               ${iconStyles}
             `}
           />
         ) : null}
+        {option.message}
+        <div />
         <div>
-          {option.message}
-          <div
-            css={css`
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              align-content: space-between;
-            `}
-          >
-            {changes ? (
-              <InfoText
-                css={css`
-                  flex: 0;
-                  white-space: nowrap;
-                  text-align: left;
-                `}
-              >
-                {changes} changes
-              </InfoText>
-            ) : (
-              <div></div>
-            )}
+          {changes ? (
             <InfoText
               css={css`
                 flex: 0;
@@ -266,9 +247,20 @@ export function DetailedOption({
                 text-align: left;
               `}
             >
-              {relativeDate(new Date(option.edited_at))}
+              {changes} changes
             </InfoText>
-          </div>
+          ) : (
+            <div></div>
+          )}
+          <InfoText
+            css={css`
+              flex: 0;
+              white-space: nowrap;
+              text-align: left;
+            `}
+          >
+            {relativeDate(new Date(option.edited_at))}
+          </InfoText>
         </div>
       </div>
     </Option>
