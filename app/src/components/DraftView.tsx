@@ -444,6 +444,35 @@ export default function DraftView(props: DraftViewProps) {
                 </>
               )}
             </div>
+            <div
+              css={css`
+                display: flex;
+                align-items: center;
+              `}
+            >
+              <Contributors upwell={upwell} contributors={draft.contributors} />
+              <span>
+                <Switch
+                  inputProps={{ 'aria-label': 'show changes' }}
+                  checked={historyHeads !== false}
+                  onClick={() => {
+                    if (historyHeads) setHistoryHeads(false)
+                    else setHistoryHeads([])
+                  }}
+                />
+                {historyHeads && historyHeads.length > 0
+                  ? `showing changes from ${historyTitle}`
+                  : 'show changes '}
+              </span>
+              <DraftsHistory
+                did={draft.id}
+                goToDraft={goToDraft}
+                drafts={draftsMeta}
+                setHistorySelection={setHistorySelection}
+                id={id}
+                author={author}
+              />
+            </div>
           </div>
           <div
             css={css`
@@ -495,35 +524,6 @@ export default function DraftView(props: DraftViewProps) {
               <Button onClick={() => setModalState(ModalState.NEW_DRAFT)}>
                 New Draft
               </Button>
-            </div>
-            <div
-              css={css`
-                display: flex;
-                align-items: center;
-              `}
-            >
-              <Contributors upwell={upwell} contributors={draft.contributors} />
-              <span>
-                <Switch
-                  inputProps={{ 'aria-label': 'show changes' }}
-                  checked={historyHeads !== false}
-                  onClick={() => {
-                    if (historyHeads) setHistoryHeads(false)
-                    else setHistoryHeads([])
-                  }}
-                />
-                {historyHeads && historyHeads.length > 0
-                  ? `showing changes from ${historyTitle}`
-                  : 'show changes '}
-              </span>
-              <DraftsHistory
-                did={draft.id}
-                goToDraft={goToDraft}
-                drafts={draftsMeta}
-                setHistorySelection={setHistorySelection}
-                id={id}
-                author={author}
-              />
             </div>
           </div>
         </div>
