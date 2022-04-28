@@ -283,7 +283,7 @@ export default function DraftView(props: DraftViewProps) {
     if (!isInADraft(draftMeta)) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
     return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
-      ? 'Untitled'
+      ? 'Untitled draft'
       : draftInstance.message
   }
 
