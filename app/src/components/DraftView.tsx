@@ -19,7 +19,7 @@ import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
-import ShareSelector from './ShareSelector'
+import ShareButton from './ShareButton'
 import ConfirmModal from './ConfirmModal'
 
 const log = debug('DraftView')
@@ -32,6 +32,7 @@ export enum ModalState {
   NEW_DRAFT,
   MERGE,
   HAS_COMMENTS,
+  NAME_BEFORE_SHARE,
 }
 
 type DraftViewProps = {
@@ -77,7 +78,6 @@ export default function DraftView(props: DraftViewProps) {
   let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
     draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
   )
-  const [isShared, setIsShared] = useState<boolean>(maybeDraft.shared)
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -223,17 +223,28 @@ export default function DraftView(props: DraftViewProps) {
   const handleShareSelect = () => {
     const upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    draftInstance.shared = true
-    setIsShared(true)
-    documents.save(id)
-    documents.draftChanged(upwell.id, draft.id)
+
+    if (
+      !draftInstance.message ||
+      draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
+    ) {
+      setModalState(ModalState.NAME_BEFORE_SHARE)
+      return
+    }
+
+    shareDraft(draftInstance)
   }
 
-  const handlePrivateSelect = () => {
+  const handleFinishSharing = (draftName: string) => {
+    handleEditName(draftName)
+
     const upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    draftInstance.shared = false
-    setIsShared(false)
+    shareDraft(draftInstance)
+  }
+
+  const shareDraft = (draftInstance: DraftMetadata) => {
+    draftInstance.shared = true
     documents.save(id)
     documents.draftChanged(upwell.id, draft.id)
   }
@@ -307,6 +318,12 @@ export default function DraftView(props: DraftViewProps) {
         open={modalState === ModalState.NEW_DRAFT}
         onSubmit={createDraft}
         onClose={handleModalClose}
+      />
+      <InputModal
+        open={modalState === ModalState.NAME_BEFORE_SHARE}
+        onSubmit={handleFinishSharing}
+        onClose={handleModalClose}
+        title="Before sharing, name this layer:"
       />
       <ConfirmModal
         title="Delete comments and merge?"
@@ -411,10 +428,9 @@ export default function DraftView(props: DraftViewProps) {
                 Merge
               </Button>
               {isInADraft(draft) && (
-                <ShareSelector
-                  isShared={isShared}
+                <ShareButton
+                  isShared={draft.shared}
                   onShareSelect={handleShareSelect}
-                  onPrivateSelect={handlePrivateSelect}
                 />
               )}
               <DraftMenu
