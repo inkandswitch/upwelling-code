@@ -225,14 +225,13 @@ export function DetailedOption({
         css={css`
           display: flex;
           flex-direction: row;
-          align-items: flex-start;
+          align-items: baseline;
         `}
       >
         {Icon ? (
           <Icon
             css={css`
-              margin-left: 3px;
-              margin-right: 10px;
+              margin: 3px 10px 0 3px;
               ${iconStyles}
             `}
           />
