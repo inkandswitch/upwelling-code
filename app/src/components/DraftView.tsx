@@ -19,6 +19,7 @@ import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
+import ShareButton from './ShareButton'
 import ConfirmModal from './ConfirmModal'
 
 const log = debug('DraftView')
@@ -31,6 +32,7 @@ export enum ModalState {
   NEW_DRAFT,
   MERGE,
   HAS_COMMENTS,
+  NAME_BEFORE_SHARE,
 }
 
 type DraftViewProps = {
@@ -218,6 +220,35 @@ export default function DraftView(props: DraftViewProps) {
     goToDraft('stack')
   }
 
+  const handleShareSelect = () => {
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+
+    if (
+      !draftInstance.message ||
+      draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
+    ) {
+      setModalState(ModalState.NAME_BEFORE_SHARE)
+      return
+    }
+
+    shareDraft(draftInstance)
+  }
+
+  const handleFinishSharing = (draftName: string) => {
+    handleEditName(draftName)
+
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    shareDraft(draftInstance)
+  }
+
+  const shareDraft = (draftInstance: DraftMetadata) => {
+    draftInstance.shared = true
+    documents.save(id)
+    documents.draftChanged(upwell.id, draft.id)
+  }
+
   function goToDraft(did: string) {
     documents
       .save(id)
@@ -240,9 +271,14 @@ export default function DraftView(props: DraftViewProps) {
     }
     return changes
   }
+
+  function isInADraft(draftMeta: DraftMetadata) {
+    return draftMeta.id !== upwell.rootDraft.id
+  }
+
   // Hack because the params are always undefined?
   function renderDraftMessage(draftMeta: DraftMetadata) {
-    if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
+    if (!isInADraft(draftMeta)) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
     return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
       ? 'Untitled'
@@ -282,6 +318,12 @@ export default function DraftView(props: DraftViewProps) {
         open={modalState === ModalState.NEW_DRAFT}
         onSubmit={createDraft}
         onClose={handleModalClose}
+      />
+      <InputModal
+        open={modalState === ModalState.NAME_BEFORE_SHARE}
+        onSubmit={handleFinishSharing}
+        onClose={handleModalClose}
+        title="Before sharing, name this layer:"
       />
       <ConfirmModal
         title="Delete comments and merge?"
@@ -385,6 +427,12 @@ export default function DraftView(props: DraftViewProps) {
               >
                 Merge
               </Button>
+              {isInADraft(draft) && (
+                <ShareButton
+                  isShared={draft.shared}
+                  onShareSelect={handleShareSelect}
+                />
+              )}
               <DraftMenu
                 onEditName={handleEditName}
                 onDelete={handleDeleteDraft}

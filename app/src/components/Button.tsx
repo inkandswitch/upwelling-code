@@ -79,8 +79,6 @@ export function IconButton({
     >
       <Icon
         css={css`
-          max-height: 20px;
-          max-width: 20px;
           stroke: gray;
         `}
       />
