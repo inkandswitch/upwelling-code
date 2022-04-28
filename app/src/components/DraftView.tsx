@@ -15,6 +15,7 @@ import debug from 'debug'
 import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { ReactComponent as OffsetPancakes } from '../components/icons/OffsetPancakes.svg'
 import { ReactComponent as Merge } from '../components/icons/Merge.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
@@ -297,6 +298,7 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   const draftsMeta = drafts.map((d) => d.materialize())
+  const showChangesSince = historyHeads && historyHeads.length > 0
 
   return (
     <div
@@ -448,10 +450,18 @@ export default function DraftView(props: DraftViewProps) {
               css={css`
                 display: flex;
                 align-items: center;
+                position: relative;
               `}
             >
               <Contributors upwell={upwell} contributors={draft.contributors} />
-              <span>
+              <div
+                id="changes-and-history"
+                css={css`
+                  display: flex;
+                  flex-direction: row;
+                  align-items: center;
+                `}
+              >
                 <Switch
                   inputProps={{ 'aria-label': 'show changes' }}
                   checked={historyHeads !== false}
@@ -460,18 +470,31 @@ export default function DraftView(props: DraftViewProps) {
                     else setHistoryHeads([])
                   }}
                 />
-                {historyHeads && historyHeads.length > 0
-                  ? `showing changes from ${historyTitle}`
-                  : 'show changes '}
-              </span>
-              <DraftsHistory
-                did={draft.id}
-                goToDraft={goToDraft}
-                drafts={draftsMeta}
-                setHistorySelection={setHistorySelection}
-                id={id}
-                author={author}
-              />
+                {showChangesSince ? 'Changes since' : 'Show changes '}
+                <DraftsHistory
+                  did={draft.id}
+                  goToDraft={goToDraft}
+                  drafts={draftsMeta}
+                  setHistorySelection={setHistorySelection}
+                  id={id}
+                  author={author}
+                />
+              </div>
+              {showChangesSince ? (
+                <div
+                  css={css`
+                    position: absolute;
+                    right: 30px;
+                    top: 38px;
+                    display: flex;
+                    align-items: center;
+                    column-gap: 4px;
+                  `}
+                >
+                  <OffsetPancakes />
+                  {historyTitle}
+                </div>
+              ) : null}
             </div>
           </div>
           <div
