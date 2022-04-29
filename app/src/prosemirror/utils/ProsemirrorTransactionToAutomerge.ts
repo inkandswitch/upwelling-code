@@ -1,6 +1,5 @@
 import { Draft } from 'api'
 import { ChangeSet } from 'automerge-wasm-pack'
-import { Doc } from 'prettier'
 import { EditorState, Transaction } from 'prosemirror-state'
 import {
   AddMarkStep,
