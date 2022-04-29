@@ -352,7 +352,8 @@ export default function DraftView(props: DraftViewProps) {
             display: flex;
             flex-direction: column;
             row-gap: 10px;
-            padding: 10px 0px;
+            padding-top: 10px;
+            padding-bottom: 30px;
           `}
         >
           <div
