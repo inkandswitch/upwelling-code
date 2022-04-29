@@ -57,15 +57,17 @@ export default function DraftsHistory({ id, did, setHistorySelection }: Props) {
         }}
         renderValue={renderValue}
       >
-        <DetailedOption
-          key={'stack'}
-          option={{
-            ...upwell.rootDraft.materialize(),
-            message: upwell.rootDraft.title || 'Untitled Document',
-          }}
-          upwell={upwell}
-          icon={PancakeSmall}
-        />
+        {did !== upwell.rootDraft.id && (
+          <DetailedOption
+            key={'stack'}
+            option={{
+              ...upwell.rootDraft.materialize(),
+              message: upwell.get(did).message,
+            }}
+            upwell={upwell}
+            icon={PancakeSmall}
+          />
+        )}
         {history
           .filter((d) => d.message !== Upwell.SPECIAL_ROOT_DOCUMENT)
           .map((d) => {
