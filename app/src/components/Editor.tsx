@@ -250,6 +250,7 @@ export function Editor(props: Props) {
         ${textCSS}
         caret-color: ${color || 'auto'};
         overflow-wrap: break-word;
+        position: relative; /* for change bars */
       `}
     />
   )
