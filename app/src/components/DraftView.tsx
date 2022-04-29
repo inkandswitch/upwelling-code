@@ -173,7 +173,7 @@ export default function DraftView(props: DraftViewProps) {
       setModalState(ModalState.HAS_COMMENTS)
     }
     // Set to MERGE if it's an unnamed draft, which brings up the "name your draft" modal
-    else if (draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) {
+    else if (draftInstance.message === 'Untitled draft') {
       setModalState(ModalState.MERGE)
     } else {
       upwell.rootDraft = draftInstance
