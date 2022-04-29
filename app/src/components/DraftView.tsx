@@ -265,13 +265,8 @@ export default function DraftView(props: DraftViewProps) {
 
   function getChanges(draftMeta: DraftMetadata) {
     let draftInstance = upwell.get(draftMeta.id)
-    let changes =
-      upwell.changes.get(draftMeta.id) ||
-      upwell.getChangesFromRoot(draftInstance)
-    if (draftMeta.id === upwell.rootDraft.id) {
-      changes = 0
-    }
-    return changes
+    if (draftMeta.id === upwell.rootDraft.id) return 0
+    return upwell.getChangesFromRoot(draftInstance)
   }
 
   function isInADraft(draftMeta: DraftMetadata) {
