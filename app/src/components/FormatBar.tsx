@@ -22,10 +22,10 @@ export default function FormatBar() {
           margin-left: -12px;
         `}
       >
-        <IconButton aria-label="bold">
+        <IconButton aria-label="bold" title="ctrl-b or cmd+b">
           <Bold />
         </IconButton>
-        <IconButton aria-label="italic">
+        <IconButton aria-label="italic" title="ctrl-i or cmd-i">
           <Italic />
         </IconButton>
       </div>
