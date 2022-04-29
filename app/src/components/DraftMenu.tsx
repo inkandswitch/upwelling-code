@@ -8,7 +8,7 @@ import InputModal from './InputModal'
 type Props = {
   onShare?: Function
   onEditName?: Function
-  onDelete?: Function
+  onDelete?: any
 }
 
 export default function DraftMenu({ onShare, onEditName, onDelete }: Props) {
