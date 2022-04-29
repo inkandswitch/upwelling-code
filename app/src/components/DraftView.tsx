@@ -272,6 +272,19 @@ export default function DraftView(props: DraftViewProps) {
     return draftMeta.id !== upwell.rootDraft.id
   }
 
+  function handleCopyLink() {
+    let url = document.location.href
+
+    navigator.clipboard.writeText(url).then(
+      function () {
+        console.log('Copied!')
+      },
+      function () {
+        console.log('Copy error')
+      }
+    )
+  }
+
   // Hack because the params are always undefined?
   function renderDraftMessage(draftMeta: DraftMetadata) {
     if (!isInADraft(draftMeta)) return '(not in a draft)'
@@ -432,6 +445,7 @@ export default function DraftView(props: DraftViewProps) {
                     <Merge />
                   </Button>
                   <DraftMenu
+                    onShare={handleCopyLink}
                     onEditName={handleEditName}
                     onDelete={handleDeleteDraft}
                   />
