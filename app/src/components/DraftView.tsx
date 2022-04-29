@@ -282,9 +282,7 @@ export default function DraftView(props: DraftViewProps) {
   function renderDraftMessage(draftMeta: DraftMetadata) {
     if (!isInADraft(draftMeta)) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
-    return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
-      ? 'Untitled draft'
-      : draftInstance.message
+    return draftInstance.message
   }
 
   const setHistorySelection = (d: DraftMetadata) => {
