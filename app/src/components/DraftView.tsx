@@ -112,7 +112,6 @@ export default function DraftView(props: DraftViewProps) {
       if (!mounted) {
         setMounted(true)
       }
-      console.log('subscribe called')
       window.requestIdleCallback(() => {
         sync()
       })
@@ -544,10 +543,8 @@ export default function DraftView(props: DraftViewProps) {
           </div>
         </div>
         <EditReviewView
-          did={draft.id}
-          visible={[stackSelected ? upwell.rootDraft.id : draft.id]}
+          visible={stackSelected ? upwell.rootDraft.id : draft.id}
           id={id}
-          author={author}
           editable={!stackSelected}
           historyHeads={historyHeads}
           onClick={handleOnClickEditor}
