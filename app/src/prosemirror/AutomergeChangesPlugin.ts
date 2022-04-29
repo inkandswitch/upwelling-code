@@ -11,22 +11,57 @@ let documents = Documents()!
 
 export const automergeChangesKey = new PluginKey('automergeChanges')
 
-function changeSetToInlineDecorations(changeSet: ChangeSet, draft: Draft) {
-  return changeSet.add.map((change) => {
-    let { from, to } = automergeToProsemirror(change, draft)
-    let id = change.actor.slice(0, 32)
-    let color = documents.upwell!.getAuthorColor(id)
-    return Decoration.inline(from, to, {
-      style: `background: ${getAuthorHighlight(color)}`,
-    })
-  })
+function getInlineDecoration(from: number, to: number, authorId: string) {
+  let color = documents.upwell!.getAuthorColor(authorId)
+  return Decoration.inline(
+    from,
+    to,
+    { style: `background: ${getAuthorHighlight(color)}` },
+    { author: authorId }
+  )
 }
 
-function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
-  return changeSet.add.map((change) => {
+function getInlineDecorations(
+  changeSet: ChangeSet,
+  draft: Draft,
+  doc: Node,
+  decorations: DecorationSet
+): DecorationSet {
+  changeSet.add.forEach((change) => {
+    let { from, to } = automergeToProsemirror(change, draft)
+    let authorId = change.actor.slice(0, 32)
+
+    let overlap = decorations.find(from, to, (spec) => spec.author === authorId)
+    if (overlap.length > 0) {
+      if (overlap[0].from < from && overlap[0].to > to) {
+        return
+      } else if (overlap[0].to === from) {
+        let newDeco = getInlineDecoration(overlap[0].from, to, authorId)
+        decorations = decorations.remove([overlap[0]]).add(doc, [newDeco])
+      } else if (to === overlap[0].from) {
+        let newDeco = getInlineDecoration(from, overlap[0].to, authorId)
+        decorations = decorations.remove([overlap[0]]).add(doc, [newDeco])
+      } else {
+      }
+    } else {
+      let deco = getInlineDecoration(from, to, authorId)
+      decorations = decorations.add(doc, [deco])
+    }
+  })
+
+  return decorations
+}
+
+function getMarginDecorations(
+  changeSet: ChangeSet,
+  draft: Draft,
+  doc: Node,
+  decorations: DecorationSet
+): DecorationSet {
+  changeSet.add.forEach((change) => {
     let { from, to } = automergeToProsemirror(change, draft)
     if (draft.text[change.start] === '\uFFFC') from += 1
-    return Decoration.widget(from, (view, getPos) => {
+    let deco = Decoration.widget(from, (view, getPos) => {
       let sidebarThing = document.createElement('div')
       sidebarThing.style.position = 'absolute'
       let fromCoords = view.coordsAtPos(from)
@@ -49,13 +84,18 @@ function changeSetToMarginDecorations(changeSet: ChangeSet, draft: Draft) {
       )
       return sidebarThing
     })
+    decorations = decorations.add(doc, [deco])
   })
+
+  return decorations
 }
 
 function getOldChanges(
   editableDraft: Draft,
   heads: string[],
-  baseDraft: Draft
+  baseDraft: Draft,
+  doc: Node,
+  decorations: DecorationSet
 ) {
   let obj = editableDraft.doc.get('_root', 'text', heads)
 
@@ -64,48 +104,66 @@ function getOldChanges(
       let history = editableDraft.doc.attribute2(obj[1], heads, [
         baseDraft.doc.getHeads(),
       ])
-      let before = changeSetToInlineDecorations(history[0], editableDraft)
-      let beforeMargins = changeSetToMarginDecorations(
+
+      decorations = getInlineDecorations(
         history[0],
-        editableDraft
+        editableDraft,
+        doc,
+        decorations
       )
-      return before.concat(beforeMargins)
+      decorations = getMarginDecorations(
+        history[0],
+        editableDraft,
+        doc,
+        decorations
+      )
     }
   }
-  return []
+  return decorations
 }
 
-function getNewChanges(editableDraft: Draft, baseDraft: Draft) {
+function getNewChanges(
+  editableDraft: Draft,
+  baseDraft: Draft,
+  doc: Node,
+  decorations: DecorationSet
+): DecorationSet {
   let latestObj = editableDraft.doc.get(
     '_root',
     'text',
     baseDraft.doc.getHeads()
   )
+
   if (latestObj && latestObj[0] === 'text') {
     let newHistory = editableDraft.doc.attribute2(
       latestObj[1],
       baseDraft.doc.getHeads(),
       [editableDraft.doc.getHeads()]
     )
-    let after = changeSetToInlineDecorations(newHistory[0], editableDraft)
+    let after = getInlineDecorations(
+      newHistory[0],
+      editableDraft,
+      doc,
+      decorations
+    )
     return after
   }
-  return []
+  return decorations
 }
 
 function getAllChanges(
   upwell: Upwell,
   baseDraft: Draft,
   draft: Draft,
-  doc: Node
+  doc: Node,
+  decorations: DecorationSet
 ) {
   let { attribution } = upwell.mergeWithEdits(
     { id: draft.authorId, name: '' },
     baseDraft,
     draft
   )
-  let decorations = changeSetToInlineDecorations(attribution[0], draft)
-  return DecorationSet.create(doc, decorations)
+  return getInlineDecorations(attribution[0], draft, doc, decorations)
 }
 
 export const automergeChangesPlugin: (
@@ -125,7 +183,8 @@ export const automergeChangesPlugin: (
             upwell,
             baseDraft,
             editableDraft,
-            state.doc
+            state.doc,
+            DecorationSet.empty
           ),
         }
       },
@@ -144,35 +203,35 @@ export const automergeChangesPlugin: (
         }
 
         if (heads) {
-          console.log('i have heads', heads)
           prev.heads = automergeChanges.heads
 
-          let oldChanges = getOldChanges(editableDraft, heads, baseDraft)
-          let newChanges = getNewChanges(editableDraft, baseDraft)
+          let decorations = DecorationSet.empty
+          decorations = getOldChanges(
+            editableDraft,
+            heads,
+            baseDraft,
+            tr.doc,
+            decorations
+          )
+          decorations = getNewChanges(
+            editableDraft,
+            baseDraft,
+            tr.doc,
+            decorations
+          )
 
-          let set = DecorationSet.create(tr.doc, [])
-          prev.decorations = set.add(tr.doc, oldChanges).add(tr.doc, newChanges)
+          prev.decorations = decorations
         }
 
         if (!heads && changeSet) {
-          let newDecos = changeSetToInlineDecorations(
-            automergeChanges.changeSet[0],
-            editableDraft
+          prev.decorations = getInlineDecorations(
+            changeSet[0],
+            editableDraft,
+            tr.doc,
+            prev.decorations.map(tr.mapping, tr.doc)
           )
-          let decorations: DecorationSet = prev.decorations
-          prev.decorations = decorations
-            .map(tr.mapping, tr.doc)
-            .add(tr.doc, newDecos)
         } else if (tr.steps.length > 0) {
           prev.decorations = prev.decorations.map(tr.mapping, tr.doc)
-          /*
-          prev.decorations = getAllChanges(
-            upwell,
-            baseDraft,
-            editableDraft,
-            newState.doc
-          )
-          */
         }
         return prev
       },
