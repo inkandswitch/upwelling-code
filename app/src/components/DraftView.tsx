@@ -54,7 +54,6 @@ const pancakeCSS = `
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, sync } = props
-  let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
   let [modalState, setModalState] = useState<ModalState>(ModalState.CLOSED)
   let upwell = documents.get(id)
@@ -107,11 +106,9 @@ export default function DraftView(props: DraftViewProps) {
       let instance = upwell.get(draft.id)
       if (local) {
         setDraft(instance.materialize())
+        console.log('got local change')
       }
       upwell.getChangesFromRoot(instance)
-      if (!mounted) {
-        setMounted(true)
-      }
       window.requestIdleCallback(() => {
         sync()
       })
@@ -119,7 +116,7 @@ export default function DraftView(props: DraftViewProps) {
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, sync, mounted])
+  }, [id, draft.parent_id, draft.id, sync])
 
   // every time the draft id changes
   useEffect(() => {
@@ -258,7 +255,11 @@ export default function DraftView(props: DraftViewProps) {
       })
       .finally(() => {
         const url = `/${id}/${did}`
-        setLocation(url)
+        if (did === 'stack') {
+          window.location.href = url
+        } else {
+          setLocation(url)
+        }
       })
   }
 
