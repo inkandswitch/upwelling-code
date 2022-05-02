@@ -5,12 +5,8 @@ import init, {
   create,
   Value,
   Heads,
-  SyncMessage,
-  SyncState,
-  decodeChange,
-  ChangeSet,
 } from 'automerge-wasm-pack'
-import { Author, AuthorId } from './Upwell'
+import { Upwell, Author, AuthorId } from './Upwell'
 import { Comments, createAuthorId, CommentState } from '.'
 
 export async function loadForTheFirstTimeLoL() {
@@ -67,7 +63,7 @@ export class Draft {
   comments: Comments
   _heads?: Heads = []
   _textCache?: string
-  subscriber: Subscriber = () => {}
+  subscriber: Subscriber = () => { }
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id
@@ -134,7 +130,9 @@ export class Draft {
   }
 
   get message(): string {
-    return this._getValue('message') as string
+    let msg = this._getValue('message') as string
+    if (msg.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) return 'Untitled draft'
+    else return msg
   }
 
   set message(value: string) {

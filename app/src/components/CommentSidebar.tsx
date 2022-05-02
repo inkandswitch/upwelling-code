@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useState } from 'react'
+import React, { MouseEventHandler, useState } from 'react'
 import { DraftMetadata, Comment, CommentState } from 'api'
 import Documents from '../Documents'
 import { Contributor } from './Contributors'
@@ -11,11 +11,56 @@ import DialogContent from '@mui/material/DialogContent'
 
 let documents = Documents()
 
-type Comments = {
+export type Comments = {
   [key: string]: Comment
 }
 
-type CommentViewProps = {
+type CommentViewProps = CommentThreadProps & {
+  onReplyClick?: MouseEventHandler<HTMLButtonElement>
+}
+
+export function CommentView(props: CommentViewProps) {
+  let { id, comment, comments, draft, level, onReplyClick } = props
+  let upwell = documents.get(id)
+  const [isOpen, setIsOpen] = useState(comment.state === CommentState.OPEN)
+
+  let resolveComment = () => {
+    let upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+
+    setIsOpen(false)
+    draftInstance.comments.resolve(comment)
+    comment.children.map((cid) => draftInstance.comments.resolve(comments[cid]))
+    documents.draftChanged(upwell.id, draft.id)
+    documents.save(id)
+  }
+  if (!isOpen) return null
+
+  const showReplyButton = !comment.parentId && onReplyClick
+
+  return (
+    <CommentBox
+      level={level}
+      authorColor={upwell.getAuthorColor(comment.author)}
+      authorName={upwell.getAuthorName(comment.author)}
+      buttons={
+        <>
+          {' '}
+          {!comment.parentId && (
+            <Button color="warning" onClick={resolveComment}>
+              Resolve
+            </Button>
+          )}
+          {showReplyButton && <Button onClick={onReplyClick}>Reply</Button>}
+        </>
+      }
+    >
+      {comment.message}
+    </CommentBox>
+  )
+}
+
+type CommentThreadProps = {
   id: string
   draft: DraftMetadata
   comment: Comment
@@ -24,128 +69,76 @@ type CommentViewProps = {
   level: number
 }
 
-export function CommentView(props: CommentViewProps) {
-  let { id, comment, draft, level } = props
-  let upwell = documents.get(id)
-  let authorName = upwell.getAuthorName(comment.author)
-  const [isOpen, setIsOpen] = useState(comment.state === CommentState.OPEN)
+const CommentThread = (props: CommentThreadProps) => {
+  const { comment, comments, id, draft } = props
   const [showReply, setShowReply] = useState(false)
   const [reply, setReply] = useState('')
+  const upwell = documents.get(id)
 
-  let resolveComment = () => {
-    let upwell = documents.get(id)
-    let draftInstance = upwell.get(draft.id)
-    draftInstance.comments.resolve(comment)
-    documents.draftChanged(upwell.id, draft.id)
-    setIsOpen(false)
+  const handleReplyClick = () => {
+    setShowReply(true)
   }
-  if (!isOpen) return null
 
   const handleReply = (e: any) => {
     e.preventDefault() // stop page reload
 
-    const upwell = documents.get(id)
     const draftInstance = upwell.get(draft.id)
-    draftInstance.comments.addChild(
-      reply,
-      documents.author.id,
-      props.comment.id
-    )
+    draftInstance.comments.addChild(reply, documents.author.id, comment.id)
     documents.draftChanged(upwell.id, draft.id)
+    documents.save(id)
 
     setReply('')
     setShowReply(false)
   }
 
   return (
-    <div
-      css={css`
-        display: flex;
-        flex-direction: column;
-        background-color: white;
-        color: black;
-        border-radius: 3px;
-        padding: 10px;
-        margin-left: ${20 * level}px;
-      `}
-    >
-      <div
-        css={css`
-          display: flex;
-          align-items: center;
-          column-gap: 10px;
-          align-items: baseline;
-          font-size: 0.9em;
-          line-height: 1.2em;
-        `}
-      >
-        <Contributor
-          authorColor={upwell.getAuthorColor(comment.author)}
-          name={authorName}
+    <>
+      <CommentView {...props} onReplyClick={handleReplyClick} />
+      {comment.children?.map((cid) => (
+        <CommentView
+          key={`thread-${cid}`}
+          {...props}
+          comment={comments[cid]}
+          level={1}
         />
-        <div
-          css={css`
-            padding: 10px 0;
-          `}
-        >
-          {comment.message}
-        </div>
-      </div>
-      <div
-        css={css`
-          text-align: right;
-          padding-top: 5px;
-        `}
-      >
-        <Button color="warning" onClick={resolveComment}>
-          Resolve
-        </Button>
-        <Button onClick={() => setShowReply(true)}>Reply</Button>
-      </div>
+      ))}
       {showReply && (
-        <form id="comment-area">
-          <DialogContent>
-            <TextField
-              autoFocus
-              id="comment-input"
-              label="Comment"
-              type="textarea"
-              fullWidth
-              variant="standard"
-              onChange={(e) => setReply(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={() => setShowReply(false)}
+        <CommentBox level={1}>
+          <form id="comment-area">
+            <DialogContent
+              css={css`
+                padding-left: 0;
+                padding-right: 0;
+              `}
             >
-              Cancel
-            </Button>
-            <Button variant="outlined" onClick={handleReply} type="submit">
-              Reply
-            </Button>
-          </DialogActions>
-        </form>
+              <TextField
+                autoFocus
+                id="comment-input"
+                label="Comment"
+                type="textarea"
+                fullWidth
+                variant="standard"
+                onChange={(e) => setReply(e.target.value)}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setShowReply(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="outlined" onClick={handleReply} type="submit">
+                Reply
+              </Button>
+            </DialogActions>
+          </form>
+        </CommentBox>
       )}
-    </div>
+    </>
   )
 }
-
-const CommentThread = (props: CommentViewProps) => (
-  <>
-    <CommentView {...props} />
-    {props.comment.children?.map((cid) => (
-      <CommentThread
-        key={`thread-${cid}`}
-        {...props}
-        comment={props.comments[cid]}
-        level={props.level + 1}
-      />
-    ))}
-  </>
-)
 
 type CommentSidebarProps = {
   draft: DraftMetadata
@@ -198,6 +191,70 @@ export default function CommentSidebar(props: CommentSidebarProps) {
           />
         )
       })}
+    </div>
+  )
+}
+
+type CommentBoxProps = {
+  children: any
+  buttons?: any
+  level: number
+  authorName?: string
+  authorColor?: string
+}
+
+const CommentBox = ({
+  children,
+  buttons,
+  level,
+  authorName,
+  authorColor,
+}: CommentBoxProps) => {
+  return (
+    <div
+      css={css`
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        color: black;
+        border-radius: 3px;
+        padding: 10px;
+        margin-left: ${20 * level}px;
+      `}
+    >
+      {authorColor && authorName ? (
+        <div
+          css={css`
+            display: flex;
+            align-items: center;
+            column-gap: 10px;
+            align-items: baseline;
+            font-size: 0.9em;
+            line-height: 1.2em;
+          `}
+        >
+          <Contributor authorColor={authorColor} name={authorName} />
+          <div
+            css={css`
+              padding: 10px 0;
+            `}
+          >
+            {children}
+          </div>
+        </div>
+      ) : (
+        children
+      )}
+      {buttons && (
+        <div
+          css={css`
+            text-align: right;
+            padding-top: 5px;
+          `}
+        >
+          {buttons}
+        </div>
+      )}
     </div>
   )
 }

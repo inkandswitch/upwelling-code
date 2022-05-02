@@ -2,7 +2,6 @@
 import { css } from '@emotion/react/macro'
 import React from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
-import { Author } from 'api'
 import { Editor } from './Editor'
 import Documents from '../Documents'
 
@@ -14,10 +13,8 @@ let documents = Documents()
 type Props = {
   id: string
   editable: boolean
-  did: string
-  visible: string[]
+  visible: string
   historyHeads: string[] | false
-  author: Author
   onClick: React.MouseEventHandler<HTMLDivElement>
 }
 
@@ -33,13 +30,12 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 export function EditReviewView(props: Props) {
-  const { id, editable, historyHeads, visible, author, onClick } = props
+  const { id, editable, historyHeads, visible, onClick } = props
   //  let [text, setText] = useState<string | undefined>()
   let upwell = documents.get(id)
-  let { did } = props
 
   let backTheBackUp = async () => {
-    let draft = upwell.get(did)
+    let draft = upwell.get(props.visible)
     let changes = draft.doc.getChanges([])
     let oldIsNewAgain = upwell.createDraft(`${draft.message} (recovered)`)
     oldIsNewAgain.doc.applyChanges(changes.slice(0, changes.length - 1))
@@ -51,10 +47,9 @@ export function EditReviewView(props: Props) {
     <ErrorBoundary FallbackComponent={ErrorFallback} onReset={backTheBackUp}>
       <Editor
         upwellId={upwell.id}
-        author={author}
         editable={editable}
         historyHeads={historyHeads}
-        editableDraftId={visible[0]}
+        editableDraftId={visible}
       ></Editor>
     </ErrorBoundary>
   )

@@ -66,7 +66,6 @@ function getMarginDecorations(
       sidebarThing.style.position = 'absolute'
       let fromCoords = view.coordsAtPos(from)
       let toCoords = view.coordsAtPos(to)
-      sidebarThing.style.top = `${fromCoords.top}px`
       sidebarThing.style.height = `${toCoords.bottom - fromCoords.top}px`
       sidebarThing.style.left = `${
         view.dom.clientLeft +
@@ -75,13 +74,16 @@ function getMarginDecorations(
             .getComputedStyle(view.dom, null)
             .getPropertyValue('padding-left')
         ) -
-        5
+        12
       }px`
       sidebarThing.style.width = '3px'
       sidebarThing.style.borderRadius = '3px'
-      sidebarThing.style.background = documents.upwell!.getAuthorColor(
-        change.actor.slice(0, 32)
-      )
+      // keeping this around because it's cool. You can show the change heatmap with author colors:
+      // sidebarThing.style.background = documents.upwell!.getAuthorColor(
+      // change.actor.slice(0, 32)
+      // )
+      sidebarThing.style.background = '#0000003E'
+      sidebarThing.title = 'changes'
       return sidebarThing
     })
     decorations = decorations.add(doc, [deco])
@@ -203,6 +205,7 @@ export const automergeChangesPlugin: (
         }
 
         if (heads) {
+          console.log('i have heads', heads)
           prev.heads = automergeChanges.heads
 
           let decorations = DecorationSet.empty

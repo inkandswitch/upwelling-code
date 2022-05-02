@@ -1,25 +1,23 @@
 import * as React from 'react'
-import TextField from '@mui/material/TextField'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
-import { useState } from 'react'
 import { Button } from './Button'
 
-type InputModalProps = {
+type ConfirmModalProps = {
   onSubmit?: Function
   open: boolean
   onClose: Function
   title?: string
+  message?: string
 }
-export default function InputModal({
+export default function ConfirmModal({
   onSubmit,
   open,
   onClose,
   title = 'Name your changes',
-}: InputModalProps) {
-  const [text, setText] = useState('')
-
+  message = '',
+}: ConfirmModalProps) {
   const handleClose = () => {
     onClose()
   }
@@ -28,26 +26,14 @@ export default function InputModal({
     if (!onSubmit) {
       throw new Error('Pass onSubmit to modal. Could not find function')
     }
-    if (text.length) {
-      onSubmit(text)
-      onClose()
-    }
+    onSubmit()
+    onClose()
   }
 
   return (
-    <Dialog open={open} onClose={handleClose}>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs">
       <form>
-        <DialogContent>
-          <TextField
-            autoFocus
-            id="draft-name-input"
-            label="Draft name"
-            type="text"
-            fullWidth
-            variant="standard"
-            onChange={(e) => setText(e.target.value)}
-          />
-        </DialogContent>
+        <DialogContent>{message}</DialogContent>
         <DialogActions>
           <Button variant="outlined" color="error" onClick={handleClose}>
             Cancel

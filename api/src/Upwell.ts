@@ -82,8 +82,10 @@ export class Upwell {
     this.metadata.addToHistory(draft.id)
     this.metadata.archive(draft.id)
 
-    for (let draft of this.drafts()) {
-      this.updateToRoot(draft)
+    for (let d of this.drafts()) {
+      if (d.id !== this.rootDraft.id && draft.id !== d.id) {
+        this.updateToRoot(draft)
+      }
     }
   }
 

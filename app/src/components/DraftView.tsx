@@ -3,27 +3,39 @@ import { css } from '@emotion/react/macro'
 import React, { useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
-import { Upwell, DraftMetadata, Draft, Author } from 'api'
+import { Upwell, DraftMetadata, Draft, Author, CommentState } from 'api'
 import Documents from '../Documents'
 import { EditReviewView } from './EditReview'
-import { Button } from './Button'
+import { Button, buttonIconStyle } from './Button'
 import Input from './Input'
 import DraftsHistory from './DraftsHistory'
-import CommentSidebar from './CommentSidebar'
+import CommentSidebar, { Comments } from './CommentSidebar'
 import Contributors from './Contributors'
 import debug from 'debug'
 import Select, { DetailedOption } from './Select'
 import { ReactComponent as Pancake } from '../components/icons/Pancake.svg'
 import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { ReactComponent as OffsetPancakes } from '../components/icons/OffsetPancakes.svg'
+import { ReactComponent as Merge } from '../components/icons/Merge.svg'
 import { getYourDrafts } from '../util'
 import InputModal from './InputModal'
 import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
+import ShareButton from './ShareButton'
+import ConfirmModal from './ConfirmModal'
 
 const log = debug('DraftView')
 
 const blue = '#0083A3'
 let documents = Documents()
+
+export enum ModalState {
+  CLOSED,
+  NEW_DRAFT,
+  MERGE,
+  HAS_COMMENTS,
+  NAME_BEFORE_SHARE,
+}
 
 type DraftViewProps = {
   did: string
@@ -42,9 +54,8 @@ const pancakeCSS = `
 
 export default function DraftView(props: DraftViewProps) {
   let { id, author, did, sync } = props
-  let [mounted, setMounted] = useState<boolean>(false)
   let [, setLocation] = useLocation()
-  let [modalOpen, setModalOpen] = useState<string | undefined>(undefined)
+  let [modalState, setModalState] = useState<ModalState>(ModalState.CLOSED)
   let upwell = documents.get(id)
   let [stackSelected, setStackSelected] = useState<boolean>(
     did === 'stack' || did === upwell.rootDraft.id
@@ -95,16 +106,17 @@ export default function DraftView(props: DraftViewProps) {
       let instance = upwell.get(draft.id)
       if (local) {
         setDraft(instance.materialize())
+        console.log('got local change')
       }
       upwell.getChangesFromRoot(instance)
-      if (!mounted) {
-        setMounted(true)
-      }
+      window.requestIdleCallback(() => {
+        sync()
+      })
     })
     return () => {
       documents.unsubscribe(id)
     }
-  }, [id, draft.parent_id, draft.id, sync, mounted])
+  }, [id, draft.parent_id, draft.id, sync])
 
   // every time the draft id changes
   useEffect(() => {
@@ -152,10 +164,17 @@ export default function DraftView(props: DraftViewProps) {
   const handleMergeClick = async () => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    if (draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) {
-      setModalOpen('merge')
+    const comments = draftInstance.comments.objects()
+
+    if (hasUnresolvedComments(comments)) {
+      setModalState(ModalState.HAS_COMMENTS)
+    }
+    // Set to MERGE if it's an unnamed draft, which brings up the "name your draft" modal
+    else if (draftInstance.message === 'Untitled draft') {
+      setModalState(ModalState.MERGE)
     } else {
       upwell.rootDraft = draftInstance
+      documents.rtcUpwell?.updatePeers()
       goToDraft('stack')
     }
   }
@@ -166,6 +185,24 @@ export default function DraftView(props: DraftViewProps) {
     documents.rtcUpwell?.updatePeers()
     goToDraft(newDraft.id)
   }
+
+  const handleCommentDestroy = async () => {
+    let upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    const comments = draftInstance.comments.objects()
+
+    Object.values(comments).forEach((c) => {
+      draftInstance.comments.resolve(c)
+      c.children.forEach((ch) => draftInstance.comments.resolve(comments[ch]))
+    })
+
+    documents.draftChanged(upwell.id, draft.id)
+    documents.save(id)
+    setModalState(ModalState.MERGE)
+    handleMergeClick()
+  }
+
+  const handleModalClose = () => setModalState(ModalState.CLOSED)
 
   const handleEditName = (draftName: string) => {
     const upwell = documents.get(id)
@@ -181,6 +218,35 @@ export default function DraftView(props: DraftViewProps) {
     goToDraft('stack')
   }
 
+  const handleShareSelect = () => {
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+
+    if (
+      !draftInstance.message ||
+      draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
+    ) {
+      setModalState(ModalState.NAME_BEFORE_SHARE)
+      return
+    }
+
+    shareDraft(draftInstance)
+  }
+
+  const handleFinishSharing = (draftName: string) => {
+    handleEditName(draftName)
+
+    const upwell = documents.get(id)
+    let draftInstance = upwell.get(draft.id)
+    shareDraft(draftInstance)
+  }
+
+  const shareDraft = (draftInstance: Draft) => {
+    draftInstance.shared = true
+    documents.save(id)
+    documents.draftChanged(upwell.id, draft.id)
+  }
+
   function goToDraft(did: string) {
     documents
       .save(id)
@@ -188,31 +254,43 @@ export default function DraftView(props: DraftViewProps) {
         console.error('failure to save', err)
       })
       .finally(() => {
-        let draftInstance = upwell.get(did)
-        setDrafts(upwell.drafts())
-        setDraft(draftInstance.materialize())
         const url = `/${id}/${did}`
-        setLocation(url)
+        if (did === 'stack') {
+          window.location.href = url
+        } else {
+          setLocation(url)
+        }
       })
   }
 
   function getChanges(draftMeta: DraftMetadata) {
     let draftInstance = upwell.get(draftMeta.id)
-    let changes =
-      upwell.changes.get(draftMeta.id) ||
-      upwell.getChangesFromRoot(draftInstance)
-    if (draftMeta.id === upwell.rootDraft.id) {
-      changes = 0
-    }
-    return changes
+    if (draftMeta.id === upwell.rootDraft.id) return 0
+    return upwell.getChangesFromRoot(draftInstance)
   }
+
+  function isInADraft(draftMeta: DraftMetadata) {
+    return draftMeta.id !== upwell.rootDraft.id
+  }
+
+  function handleCopyLink() {
+    let url = document.location.href
+
+    navigator.clipboard.writeText(url).then(
+      function () {
+        console.log('Copied!')
+      },
+      function () {
+        console.log('Copy error')
+      }
+    )
+  }
+
   // Hack because the params are always undefined?
   function renderDraftMessage(draftMeta: DraftMetadata) {
-    if (draftMeta.id === upwell.rootDraft.id) return '(not in a draft)'
+    if (!isInADraft(draftMeta)) return '(not in a draft)'
     let draftInstance = upwell.get(draftMeta.id)
-    return draftInstance.message.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)
-      ? 'Untitled'
-      : draftInstance.message
+    return draftInstance.message
   }
 
   const setHistorySelection = (d: DraftMetadata) => {
@@ -226,6 +304,7 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   const draftsMeta = drafts.map((d) => d.materialize())
+  const showChangesSince = historyHeads && historyHeads.length > 0
 
   return (
     <div
@@ -240,9 +319,27 @@ export default function DraftView(props: DraftViewProps) {
       `}
     >
       <InputModal
-        open={modalOpen !== undefined}
-        onSubmit={modalOpen === 'merge' ? onMerge : createDraft}
-        onClose={() => setModalOpen(undefined)}
+        open={modalState === ModalState.MERGE}
+        onSubmit={onMerge}
+        onClose={handleModalClose}
+      />
+      <InputModal
+        open={modalState === ModalState.NEW_DRAFT}
+        onSubmit={createDraft}
+        onClose={handleModalClose}
+      />
+      <InputModal
+        open={modalState === ModalState.NAME_BEFORE_SHARE}
+        onSubmit={handleFinishSharing}
+        onClose={handleModalClose}
+        title="Before sharing, name this layer:"
+      />
+      <ConfirmModal
+        title="Delete comments and merge?"
+        message="This draft has unresolved comments. If you merge, they won't be brought along."
+        open={modalState === ModalState.HAS_COMMENTS}
+        onSubmit={handleCommentDestroy}
+        onClose={handleModalClose}
       />
       <div id="spacer-placeholder" />
       <div
@@ -293,7 +390,8 @@ export default function DraftView(props: DraftViewProps) {
                 <Select
                   onChange={(value: DraftMetadata | null) => {
                     if (value === null) return
-                    goToDraft(value.id)
+                    const url = `/${id}/${value.id}`
+                    setLocation(url)
                   }}
                   renderValue={() => renderDraftMessage(draft)}
                 >
@@ -332,16 +430,78 @@ export default function DraftView(props: DraftViewProps) {
                   Pending changes
                 </Button>
               )}
-              <Button
-                disabled={hasPendingChanges || stackSelected}
-                onClick={handleMergeClick}
+              {isInADraft(draft) && (
+                <>
+                  <ShareButton
+                    isShared={draft.shared}
+                    onShareSelect={handleShareSelect}
+                  />
+                  <Button
+                    css={buttonIconStyle}
+                    variant="outlined"
+                    aria-label="merge"
+                    disabled={hasPendingChanges || stackSelected}
+                    onClick={handleMergeClick}
+                  >
+                    <Merge />
+                  </Button>
+                  <DraftMenu
+                    onShare={handleCopyLink}
+                    onEditName={handleEditName}
+                    onDelete={handleDeleteDraft}
+                  />
+                </>
+              )}
+            </div>
+            <div
+              css={css`
+                display: flex;
+                align-items: center;
+                position: relative;
+              `}
+            >
+              <Contributors upwell={upwell} contributors={draft.contributors} />
+              <div
+                id="changes-and-history"
+                css={css`
+                  display: flex;
+                  flex-direction: row;
+                  align-items: center;
+                `}
               >
-                Merge
-              </Button>
-              <DraftMenu
-                onEditName={handleEditName}
-                onDelete={handleDeleteDraft}
-              />
+                <Switch
+                  inputProps={{ 'aria-label': 'show changes' }}
+                  checked={historyHeads !== false}
+                  onClick={() => {
+                    if (historyHeads) setHistoryHeads(false)
+                    else setHistoryHeads([])
+                  }}
+                />
+                {showChangesSince ? 'Changes since' : 'Show changes '}
+                <DraftsHistory
+                  did={draft.id}
+                  goToDraft={goToDraft}
+                  drafts={draftsMeta}
+                  setHistorySelection={setHistorySelection}
+                  id={id}
+                  author={author}
+                />
+              </div>
+              {showChangesSince ? (
+                <div
+                  css={css`
+                    position: absolute;
+                    right: 30px;
+                    top: 38px;
+                    display: flex;
+                    align-items: center;
+                    column-gap: 4px;
+                  `}
+                >
+                  <OffsetPancakes />
+                  {historyTitle}
+                </div>
+              ) : null}
             </div>
           </div>
           <div
@@ -379,6 +539,7 @@ export default function DraftView(props: DraftViewProps) {
                   let draftInstance = upwell.get(draft.id)
                   draftInstance.title = e.target.value
                   documents.draftChanged(id, draft.id)
+                  documents.save(id)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)
@@ -390,46 +551,15 @@ export default function DraftView(props: DraftViewProps) {
                 `}
               />
 
-              <Button onClick={() => setModalOpen('new-draft')}>
+              <Button onClick={() => setModalState(ModalState.NEW_DRAFT)}>
                 New Draft
               </Button>
-            </div>
-            <div
-              css={css`
-                display: flex;
-                align-items: center;
-              `}
-            >
-              <Contributors upwell={upwell} contributors={draft.contributors} />
-              <span>
-                <Switch
-                  inputProps={{ 'aria-label': 'show changes' }}
-                  checked={historyHeads !== false}
-                  onClick={() => {
-                    if (historyHeads) setHistoryHeads(false)
-                    else setHistoryHeads([])
-                  }}
-                />
-                {historyHeads && historyHeads.length > 0
-                  ? `showing changes from ${historyTitle}`
-                  : 'show changes '}
-              </span>
-              <DraftsHistory
-                did={draft.id}
-                goToDraft={goToDraft}
-                drafts={draftsMeta}
-                setHistorySelection={setHistorySelection}
-                id={id}
-                author={author}
-              />
             </div>
           </div>
         </div>
         <EditReviewView
-          did={draft.id}
-          visible={[stackSelected ? upwell.rootDraft.id : draft.id]}
+          visible={stackSelected ? upwell.rootDraft.id : draft.id}
           id={id}
-          author={author}
           editable={!stackSelected}
           historyHeads={historyHeads}
           onClick={handleOnClickEditor}
@@ -450,5 +580,11 @@ export default function DraftView(props: DraftViewProps) {
         <CommentSidebar draft={draft} id={id} />
       </div>
     </div>
+  )
+}
+
+function hasUnresolvedComments(comments: Comments): boolean {
+  return (
+    0 <= Object.values(comments).findIndex((c) => c.state === CommentState.OPEN)
   )
 }

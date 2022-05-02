@@ -7,7 +7,7 @@ import Documents from '../Documents'
 import { DetailedOption, HistorySelect } from './Select'
 import { AuthorColorsType } from './ClickableDraftList'
 import { ReactComponent as OffsetPancakes } from '../components/icons/OffsetPancakes.svg'
-import { ReactComponent as Pancakes } from '../components/icons/Pancakes.svg'
+import { ReactComponent as PancakeSmall } from '../components/icons/PancakeSmall.svg'
 
 let documents = Documents()
 
@@ -57,15 +57,17 @@ export default function DraftsHistory({ id, did, setHistorySelection }: Props) {
         }}
         renderValue={renderValue}
       >
-        <DetailedOption
-          key={'stack'}
-          option={{
-            ...upwell.rootDraft.materialize(),
-            message: upwell.rootDraft.title || 'Untitled Document',
-          }}
-          upwell={upwell}
-          icon={Pancakes}
-        />
+        {did !== upwell.rootDraft.id && (
+          <DetailedOption
+            key={'stack'}
+            option={{
+              ...upwell.rootDraft.materialize(),
+              message: upwell.get(did).message,
+            }}
+            upwell={upwell}
+            icon={PancakeSmall}
+          />
+        )}
         {history
           .filter((d) => d.message !== Upwell.SPECIAL_ROOT_DOCUMENT)
           .map((d) => {

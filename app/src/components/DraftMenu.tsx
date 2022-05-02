@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { IconButton } from './Button'
+import IconButton from '@mui/material/IconButton'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import { ReactComponent as VerticalDots } from '../components/icons/VerticalDots.svg'
@@ -8,7 +8,7 @@ import InputModal from './InputModal'
 type Props = {
   onShare?: Function
   onEditName?: Function
-  onDelete?: Function
+  onDelete?: any
 }
 
 export default function DraftMenu({ onShare, onEditName, onDelete }: Props) {
@@ -49,8 +49,9 @@ export default function DraftMenu({ onShare, onEditName, onDelete }: Props) {
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleClick}
-        icon={VerticalDots}
-      ></IconButton>
+      >
+        <VerticalDots />
+      </IconButton>
       <Menu
         id="draft-actions-positioned-menu"
         aria-labelledby="draft-actions-positioned-button"

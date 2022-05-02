@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import React, { useEffect, useRef } from 'react'
-import { Transaction as AutomergeEdit, Author } from 'api'
+import { Transaction as AutomergeEdit } from 'api'
 
 import { schema } from '../prosemirror/UpwellSchema'
 import {
@@ -46,7 +46,6 @@ type Props = {
   editable: boolean
   editableDraftId: string
   historyHeads: string[] | false
-  author: Author
 }
 
 export const editorSharedCSS = css`
@@ -76,7 +75,7 @@ export const textCSS = css`
 `
 
 export function Editor(props: Props) {
-  let { upwellId, historyHeads, editable, editableDraftId, author } = props
+  let { upwellId, historyHeads, editable, editableDraftId } = props
 
   const [state, setState] = React.useState<EditorState | null>(null)
 
@@ -127,12 +126,12 @@ export function Editor(props: Props) {
       schema,
       doc: pmDoc,
       plugins: [
-        contextMenu([commentButton(author)]),
+        contextMenu([commentButton(documents.author)]),
         remoteCursorPlugin(),
         automergeChangesPlugin(
           upwell,
           editableDraft,
-          author.id,
+          documents.author.id,
           upwell.rootDraft
         ),
         history(),
@@ -159,7 +158,7 @@ export function Editor(props: Props) {
       heads: historyHeads,
     })
     setState(newState.apply(transaction))
-  }, [editableDraftId, upwellId, author, historyHeads])
+  }, [editableDraftId, upwellId, historyHeads])
 
   let editableDraft = upwell.get(editableDraftId)
   log('got heads', historyHeads)
@@ -252,6 +251,7 @@ export function Editor(props: Props) {
         ${textCSS}
         caret-color: ${color || 'auto'};
         overflow-wrap: break-word;
+        position: relative; /* for change bars */
       `}
     />
   )
