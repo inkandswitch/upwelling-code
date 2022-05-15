@@ -131,6 +131,7 @@ export class Draft {
 
   get message(): string {
     let msg = this._getValue('message') as string
+    if (msg === undefined) return 'Undefined'
     if (msg.startsWith(Upwell.SPECIAL_UNNAMED_SLUG)) return 'Untitled draft'
     else return msg
   }
