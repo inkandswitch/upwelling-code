@@ -46,9 +46,7 @@ function handleReplaceStep(
         editableDraft.insertAt(insOffset, node.text)
         insOffset += node.text.length
       } else if (['paragraph', 'heading'].indexOf(node.type.name) !== -1) {
-        if (idx !== 0)
-          // @ts-ignore
-          editableDraft.insertBlock(insOffset++, node.type.name)
+        editableDraft.insertBlock(insOffset++, node.type.name)
 
         let nodeText = node.textBetween(0, node.content.size)
         changeSet.add.push({
