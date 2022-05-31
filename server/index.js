@@ -46,6 +46,8 @@ app.post('/:id', (req, res) => {
   req.file(id).upload({
     dirname: path.join(__dirname, 'data'),
     saveAs: `${req.params.id}.upwell`,
+  }, () => {
+    res.status(200).send('OK')
   })
 })
 

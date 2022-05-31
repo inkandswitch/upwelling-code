@@ -42,7 +42,7 @@ type DraftViewProps = {
   id: string
   root: Draft
   author: Author
-  sync: () => void
+  sync: () => Promise<void>
 }
 
 const pancakeCSS = `
@@ -98,6 +98,10 @@ export default function DraftView(props: DraftViewProps) {
         setDraft(instance.materialize())
         console.log('got local change')
       }
+      console.log(instance.parent_id)
+      console.log(upwell.rootDraft.id)
+      if (upwell.rootDraft.id !== instance.parent_id) {
+      }
       upwell.getChangesFromRoot(instance)
       window.requestIdleCallback(() => {
         sync()
@@ -143,8 +147,18 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.message = draftName
     upwell.rootDraft = draftInstance
-    documents.rtcUpwell?.updatePeers()
-    goToDraft('stack')
+    documents
+      .sync(id)
+      .then(() => {
+        documents.rtcUpwell?.updatePeers()
+      })
+      .catch((err) => {
+        console.error('failed to sync')
+        console.error(err)
+      })
+      .finally(() => {
+        goToDraft('stack')
+      })
   }
 
   const handleMergeClick = async () => {

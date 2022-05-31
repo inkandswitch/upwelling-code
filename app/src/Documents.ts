@@ -124,7 +124,7 @@ export class Documents {
       this.upwell = upwell
       return upwell
     } else {
-      // local-first
+      // get local doc
       let localBinary = await this.storage.getItem(id)
       if (localBinary) {
         let ours = await this.toUpwell(localBinary)
@@ -132,20 +132,7 @@ export class Documents {
         this.upwell = ours
         return ours
       } else {
-        // no local binary, get from server
-        try {
-          let remoteBinary = await this.remote.getItem(id)
-          if (remoteBinary) {
-            let theirs = await this.toUpwell(Buffer.from(remoteBinary))
-            this.upwells.set(id, theirs)
-            this.upwell = theirs
-            return theirs
-          } else {
-            throw new Error('No document with id=' + id)
-          }
-        } catch (err) {
-          throw new Error('Could not connect to server')
-        }
+        throw new Error('No document with id=' + id)
       }
     }
   }
@@ -161,9 +148,12 @@ export class Documents {
       this.upwells.set(id, upwell)
       this.upwell = upwell
       await this.storage.setItem(id, buf)
+      log('setting item on remote')
       return this.remote.setItem(id, buf, filename)
     } else if (!remoteBinary && inMemory) {
+      this.upwell = inMemory
       let newFile = await inMemory.toFile()
+      log('saving item on local')
       await this.storage.setItem(id, newFile)
       return this.remote.setItem(id, newFile, filename)
     } else if (inMemory && remoteBinary) {
@@ -172,6 +162,7 @@ export class Documents {
       let theirs = await this.toUpwell(buf)
       // update our local one
       inMemory.merge(theirs)
+      this.upwell = inMemory
       let newFile = await inMemory.toFile()
       await this.storage.setItem(id, newFile)
       log('uploading', id)
@@ -203,4 +194,4 @@ export default function initialize(): Documents {
   return documents
 }
 
-function noop() { }
+function noop() {}

@@ -54,7 +54,9 @@ export default function App() {
   async function newUpwell() {
     let id = nanoid()
     let doc = await documents.create(id, documents.author)
-    setLocation('/' + doc.id + '/stack')
+    documents.sync(id).finally(() => {
+      setLocation('/' + doc.id + '/stack')
+    })
   }
 
   return (

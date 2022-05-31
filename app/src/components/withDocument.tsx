@@ -89,21 +89,20 @@ export default function withDocument(
             documents.paths.set(id, query.path as string)
           }
           log('render function')
-          upwell = await documents.open(id)
+          try {
+            // get from server
+            await documents.sync(id)
+            console.log('hello')
+            upwell = documents.get(id)
+          } catch (err) {
+            // get a document from local fs or memory
+            upwell = await documents.open(id)
+          }
+          console.log('got upwell', upwell)
           if (!unmounted && upwell) {
             log('getting rootDraft in main component')
             setRoot(upwell.rootDraft)
           }
-        } catch (err) {
-          console.log(err)
-        }
-
-        try {
-          await sync()
-          upwell = documents.get(id)
-        } catch (err) {
-          console.log('could not find upwell on server')
-          console.error(err)
           if (!upwell) {
             log('Retrying in', RETRY_TIMEOUT, retries)
             if (retries >= MAX_RETRIES) return setTimedOut(true)
@@ -202,9 +201,8 @@ export default function withDocument(
                 css={css`
                   height: 5px;
                   content: '';
-                  background: ${documents.upwell!.getAuthorColor(
-                    documents.author.id
-                  )};
+                  background: ${documents.upwell &&
+                  documents.upwell.getAuthorColor(documents.author.id)};
                 `}
               ></div>
             </div>
