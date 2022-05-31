@@ -91,18 +91,25 @@ export default function DraftView(props: DraftViewProps) {
 
   // every time the upwell id changes
   useEffect(() => {
-    documents.subscribe(id, (local: boolean) => {
-      let upwell = documents.get(id)
+    let upwell = documents.get(id)
+    documents.subscribe(id, async (local: boolean) => {
       let instance = upwell.get(draft.id)
       if (local) {
         setDraft(instance.materialize())
         console.log('got local change')
       }
-      console.log(instance.parent_id)
-      console.log(upwell.rootDraft.id)
-      if (upwell.rootDraft.id !== instance.parent_id) {
-      }
       upwell.getChangesFromRoot(instance)
+
+      if (
+        upwell.rootDraft.id !== draft.id &&
+        upwell.history.length &&
+        upwell.history.get(0)!.id !== draft.parent_id
+      ) {
+        let instance = upwell.get(draft.id)
+        console.log('UPDATING')
+        upwell.updateToRoot(instance)
+        await documents.save(id)
+      }
       window.requestIdleCallback(() => {
         sync()
       })
@@ -142,22 +149,21 @@ export default function DraftView(props: DraftViewProps) {
     }
   }
 
-  const onMerge = async (draftName: string) => {
+  const onMerge = async (draftName?: string) => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    draftInstance.message = draftName
+    if (draftName) draftInstance.message = draftName
     upwell.rootDraft = draftInstance
     documents
       .sync(id)
       .then(() => {
         documents.rtcUpwell?.updatePeers()
+        goToDraft('stack')
       })
       .catch((err) => {
         console.error('failed to sync')
         console.error(err)
-      })
-      .finally(() => {
-        goToDraft('stack')
+        throw new Error('You cant merge while offline')
       })
   }
 
@@ -173,9 +179,7 @@ export default function DraftView(props: DraftViewProps) {
     else if (draftInstance.message === 'Untitled draft') {
       setModalState(ModalState.MERGE)
     } else {
-      upwell.rootDraft = draftInstance
-      documents.rtcUpwell?.updatePeers()
-      goToDraft('stack')
+      onMerge()
     }
   }
 
