@@ -67,7 +67,7 @@ app.ws('/:did/connect/:peerId', function (ws, req) {
     if (value.method === 'BYE') {
       console.log('closing socket', req.params.peerId)
       try {
-        delete doc[value.peerId]
+        if (doc[value.peerId]) delete doc[value.peerId]
       } catch (e) {
         console.log("HMMM COULDN'T ACCESS DOC", e)
       }

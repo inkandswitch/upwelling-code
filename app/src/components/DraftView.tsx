@@ -76,9 +76,6 @@ export default function DraftView(props: DraftViewProps) {
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [historyHeads, setHistoryHeads] = useState<string[] | false>(false)
   let [historyTitle, setHistoryTitle] = useState<string>('')
-  let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
-    draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
-  )
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -96,13 +93,6 @@ export default function DraftView(props: DraftViewProps) {
   useEffect(() => {
     documents.subscribe(id, (local: boolean) => {
       let upwell = documents.get(id)
-      if (!local && upwell.isArchived(draft.id)) {
-        // someone merged or archived my draft while i was looking at it
-        setHasPendingChanges(true)
-      }
-      if (!local && upwell.metadata.main !== draft.parent_id) {
-        setHasPendingChanges(true)
-      }
       let instance = upwell.get(draft.id)
       if (local) {
         setDraft(instance.materialize())
@@ -139,10 +129,6 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.title = e.target.value
     documents.save(id)
-  }
-
-  let handleUpdateClick = () => {
-    window.location.reload()
   }
 
   const handleOnClickEditor = () => {
@@ -415,21 +401,6 @@ export default function DraftView(props: DraftViewProps) {
                   })}
                 </Select>
               </FormControl>
-              {hasPendingChanges && (
-                <Button
-                  css={css`
-                    background: white;
-                    color: #da1e28;
-                    border: 1px solid #da1e28;
-                    &:hover {
-                      background: #ffdede;
-                    }
-                  `}
-                  onClick={handleUpdateClick}
-                >
-                  Pending changes
-                </Button>
-              )}
               {isInADraft(draft) && (
                 <>
                   <ShareButton
@@ -440,7 +411,7 @@ export default function DraftView(props: DraftViewProps) {
                     css={buttonIconStyle}
                     variant="outlined"
                     aria-label="merge"
-                    disabled={hasPendingChanges || stackSelected}
+                    disabled={stackSelected}
                     onClick={handleMergeClick}
                   >
                     <Merge />
