@@ -92,24 +92,17 @@ export default function DraftView(props: DraftViewProps) {
   // every time the upwell id changes
   useEffect(() => {
     let upwell = documents.get(id)
+    let instance = upwell.get(draft.id)
+    upwell.updateToRoot(instance)
     documents.subscribe(id, async (local: boolean) => {
       let instance = upwell.get(draft.id)
       if (local) {
         setDraft(instance.materialize())
         console.log('got local change')
+      } else {
+        upwell.updateToRoot(instance)
       }
       upwell.getChangesFromRoot(instance)
-
-      if (
-        upwell.rootDraft.id !== draft.id &&
-        upwell.history.length &&
-        upwell.history.get(0)!.id !== draft.parent_id
-      ) {
-        let instance = upwell.get(draft.id)
-        console.log('UPDATING')
-        upwell.updateToRoot(instance)
-        await documents.save(id)
-      }
       window.requestIdleCallback(() => {
         sync()
       })
@@ -154,6 +147,7 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     if (draftName) draftInstance.message = draftName
     upwell.rootDraft = draftInstance
+    await documents.save(id)
     documents
       .sync(id)
       .then(() => {

@@ -155,6 +155,7 @@ export class Upwell {
 
   updateToRoot(draft: Draft) {
     let root = this.rootDraft
+    if (root.id === draft.id) return
     let message = draft.message
     let id = draft.id
     let parent_id = draft.parent_id
