@@ -81,12 +81,6 @@ export class Upwell {
     this.rootDraft.merge(draft)
     this.metadata.addToHistory(draft.id)
     this.metadata.archive(draft.id)
-
-    for (let d of this.drafts()) {
-      if (d.id !== this.rootDraft.id && draft.id !== d.id) {
-        this.updateToRoot(draft)
-      }
-    }
   }
 
   mergeWithEdits(
@@ -161,10 +155,17 @@ export class Upwell {
 
   updateToRoot(draft: Draft) {
     let root = this.rootDraft
+    if (root.id === draft.id) return
     let message = draft.message
+    let id = draft.id
+    let parent_id = draft.parent_id
     draft.merge(root)
     draft.message = message
-    draft.parent_id = root.id
+    draft.id = id
+    draft.parent_id = parent_id
+    if (this.history.length) {
+      draft.parent_id = this.history.get(0)!.id
+    }
   }
 
   isArchived(id: string): boolean {

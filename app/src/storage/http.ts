@@ -10,16 +10,25 @@ export default class HTTP {
   }
 
   async getItem(id: string, actorId?: string): Promise<ArrayBuffer | null> {
-    try {
-      const response = await fetch(this.getURI(id))
-      if (response.status === 200) return response.arrayBuffer()
-      else return null
-    } catch (err) {
-      return null
-    }
+    let url = this.getURI(id)
+    return new Promise<ArrayBuffer | null>((resolve, reject) => {
+      fetch(url)
+        .then((response) => {
+          if (response.status === 200) return resolve(response.arrayBuffer())
+          else return resolve(null)
+        })
+        .catch((err) => {
+          console.error(err)
+          resolve(null)
+        })
+    })
   }
 
-  async setItem(id: string, binary: Uint8Array, filename?: string): Promise<Response> {
+  async setItem(
+    id: string,
+    binary: Uint8Array,
+    filename?: string
+  ): Promise<Response> {
     let form = new FormData()
     form.append(id, new Blob([binary]))
     return fetch(this.getURI(id) + '?filename=' + filename, {

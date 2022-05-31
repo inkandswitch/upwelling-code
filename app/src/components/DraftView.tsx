@@ -42,7 +42,7 @@ type DraftViewProps = {
   id: string
   root: Draft
   author: Author
-  sync: () => void
+  sync: () => Promise<void>
 }
 
 const pancakeCSS = `
@@ -76,9 +76,6 @@ export default function DraftView(props: DraftViewProps) {
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [historyHeads, setHistoryHeads] = useState<string[] | false>(false)
   let [historyTitle, setHistoryTitle] = useState<string>('')
-  let [hasPendingChanges, setHasPendingChanges] = useState<boolean>(
-    draft.id !== 'stack' && upwell.rootDraft.id !== draft.parent_id
-  )
 
   useEffect(() => {
     let upwell = documents.get(id)
@@ -94,19 +91,16 @@ export default function DraftView(props: DraftViewProps) {
 
   // every time the upwell id changes
   useEffect(() => {
-    documents.subscribe(id, (local: boolean) => {
-      let upwell = documents.get(id)
-      if (!local && upwell.isArchived(draft.id)) {
-        // someone merged or archived my draft while i was looking at it
-        setHasPendingChanges(true)
-      }
-      if (!local && upwell.metadata.main !== draft.parent_id) {
-        setHasPendingChanges(true)
-      }
+    let upwell = documents.get(id)
+    let instance = upwell.get(draft.id)
+    upwell.updateToRoot(instance)
+    documents.subscribe(id, async (local: boolean) => {
       let instance = upwell.get(draft.id)
       if (local) {
         setDraft(instance.materialize())
         console.log('got local change')
+      } else {
+        upwell.updateToRoot(instance)
       }
       upwell.getChangesFromRoot(instance)
       window.requestIdleCallback(() => {
@@ -141,10 +135,6 @@ export default function DraftView(props: DraftViewProps) {
     documents.save(id)
   }
 
-  let handleUpdateClick = () => {
-    window.location.reload()
-  }
-
   const handleOnClickEditor = () => {
     if (stackSelected) {
       let draftInstance = upwell.createDraft(upwell.SPECIAL_UNNAMED_DOCUMENT)
@@ -152,13 +142,23 @@ export default function DraftView(props: DraftViewProps) {
     }
   }
 
-  const onMerge = async (draftName: string) => {
+  const onMerge = async (draftName?: string) => {
     let upwell = documents.get(id)
     let draftInstance = upwell.get(draft.id)
-    draftInstance.message = draftName
+    if (draftName) draftInstance.message = draftName
     upwell.rootDraft = draftInstance
-    documents.rtcUpwell?.updatePeers()
-    goToDraft('stack')
+    await documents.save(id)
+    documents
+      .sync(id)
+      .then(() => {
+        documents.rtcUpwell?.updatePeers()
+        goToDraft('stack')
+      })
+      .catch((err) => {
+        console.error('failed to sync')
+        console.error(err)
+        throw new Error('You cant merge while offline')
+      })
   }
 
   const handleMergeClick = async () => {
@@ -173,9 +173,7 @@ export default function DraftView(props: DraftViewProps) {
     else if (draftInstance.message === 'Untitled draft') {
       setModalState(ModalState.MERGE)
     } else {
-      upwell.rootDraft = draftInstance
-      documents.rtcUpwell?.updatePeers()
-      goToDraft('stack')
+      onMerge()
     }
   }
 
@@ -415,21 +413,6 @@ export default function DraftView(props: DraftViewProps) {
                   })}
                 </Select>
               </FormControl>
-              {hasPendingChanges && (
-                <Button
-                  css={css`
-                    background: white;
-                    color: #da1e28;
-                    border: 1px solid #da1e28;
-                    &:hover {
-                      background: #ffdede;
-                    }
-                  `}
-                  onClick={handleUpdateClick}
-                >
-                  Pending changes
-                </Button>
-              )}
               {isInADraft(draft) && (
                 <>
                   <ShareButton
@@ -440,7 +423,7 @@ export default function DraftView(props: DraftViewProps) {
                     css={buttonIconStyle}
                     variant="outlined"
                     aria-label="merge"
-                    disabled={hasPendingChanges || stackSelected}
+                    disabled={stackSelected}
                     onClick={handleMergeClick}
                   >
                     <Merge />
