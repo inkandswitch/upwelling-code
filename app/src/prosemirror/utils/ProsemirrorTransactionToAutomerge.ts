@@ -162,7 +162,8 @@ function handleReplaceAroundStep(
     console.error(
       `Unhandled scenario in ReplaceAroundStep, expected character at ${gapEnd} (${text[
         gapEnd
-      ]?.charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)} or End of Document (${text.length
+      ]?.charCodeAt(0)}) to be ${'\uFFFC'.charCodeAt(0)} or End of Document (${
+        text.length
       })`,
       step
     )
