@@ -53,6 +53,7 @@ export class Documents {
   draftChanged(id: string, did: string) {
     if (this.rtcDraft && this.rtcDraft.draft.id === did) {
       log('updating peers')
+      this.save(id)
       this.rtcDraft.updatePeers()
     }
   }

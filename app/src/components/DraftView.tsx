@@ -195,7 +195,6 @@ export default function DraftView(props: DraftViewProps) {
     })
 
     documents.draftChanged(upwell.id, draft.id)
-    documents.save(id)
     setModalState(ModalState.MERGE)
     handleMergeClick()
   }
@@ -241,7 +240,6 @@ export default function DraftView(props: DraftViewProps) {
 
   const shareDraft = (draftInstance: Draft) => {
     draftInstance.shared = true
-    documents.save(id)
     documents.draftChanged(upwell.id, draft.id)
   }
 
@@ -522,7 +520,6 @@ export default function DraftView(props: DraftViewProps) {
                   let draftInstance = upwell.get(draft.id)
                   draftInstance.title = e.target.value
                   documents.draftChanged(id, draft.id)
-                  documents.save(id)
                 }}
                 onBlur={(e) => {
                   handleTitleInputBlur(e)

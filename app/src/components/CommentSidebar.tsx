@@ -32,7 +32,6 @@ export function CommentView(props: CommentViewProps) {
     draftInstance.comments.resolve(comment)
     comment.children.map((cid) => draftInstance.comments.resolve(comments[cid]))
     documents.draftChanged(upwell.id, draft.id)
-    documents.save(id)
   }
   if (!isOpen) return null
 
@@ -85,7 +84,6 @@ const CommentThread = (props: CommentThreadProps) => {
     const draftInstance = upwell.get(draft.id)
     draftInstance.comments.addChild(reply, documents.author.id, comment.id)
     documents.draftChanged(upwell.id, draft.id)
-    documents.save(id)
 
     setReply('')
     setShowReply(false)

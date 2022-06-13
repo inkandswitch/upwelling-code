@@ -85,16 +85,11 @@ export function Editor(props: Props) {
     () =>
       debounce(() => {
         window.requestIdleCallback(() => {
-          documents.save(upwellId)
+          documents.draftChanged(upwellId, editableDraftId)
         })
       }, 2000),
-    [upwellId]
+    [upwellId, editableDraftId]
   )
-
-  let onChange = () => {
-    documents.rtcDraft?.updatePeers()
-    debouncedOnTextChange()
-  }
 
   /*
   function useTraceUpdate(propss: any) {
@@ -199,6 +194,7 @@ export function Editor(props: Props) {
           )
           let transaction = state.tr.setMeta(remoteCursorKey, remoteCursors)
           let newState = state.apply(transaction)
+          debouncedOnTextChange()
           setState(newState)
         }
       })
@@ -206,7 +202,7 @@ export function Editor(props: Props) {
     return () => {
       documents.rtcDraft?.transactions.unsubscribe()
     }
-  }, [editableDraftId, editableDraft, state])
+  }, [debouncedOnTextChange, editableDraftId, editableDraft, state])
 
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
@@ -229,10 +225,7 @@ export function Editor(props: Props) {
       )
     )
 
-    window.requestIdleCallback(() => {
-      documents.draftChanged(upwell.id, editableDraft.id)
-    })
-    onChange()
+    debouncedOnTextChange()
     let newState = state.apply(transaction)
     setState(newState)
   }
