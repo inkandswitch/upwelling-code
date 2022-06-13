@@ -63,7 +63,7 @@ export class Draft {
   comments: Comments
   _heads?: Heads = []
   _textCache?: string
-  subscriber: Subscriber = () => { }
+  subscriber: Subscriber = () => {}
 
   constructor(id: string, doc: Automerge, heads?: Heads) {
     this.id = id
@@ -73,11 +73,9 @@ export class Draft {
   }
 
   private _getAutomergeText(prop: string): string {
-    if (this._textCache) return this._textCache
     let value = this.doc.get(ROOT, prop, this._heads)
     if (value && value[0] === 'text') {
-      this._textCache = this.doc.text(value[1], this._heads)
-      return this._textCache
+      return this.doc.text(value[1], this._heads)
     } else return ''
   }
 

@@ -85,10 +85,10 @@ export function Editor(props: Props) {
     () =>
       debounce(() => {
         window.requestIdleCallback(() => {
-          documents.draftChanged(upwellId, editableDraftId)
+          documents.save(upwellId)
         })
       }, 2000),
-    [upwellId, editableDraftId]
+    [upwellId]
   )
 
   /*
@@ -173,6 +173,8 @@ export function Editor(props: Props) {
     if (!state) return
     // @ts-ignore
     if (documents.rtcDraft && documents.rtcDraft.draft.id === editableDraftId) {
+      let upwell = documents.get(upwellId)
+      let editableDraft = upwell.get(editableDraftId)
       documents.rtcDraft.transactions.subscribe((edits: AutomergeEdit) => {
         let transaction = convertAutomergeTransactionToProsemirrorTransaction(
           editableDraft,
@@ -183,6 +185,8 @@ export function Editor(props: Props) {
         if (transaction) {
           let newState = state.apply(transaction)
           setState(newState)
+          documents.rtcDraft?.updatePeers()
+          debouncedOnTextChange()
         }
 
         if (edits.cursor) {
@@ -194,7 +198,6 @@ export function Editor(props: Props) {
           )
           let transaction = state.tr.setMeta(remoteCursorKey, remoteCursors)
           let newState = state.apply(transaction)
-          debouncedOnTextChange()
           setState(newState)
         }
       })
@@ -202,7 +205,7 @@ export function Editor(props: Props) {
     return () => {
       documents.rtcDraft?.transactions.unsubscribe()
     }
-  }, [debouncedOnTextChange, editableDraftId, editableDraft, state])
+  }, [debouncedOnTextChange, upwellId, editableDraftId, state])
 
   let dispatchHandler = (transaction: ProsemirrorTransaction) => {
     if (!state) return
@@ -225,6 +228,7 @@ export function Editor(props: Props) {
       )
     )
 
+    documents.rtcDraft?.updatePeers()
     debouncedOnTextChange()
     let newState = state.apply(transaction)
     setState(newState)

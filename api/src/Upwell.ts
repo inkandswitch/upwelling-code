@@ -98,15 +98,6 @@ export class Upwell {
     })
     let origHead = newDraft.doc.getHeads()
 
-    let cache_id =
-      origHead.join('_') + theirs.reduce((prev, cur) => prev + '_' + cur.id, '')
-    let hit = this.attribution_cache.get(cache_id)
-    console.log('cache_id', cache_id)
-    if (hit) {
-      console.log('cache_hit')
-      return { draft: newDraft, attribution: hit }
-    }
-
     // Merge all the passed-in drafts to this one.
     theirs.forEach((draft) => newDraft.merge(draft))
 
@@ -118,8 +109,6 @@ export class Upwell {
       throw new Error('Text field not properly initialized')
 
     let attribution = newDraft.doc.attribute2(obj[1], origHead, heads)
-
-    this.attribution_cache.set(cache_id, attribution)
 
     return { draft: newDraft, attribution }
   }
