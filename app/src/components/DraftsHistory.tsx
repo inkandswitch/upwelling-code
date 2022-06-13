@@ -73,7 +73,7 @@ export default function DraftsHistory({ id, did, setHistorySelection }: Props) {
           .map((d) => {
             return (
               <DetailedOption
-                key={d.id}
+                key={d.id + '-' + d.authorId + '-' + d.message}
                 option={d}
                 upwell={upwell}
                 icon={OffsetPancakes}
