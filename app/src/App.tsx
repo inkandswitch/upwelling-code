@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { Redirect, Route } from 'wouter'
 import Documents from './Documents'
-import DraftView from './components/DraftView'
-import withDocument from './components/withDocument'
+import WithDocument from './components/withDocument'
 import { useDropzone } from 'react-dropzone'
 import NoDocument from './components/NoDocument'
 import { useLocation } from 'wouter'
@@ -68,8 +67,7 @@ export default function App() {
             ...params,
           }
 
-          let Component = withDocument(DraftView, props)
-          return <Component />
+          return <WithDocument {...props} />
         }}
       </Route>
       <Route path="/">

@@ -57,37 +57,35 @@ export default function DraftView(props: DraftViewProps) {
   let [, setLocation] = useLocation()
   let [modalState, setModalState] = useState<ModalState>(ModalState.CLOSED)
   let upwell = documents.get(id)
-  let [stackSelected, setStackSelected] = useState<boolean>(
-    did === 'stack' || did === upwell.rootDraft.id
-  )
+  let [stackSelected, setStackSelected] = useState<boolean>(true)
 
-  let maybeDraft
-  try {
-    if (!upwell.isArchived(did) && did !== 'stack') {
-      maybeDraft = upwell.get(did)
-    } else {
-      maybeDraft = upwell.rootDraft
-    }
-  } catch (err) {
-    maybeDraft = upwell.rootDraft
-  }
-  maybeDraft.addContributor(documents.author.id)
-  let [draft, setDraft] = useState<DraftMetadata>(maybeDraft.materialize())
+  let [draft, setDraft] = useState<DraftMetadata>(
+    upwell.rootDraft.materialize()
+  )
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [historyHeads, setHistoryHeads] = useState<string[] | false>(false)
   let [historyTitle, setHistoryTitle] = useState<string>('')
 
   useEffect(() => {
     let upwell = documents.get(id)
-    setDrafts(upwell.drafts())
-    setDraft(upwell.get(draft.id).materialize())
-    log('rendering')
-  }, [id, draft.id])
 
-  useEffect(() => {
-    let part = stackSelected ? 'stack' : draft.id
-    setLocation(`/${id}/${part}`)
-  }, [setLocation, stackSelected, id, draft.id])
+    let maybeDraft
+    try {
+      if (!upwell.isArchived(did) && did !== 'stack') {
+        maybeDraft = upwell.get(did)
+      } else {
+        maybeDraft = upwell.rootDraft
+      }
+    } catch (err) {
+      maybeDraft = upwell.rootDraft
+    }
+    maybeDraft.addContributor(documents.author.id)
+    setDrafts(upwell.drafts())
+    setDraft(upwell.get(did).materialize())
+
+    setStackSelected(did === 'stack' || did === upwell.rootDraft.id)
+    log('rendering')
+  }, [id, did])
 
   // every time the upwell id changes
   useEffect(() => {
@@ -132,13 +130,6 @@ export default function DraftView(props: DraftViewProps) {
     let draftInstance = upwell.get(draft.id)
     draftInstance.title = e.target.value
     documents.save(id)
-  }
-
-  const handleOnClickEditor = () => {
-    if (stackSelected) {
-      let draftInstance = upwell.createDraft(upwell.SPECIAL_UNNAMED_DOCUMENT)
-      goToDraft(draftInstance.id)
-    }
   }
 
   const onMerge = async (draftName?: string) => {
@@ -255,7 +246,7 @@ export default function DraftView(props: DraftViewProps) {
       .finally(() => {
         const url = `/${id}/${did}`
         if (did === 'stack') {
-          window.location.href = url
+          setLocation(`/${id}/stack`)
         } else {
           setLocation(url)
         }
@@ -503,7 +494,7 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Pancakes
-                onClick={() => setStackSelected(true)}
+                onClick={() => setLocation(`/${id}/stack`)}
                 css={css`
                   ${pancakeCSS}
                   path {
@@ -512,6 +503,7 @@ export default function DraftView(props: DraftViewProps) {
                 `}
               />
               <Input
+                disabled={stackSelected}
                 value={stackSelected ? upwell.rootDraft.title : draft.title}
                 placeholder={'Untitled Document'}
                 onClick={(e) => {
@@ -531,6 +523,9 @@ export default function DraftView(props: DraftViewProps) {
                   font-size: 1.1em;
                   font-weight: 600;
                   padding-left: 20px;
+                  :disabled:hover {
+                    border: 1px solid transparent;
+                  }
                 `}
               />
 
@@ -545,7 +540,6 @@ export default function DraftView(props: DraftViewProps) {
           id={id}
           editable={!stackSelected}
           historyHeads={historyHeads}
-          onClick={handleOnClickEditor}
         />
       </div>
       <div

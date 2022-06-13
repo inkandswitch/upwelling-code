@@ -15,7 +15,7 @@ type Props = {
   editable: boolean
   visible: string
   historyHeads: string[] | false
-  onClick: React.MouseEventHandler<HTMLDivElement>
+  onClick?: React.MouseEventHandler<HTMLDivElement>
 }
 
 // @ts-ignore
