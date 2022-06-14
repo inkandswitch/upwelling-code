@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react/macro'
-import React, { useEffect, useState } from 'react'
+import React, { useReducer, useEffect, useState } from 'react'
 import FormControl from '@mui/material/FormControl'
 import Switch from '@mui/material/Switch'
 import { Upwell, DraftMetadata, Draft, Author, CommentState } from 'api'
@@ -58,10 +58,15 @@ export default function DraftView(props: DraftViewProps) {
   let [modalState, setModalState] = useState<ModalState>(ModalState.CLOSED)
   let upwell = documents.get(id)
   let [stackSelected, setStackSelected] = useState<boolean>(true)
-
   let [draft, setDraft] = useState<DraftMetadata>(
     upwell.rootDraft.materialize()
   )
+
+  let [lastDraft, setLastDraft] = useReducer(
+    (state: string, action: string) => (action !== 'stack' ? action : state),
+    did
+  )
+
   let [drafts, setDrafts] = useState<Draft[]>(upwell.drafts())
   let [historyHeads, setHistoryHeads] = useState<string[] | false>(false)
   let [historyTitle, setHistoryTitle] = useState<string>('')
@@ -82,7 +87,6 @@ export default function DraftView(props: DraftViewProps) {
     maybeDraft.addContributor(documents.author.id)
     setDrafts(upwell.drafts())
     setDraft(upwell.get(did).materialize())
-
     setStackSelected(did === 'stack' || did === upwell.rootDraft.id)
     log('rendering')
   }, [id, did])
@@ -238,6 +242,7 @@ export default function DraftView(props: DraftViewProps) {
   }
 
   function goToDraft(did: string) {
+    setLastDraft(did)
     documents
       .save(id)
       .catch((err) => {
@@ -370,7 +375,11 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Pancake
+                onClick={() => goToDraft(lastDraft)}
                 css={css`
+                  :hover {
+                    cursor: pointer;
+                  }
                   path {
                     fill: ${stackSelected ? '' : blue};
                   }
@@ -380,8 +389,7 @@ export default function DraftView(props: DraftViewProps) {
                 <Select
                   onChange={(value: DraftMetadata | null) => {
                     if (value === null) return
-                    const url = `/${id}/${value.id}`
-                    setLocation(url)
+                    goToDraft(value.id)
                   }}
                   renderValue={() => renderDraftMessage(draft)}
                 >
