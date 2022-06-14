@@ -150,7 +150,7 @@ export default function DraftView(props: DraftViewProps) {
       .catch((err) => {
         console.error('failed to sync')
         console.error(err)
-        throw new Error('You cant merge while offline')
+        alert('You cannot add to the stack while offline')
       })
   }
 
@@ -454,6 +454,7 @@ export default function DraftView(props: DraftViewProps) {
                 />
                 {showChangesSince ? 'Changes since' : 'Show changes '}
                 <DraftsHistory
+                  historySize={upwell.history.length}
                   did={draft.id}
                   goToDraft={goToDraft}
                   drafts={draftsMeta}
