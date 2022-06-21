@@ -78,16 +78,18 @@ export default function DraftView(props: DraftViewProps) {
     try {
       if (!upwell.isArchived(did) && did !== 'stack') {
         maybeDraft = upwell.get(did)
+        setStackSelected(false)
       } else {
         maybeDraft = upwell.rootDraft
+        setStackSelected(true)
       }
     } catch (err) {
       maybeDraft = upwell.rootDraft
+      setStackSelected(true)
     }
     maybeDraft.addContributor(documents.author.id)
     setDrafts(upwell.drafts())
-    setDraft(upwell.get(did).materialize())
-    setStackSelected(did === 'stack' || did === upwell.rootDraft.id)
+    setDraft(maybeDraft.materialize())
     log('rendering')
   }, [id, did])
 
