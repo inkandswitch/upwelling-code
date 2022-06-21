@@ -156,7 +156,6 @@ export default function DraftView(props: DraftViewProps) {
       .catch((err) => {
         console.error('failed to sync')
         console.error(err)
-        alert('You cannot add to the stack while offline')
       })
   }
 
