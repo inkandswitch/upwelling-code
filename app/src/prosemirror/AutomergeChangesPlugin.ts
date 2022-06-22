@@ -17,8 +17,22 @@ function getInlineDecoration(from: number, to: number, authorId: string) {
     from,
     to,
     { style: `background: ${getAuthorHighlight(color)}` },
-    { author: authorId }
+    { author: authorId, type: 'insertion' }
   )
+}
+
+function getDeletionDecoration(from: number, to: number, authorId: string) {
+  let color = documents.upwell!.getAuthorColor(authorId)
+  return Decoration.widget(from, (view, getPos) => {
+    let node = document.createElement('span')
+    node.style.top = '-7px'
+    node.setAttribute('spellcheck', 'false')
+    node.innerHTML = '<small>➰</small>'
+    node.style.background = getAuthorHighlight(color)
+    node.style.position = 'relative'
+    node.children[0].setAttribute('style', 'position: absolute')
+    return node
+  })
 }
 
 function getInlineDecorations(
@@ -31,7 +45,11 @@ function getInlineDecorations(
     let { from, to } = automergeToProsemirror(change, draft)
     let authorId = change.actor.slice(0, 32)
 
-    let overlap = decorations.find(from, to, (spec) => spec.author === authorId)
+    let overlap = decorations.find(
+      from,
+      to,
+      (spec) => spec.author === authorId && spec.type === 'insertion'
+    )
     if (overlap.length > 0) {
       if (overlap[0].from < from && overlap[0].to > to) {
         return
@@ -45,6 +63,31 @@ function getInlineDecorations(
       }
     } else {
       let deco = getInlineDecoration(from, to, authorId)
+      decorations = decorations.add(doc, [deco])
+    }
+  })
+
+  changeSet.del.forEach((change) => {
+    let start = change.pos
+    let end = start
+    let { from, to } = automergeToProsemirror({ start, end }, draft)
+    let authorId = change.actor.slice(0, 32)
+
+    let overlap = decorations.find(
+      from,
+      to,
+      (spec) => spec.author === authorId && spec.type === 'deletion'
+    )
+    if (overlap.length > 0) {
+      if (overlap[0].from < from && overlap[0].to > to) {
+        return
+      } else if (overlap[0].to === from || to === overlap[0].from) {
+        let newDeco = getDeletionDecoration(overlap[0].from, to, authorId)
+        decorations = decorations.remove([overlap[0]]).add(doc, [newDeco])
+      } else {
+      }
+    } else {
+      let deco = getDeletionDecoration(from, to, authorId)
       decorations = decorations.add(doc, [deco])
     }
   })
