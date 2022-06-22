@@ -28,7 +28,7 @@ export const remoteCursorPlugin: () => Plugin = () => {
             let { from, to } = cursor
             if (from === to) {
               let cursorElement = window.document.createElement('span')
-              cursorElement.style.borderRight = `2px solid ${documents.upwell.getAuthorColor(
+              cursorElement.style.borderRight = `2px solid ${documents.upwell!.getAuthorColor(
                 author
               )}`
               cursorElement.style.boxSizing = 'content-box'
@@ -36,7 +36,9 @@ export const remoteCursorPlugin: () => Plugin = () => {
               return Decoration.widget(from, cursorElement)
             } else {
               return Decoration.inline(from, to, {
-                style: `background: ${documents.upwell.getAuthorColor(author)}`,
+                style: `background: ${documents.upwell!.getAuthorColor(
+                  author
+                )}`,
               })
             }
           })

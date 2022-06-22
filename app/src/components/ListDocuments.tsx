@@ -197,7 +197,7 @@ export default function ListDocuments({
       `}
     >
       {drafts
-        .sort((a, b) => a.time - b.time)
+        .sort((a, b) => a.created_at - b.created_at)
         .map((draft: Draft, index) => {
           let visibleMaybe = visible.findIndex((id) => id === draft.id)
           const isMerged = upwell.isArchived(draft.id)
@@ -215,7 +215,7 @@ export default function ListDocuments({
               }}
               title={`by ${upwell.getAuthorName(
                 draft.authorId
-              )}, ${relativeDate(new Date(draft.time))}`}
+              )}, ${relativeDate(new Date(draft.created_at))}`}
               css={css`
                 display: flex;
                 flex-direction: row;

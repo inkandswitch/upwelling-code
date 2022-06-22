@@ -207,6 +207,7 @@ export default function DocumentWrapper(props: DocumentProps) {
         )}
       </div>
 
+      {/* @ts-ignore */}
       <DraftView sync={debouncedSync} root={root} {...props} />
     </div>
   )
