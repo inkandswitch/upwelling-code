@@ -23,7 +23,7 @@ const MAX_RETRIES = 4
 type DocumentProps = {
   id: string
   author: Author
-  did?: string
+  did: string
 }
 
 export default function DocumentWrapper(props: DocumentProps) {
@@ -191,7 +191,7 @@ export default function DocumentWrapper(props: DocumentProps) {
                 height: 5px;
                 content: '';
                 background: ${documents.upwell &&
-                documents.upwell.getAuthorColor(documents.author.id)};
+                documents.upwell?.getAuthorColor(documents.author.id)};
               `}
             ></div>
           </div>

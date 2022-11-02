@@ -44,7 +44,7 @@ function CommentModal({
     let commentMark = schema.mark('comment', {
       id: 'new-comment',
       author,
-      authorColor: documents.upwell.getAuthorColor(author.id),
+      authorColor: documents.upwell?.getAuthorColor(author.id),
       message: comment,
     })
     let tr = view.state.tr.addMark(from, to, commentMark)

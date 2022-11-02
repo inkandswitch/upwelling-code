@@ -23,8 +23,11 @@ import DraftMenu from './DraftMenu'
 import { useLocation } from 'wouter'
 import ShareButton from './ShareButton'
 import ConfirmModal from './ConfirmModal'
+import { DebouncedFunc } from 'lodash'
 
 const log = debug('DraftView')
+
+const publicURL = process.env.PUBLIC_URL
 
 const blue = '#0083A3'
 let documents = Documents()
@@ -42,7 +45,7 @@ type DraftViewProps = {
   id: string
   root: Draft
   author: Author
-  sync: () => Promise<void>
+  sync: DebouncedFunc<() => void>
 }
 
 const pancakeCSS = `
@@ -250,11 +253,10 @@ export default function DraftView(props: DraftViewProps) {
         console.error('failure to save', err)
       })
       .finally(() => {
-        const url = `/${id}/${did}`
         if (did === 'stack') {
-          setLocation(`/${id}/stack`)
+          setLocation(`${publicURL}/${id}/stack`)
         } else {
-          setLocation(url)
+          setLocation(`${publicURL}/${id}/${did}`)
         }
       })
   }
@@ -504,7 +506,7 @@ export default function DraftView(props: DraftViewProps) {
               `}
             >
               <Pancakes
-                onClick={() => setLocation(`/${id}/stack`)}
+                onClick={() => setLocation(`${publicURL}/${id}/stack`)}
                 css={css`
                   ${pancakeCSS}
                   path {

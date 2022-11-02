@@ -23,7 +23,7 @@ export const undoButton = (author: Author) => {
       let commentMark = schema.mark('undo', {
         id: 'new-undo',
         author: author,
-        authorColor: documents.upwell.getAuthorColor(author.id),
+        authorColor: documents.upwell?.getAuthorColor(author.id),
       })
       let tr = view.state.tr.addMark(from, to, commentMark)
       view.dispatch(tr)

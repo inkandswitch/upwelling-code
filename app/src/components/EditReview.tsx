@@ -10,6 +10,8 @@ let documents = Documents()
 // visible 0 or more drafts NOT including root
 // root
 
+const publicURL = process.env.PUBLIC_URL
+
 type Props = {
   id: string
   editable: boolean
@@ -40,7 +42,7 @@ export function EditReviewView(props: Props) {
     let oldIsNewAgain = upwell.createDraft(`${draft.message} (recovered)`)
     oldIsNewAgain.doc.applyChanges(changes.slice(0, changes.length - 1))
     await documents.save(id)
-    window.location.href = `/${id}/${oldIsNewAgain.id}`
+    window.location.href = `${publicURL}/${id}/${oldIsNewAgain.id}`
   }
 
   let textArea = (
