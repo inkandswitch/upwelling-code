@@ -54,7 +54,7 @@ export const editorSharedCSS = css`
 
 export const textCSS = css`
   width: 100%;
-  height: 100%;
+  flex: 1 1 auto;
   border: none;
   resize: none;
   font-size: 16px;

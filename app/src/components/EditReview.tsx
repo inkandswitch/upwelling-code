@@ -4,6 +4,7 @@ import React from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 import { Editor } from './Editor'
 import Documents from '../Documents'
+import FormatBar from './FormatBar'
 
 let documents = Documents()
 
@@ -69,9 +70,12 @@ export function EditReviewView(props: Props) {
         border: 1px solid #c6c6c6;
         flex: 1 1 auto;
         overflow: auto;
+        display: flex;
+        flex-direction: column;
       `}
       onClick={onClick}
     >
+      <FormatBar />
       {component}
     </div>
   )
